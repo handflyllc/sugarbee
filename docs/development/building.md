@@ -62,8 +62,9 @@ manage this automatically in a later milestone.
 
 The existing host uses SDL2's desktop window through the C graphics backend.
 Exit with the window close
-control. A controller manager, fixed simulation timestep, proper game shutdown
-callback, ZIP bomb limits, and process isolation are **not yet implemented**.
+control. Fixed simulation timing, proper game shutdown callbacks, ZIP bomb limits,
+and process isolation are **not yet implemented**. Controller discovery,
+hotplug, and a keyboard development fallback are implemented, but not analog input.
 Avoid running untrusted cartridges.
 
 ## Graphics regression check
@@ -81,8 +82,8 @@ Guru screen as well. See [graphics API](../api/graphics.md).
   current fallback glyphs display lowercase as uppercase and map some other
   punctuation to `?` until a complete font is added.
 - The graphics Lua bindings now call the language-neutral C graphics service,
-  but Lua bindings still reside in `src/main.c`. Controller/event handling has
-  not yet been extracted into a separate core module.
+  but Lua bindings still reside in `src/main.c`. Input polling and controller handling now live in
+  `src/sb_input_sdl.c`, with a language-neutral `sb_input.h` interface.
 - The ZIP reader currently calls `unzOpen` on the complete `.vcart` with its
   64-byte prefix. ZIP library behavior needs verification on target systems.
 - Runtime graphics are currently fixed at 1280×720. Manifest-defined logical
@@ -96,3 +97,20 @@ We plan to compile the C host natively on a 64-bit Raspberry Pi Linux system
 first. This shares source code and Lua API with the Debian x86_64 host; it
 is not a binary-compatible build. A cross-toolchain and minimal Linux image
 will follow once the host's behavior is stable.
+
+## Input demonstration (graphics + keyboard/gamepad)
+
+After building with `SUGARBEE_BUILD_HOST=ON`:
+
+```sh
+./build/sbee-pack -i examples/moving-box -o /tmp/moving-box.vcart -t "Moving Box"
+./build/sugarbee /tmp/moving-box.vcart
+```
+
+Move the gold box with arrow keys, W/A/S/D, or a connected controller's D-pad.
+Press J or the controller's A button to print a message in the terminal.
+Close the SDL window to quit. Test controller connection and disconnection
+both before startup and while running. A real-controller regression test is
+still manual; the headless suite covers keyboard input and optional virtual
+controller hotplug. See [input API](../api/input.md) for mappings and current
+limitations. The fixed simulation timestep has not yet been implemented.

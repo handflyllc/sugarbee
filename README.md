@@ -5,8 +5,9 @@ for Raspberry Pi 4 (64-bit Linux). The primary developer environment is Debian
 12 x86_64. Games should target SugarBee services rather than SDL or Linux APIs.
 
 **Status:** early prototype / API not stable. The graphics calls now use a
-language-neutral C interface with an SDL2 backend; input, timing, and other
-services have not yet been extracted. Lua 5.4 is the first game language.
+language-neutral C interface with an SDL2 backend. The input subsystem now
+uses a separate C service for controllers and keyboard development controls;
+timing and other services still need extraction. Lua 5.4 is the first game language.
 
 ## Build
 
@@ -20,6 +21,7 @@ See [dependencies](docs/development/dependencies.md) and
 - [Dependencies](docs/development/dependencies.md)
 - [Current `.vcart` format](docs/specifications/cartridge-format.md)
 - [2D graphics API](docs/api/graphics.md)
+- [Controller/keyboard input API](docs/api/input.md)
 - [Current architecture](docs/architecture/overview.md)
 - [Imported historical design](docs/architecture/project_sugarbee_technical_design_specification.md)
 

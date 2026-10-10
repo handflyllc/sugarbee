@@ -20,12 +20,11 @@
 
 #include "vcart.h"
 #include "sb_graphics.h"
-
-#define MAX_CONTROLLERS  4
+#include "sb_input.h"
 
 typedef struct {
     sb_graphics_t* graphics;
-    SDL_GameController* controllers[MAX_CONTROLLERS];
+    sb_input_t* input;
     lua_State* L;
     bool is_running;
     bool guru_active;
@@ -197,31 +196,32 @@ static int l_sugarbee_print(lua_State* L) {
     return 0;
 }
 
+static sb_button_t button_from_name(const char *name) {
+    if (strcmp(name, "up") == 0) return SB_BUTTON_UP;
+    if (strcmp(name, "down") == 0) return SB_BUTTON_DOWN;
+    if (strcmp(name, "left") == 0) return SB_BUTTON_LEFT;
+    if (strcmp(name, "right") == 0) return SB_BUTTON_RIGHT;
+    if (strcmp(name, "a") == 0) return SB_BUTTON_A;
+    if (strcmp(name, "b") == 0) return SB_BUTTON_B;
+    if (strcmp(name, "x") == 0) return SB_BUTTON_X;
+    if (strcmp(name, "y") == 0) return SB_BUTTON_Y;
+    if (strcmp(name, "start") == 0) return SB_BUTTON_START;
+    if (strcmp(name, "select") == 0) return SB_BUTTON_SELECT;
+    return SB_BUTTON_INVALID;
+}
+
 static int l_sugarbee_btn(lua_State* L) {
-    const char* btn_name = luaL_checkstring(L, 1);
-    int player_idx = (int)luaL_optinteger(L, 2, 0);
+    const char *name = luaL_checkstring(L, 1);
+    int player = (int)luaL_optinteger(L, 2, 0);
+    lua_pushboolean(L, sb_input_down(g_engine.input, player, button_from_name(name)));
+    return 1;
+}
 
-    if (player_idx < 0 || player_idx >= MAX_CONTROLLERS || !g_engine.controllers[player_idx]) {
-        lua_pushboolean(L, false);
-        return 1;
-    }
-
-    SDL_GameController* pad = g_engine.controllers[player_idx];
-    SDL_GameControllerButton button = SDL_CONTROLLER_BUTTON_INVALID;
-
-    if (strcmp(btn_name, "a") == 0) button = SDL_CONTROLLER_BUTTON_A;
-    else if (strcmp(btn_name, "b") == 0) button = SDL_CONTROLLER_BUTTON_B;
-    else if (strcmp(btn_name, "x") == 0) button = SDL_CONTROLLER_BUTTON_X;
-    else if (strcmp(btn_name, "y") == 0) button = SDL_CONTROLLER_BUTTON_Y;
-    else if (strcmp(btn_name, "up") == 0) button = SDL_CONTROLLER_BUTTON_DPAD_UP;
-    else if (strcmp(btn_name, "down") == 0) button = SDL_CONTROLLER_BUTTON_DPAD_DOWN;
-    else if (strcmp(btn_name, "left") == 0) button = SDL_CONTROLLER_BUTTON_DPAD_LEFT;
-    else if (strcmp(btn_name, "right") == 0) button = SDL_CONTROLLER_BUTTON_DPAD_RIGHT;
-    else if (strcmp(btn_name, "start") == 0) button = SDL_CONTROLLER_BUTTON_START;
-    else if (strcmp(btn_name, "select") == 0) button = SDL_CONTROLLER_BUTTON_BACK;
-
-    bool pressed = (button != SDL_CONTROLLER_BUTTON_INVALID) && SDL_GameControllerGetButton(pad, button);
-    lua_pushboolean(L, pressed);
+/* True for one host update when a button changes from up to down. */
+static int l_sugarbee_btnp(lua_State* L) {
+    const char *name = luaL_checkstring(L, 1);
+    int player = (int)luaL_optinteger(L, 2, 0);
+    lua_pushboolean(L, sb_input_pressed(g_engine.input, player, button_from_name(name)));
     return 1;
 }
 
@@ -231,6 +231,7 @@ void register_sugarbee_api(lua_State* L) {
     lua_pushcfunction(L, l_sugarbee_rect);  lua_setfield(L, -2, "rect");
     lua_pushcfunction(L, l_sugarbee_print); lua_setfield(L, -2, "print");
     lua_pushcfunction(L, l_sugarbee_btn);   lua_setfield(L, -2, "btn");
+    lua_pushcfunction(L, l_sugarbee_btnp);  lua_setfield(L, -2, "btnp");
     lua_setglobal(L, "sugarbee");
 }
 
@@ -293,6 +294,9 @@ bool init_engine(void) {
                                             SB_DEFAULT_WIDTH, SB_DEFAULT_HEIGHT);
     if (!g_engine.graphics) return false;
 
+    g_engine.input = sb_input_create();
+    if (!g_engine.input) return false;
+
     g_engine.L = luaL_newstate();
     if (!g_engine.L) return false;
     luaL_openlibs(g_engine.L);
@@ -303,11 +307,10 @@ bool init_engine(void) {
 }
 
 void main_loop(void) {
-    SDL_Event event;
-
     while (g_engine.is_running) {
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) g_engine.is_running = false;
+        if (!sb_input_poll(g_engine.input)) {
+            g_engine.is_running = false;
+            break;
         }
 
         if (g_engine.guru_active) {
@@ -326,12 +329,16 @@ void main_loop(void) {
 
 void shutdown_engine(void) {
     if (g_engine.L) lua_close(g_engine.L);
+    sb_input_destroy(g_engine.input);
     sb_graphics_destroy(g_engine.graphics);
     SDL_Quit();
 }
 
 int main(int argc, char* argv[]) {
-    if (!init_engine()) return 1;
+    if (!init_engine()) {
+        shutdown_engine();
+        return 1;
+    }
 
     if (argc > 1) {
         // Load target cartridge passed via command line

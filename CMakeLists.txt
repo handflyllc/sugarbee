@@ -41,9 +41,15 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sugarbee_graphics PRIVATE PkgConfig::SDL2)
     sugarbee_warnings(sugarbee_graphics)
 
+    add_library(sugarbee_input STATIC src/sb_input_sdl.c)
+    target_include_directories(sugarbee_input PUBLIC "${PROJECT_SOURCE_DIR}/include")
+    target_link_libraries(sugarbee_input PRIVATE PkgConfig::SDL2)
+    sugarbee_warnings(sugarbee_input)
+
     add_executable(sugarbee src/main.c)
     target_link_libraries(sugarbee PRIVATE
         sugarbee_graphics
+        sugarbee_input
         sugarbee_vcart
         PkgConfig::SDL2
         PkgConfig::LUA54
@@ -58,6 +64,13 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     sugarbee_warnings(test_graphics)
     add_test(NAME graphics_smoke COMMAND test_graphics)
     set_tests_properties(graphics_smoke PROPERTIES
+        ENVIRONMENT "SDL_VIDEODRIVER=dummy")
+
+    add_executable(test_input tests/test_input.c)
+    target_link_libraries(test_input PRIVATE sugarbee_input PkgConfig::SDL2)
+    sugarbee_warnings(test_input)
+    add_test(NAME input_smoke COMMAND test_input)
+    set_tests_properties(input_smoke PROPERTIES
         ENVIRONMENT "SDL_VIDEODRIVER=dummy")
 endif()
 
