@@ -8,7 +8,11 @@
     return 1; } } while (0)
 
 int main(int argc, char **argv) {
-    CHECK(argc == 2);
+    /* Optional expected dimensions allow testing multi-frame PNG atlases. */
+    CHECK(argc == 2 || argc == 4);
+    int expected_w = argc == 4 ? atoi(argv[2]) : 48;
+    int expected_h = argc == 4 ? atoi(argv[3]) : 32;
+    CHECK(expected_w > 0 && expected_h > 0);
     FILE *f = fopen(argv[1], "rb");
     CHECK(f != NULL);
     CHECK(fseek(f, 0, SEEK_END) == 0);
@@ -24,9 +28,10 @@ int main(int argc, char **argv) {
     int w = 0, h = 0;
     size_t len = 0;
     CHECK(sb_png_decode_rgba(encoded, (size_t)n, &rgba, &w, &h, &len));
-    CHECK(w == 48 && h == 32 && len == 48u * 32u * 4u);
+    CHECK(w == expected_w && h == expected_h &&
+          len == (size_t)expected_w * (size_t)expected_h * 4u);
     CHECK(rgba[3] == 0); /* transparent upper-left pixel */
-    CHECK(rgba[((size_t)18 * 48 + 20) * 4 + 3] == 255);
+    CHECK(rgba[((size_t)18 * (size_t)expected_w + 20) * 4 + 3] == 255);
     free(rgba);
     rgba = NULL;
     CHECK(!sb_png_decode_rgba(encoded, 8, &rgba, &w, &h, &len));

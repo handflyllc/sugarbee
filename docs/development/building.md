@@ -174,3 +174,22 @@ to 2048 × 2048 pixels and applies ZIP entry and archive resource limits.
 Cartridges should be treated as untrusted code: Lua currently opens its normal
 standard libraries, so these limits do **not** constitute a Lua sandbox.
 See [cartridge asset reference](../api/assets.md).
+
+## Sprite-sheet demo (Milestone 3C)
+
+The 3C example includes a four-frame PNG atlas (48 × 32 pixels per frame)
+with 3× animated drawing, and separate samples of horizontal/vertical flips.
+
+```sh
+./build/sbee-pack -i examples/sprite-sheet-demo -o /tmp/sprite-sheet-demo.vcart -t "Sprite Sheet Demo"
+./build/sugarbee /tmp/sprite-sheet-demo.vcart
+```
+
+Move the large bee with arrow keys, WASD, or the controller D-pad. It faces
+left/right with horizontal movement. Watch wing motion, crisp enlarged pixels,
+the four static frames along the bottom, and the horizontal/vertical mirrors.
+The new `sprite_region()` API validates source bounds and sizes; the expanded
+`texture_smoke` checks pixel-level crop, nearest-neighbor scale, and both flips
+using the SDL dummy driver. `sprite_sheet_png_smoke` also validates the
+192×32 atlas. Follow with the old gold-rectangle, Moving Box,
+asset-demo and no-cartridge Guru regressions.

@@ -2,6 +2,7 @@
 #include "sb_graphics.h"
 #include <SDL2/SDL.h>
 #include <stdint.h>
+#include <limits.h>
 #include <stdio.h>
 
 #define CHECK(expr) do { if (!(expr)) { \
@@ -9,6 +10,15 @@
             __LINE__, #expr, SDL_GetError()); \
     return 1; \
 } } while (0)
+
+static bool pixel_rgb(SDL_Renderer *renderer, int x, int y,
+                      uint8_t r, uint8_t g, uint8_t b) {
+    SDL_Rect rect = {x, y, 1, 1};
+    uint8_t pixel[4] = {0};
+    if (SDL_RenderReadPixels(renderer, &rect, SDL_PIXELFORMAT_RGBA32,
+                             pixel, (int)sizeof(pixel)) != 0) return false;
+    return pixel[0] == r && pixel[1] == g && pixel[2] == b;
+}
 
 int main(void) {
     CHECK(SDL_Init(SDL_INIT_VIDEO) == 0);
@@ -45,7 +55,49 @@ int main(void) {
     CHECK(out[4] == 0 && out[5] == 255 && out[6] == 0);
     CHECK(out[8] == 0 && out[9] == 0 && out[10] == 255);
     CHECK(out[12] == 8 && out[13] == 12 && out[14] == 32);
+
+    /* Crop the top row (red/green), enlarge it 2x, then flip horizontally.
+     * Pixel checks exercise actual nearest-neighbor output and orientation. */
+    CHECK(sb_graphics_sprite_region(gfx, first, 12, 2,
+                                    0, 0, 2, 1, 4, 2, true, false));
+    CHECK(pixel_rgb(renderer, 12, 2, 0, 255, 0));
+    CHECK(pixel_rgb(renderer, 13, 3, 0, 255, 0));
+    CHECK(pixel_rgb(renderer, 14, 2, 255, 0, 0));
+    CHECK(pixel_rgb(renderer, 15, 3, 255, 0, 0));
+
+    /* Vertical flip of the whole 2x2 image: blue and transparent on top,
+     * red and green below. Confirm the transparent corner blends to clear. */
+    CHECK(sb_graphics_sprite_region(gfx, first, 20, 3,
+                                    0, 0, 2, 2, 2, 2, false, true));
+    CHECK(pixel_rgb(renderer, 20, 3, 0, 0, 255));
+    CHECK(pixel_rgb(renderer, 21, 3, 8, 12, 32));
+    CHECK(pixel_rgb(renderer, 20, 4, 255, 0, 0));
+    CHECK(pixel_rgb(renderer, 21, 4, 0, 255, 0));
+
+    /* Valid 1x1 source; reject every out-of-bounds and zero-area case.
+     * The subtraction-based implementation also avoids integer overflow. */
+    CHECK(sb_graphics_sprite_region(gfx, first, 24, 3,
+                                    1, 0, 1, 1, 3, 4, false, false));
+    CHECK(pixel_rgb(renderer, 26, 6, 0, 255, 0));
+    CHECK(!sb_graphics_sprite_region(gfx, first, 0, 0,
+                                     -1, 0, 1, 1, 1, 1, false, false));
+    CHECK(!sb_graphics_sprite_region(gfx, first, 0, 0,
+                                     0, -1, 1, 1, 1, 1, false, false));
+    CHECK(!sb_graphics_sprite_region(gfx, first, 0, 0,
+                                     1, 0, 2, 1, 2, 1, false, false));
+    CHECK(!sb_graphics_sprite_region(gfx, first, 0, 0,
+                                     0, 1, 1, 2, 1, 2, false, false));
+    CHECK(!sb_graphics_sprite_region(gfx, first, 0, 0,
+                                     0, 0, 0, 1, 1, 1, false, false));
+    CHECK(!sb_graphics_sprite_region(gfx, first, 0, 0,
+                                     0, 0, 1, 1, 0, 1, false, false));
+    CHECK(!sb_graphics_sprite_region(gfx, first, 0, 0,
+                                     0, 0, 1, 1, 1, -1, false, false));
+    CHECK(!sb_graphics_sprite_region(gfx, first, 0, 0,
+                                     INT_MAX, 0, 1, 1, 1, 1, false, false));
     CHECK(sb_graphics_texture_destroy(gfx, first));
+    CHECK(!sb_graphics_sprite_region(gfx, first, 0, 0,
+                                     0, 0, 1, 1, 1, 1, false, false));
     CHECK(!sb_graphics_sprite(gfx, first, 5, 7));
     CHECK(!sb_graphics_texture_destroy(gfx, first));
     sb_texture_t next = sb_graphics_texture_rgba(gfx, 2, 2, pixels, sizeof(pixels));

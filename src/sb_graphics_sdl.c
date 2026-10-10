@@ -183,7 +183,10 @@ sb_texture_t sb_graphics_texture_rgba(sb_graphics_t *graphics,
                                              SDL_TEXTUREACCESS_STATIC,
                                              width, height);
     if (!texture) return SB_TEXTURE_INVALID;
+    /* Independent of the output/window scaling policy: enlarged sprite
+     * sheet pixels stay crisp instead of receiving linear interpolation. */
     if (SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND) != 0 ||
+        SDL_SetTextureScaleMode(texture, SDL_ScaleModeNearest) != 0 ||
         SDL_UpdateTexture(texture, NULL, rgba, (int)row_bytes) != 0) {
         SDL_DestroyTexture(texture);
         return SB_TEXTURE_INVALID;
@@ -200,12 +203,34 @@ sb_texture_t sb_graphics_texture_rgba(sb_graphics_t *graphics,
     return ((uint32_t)slot->generation << 16) | (uint32_t)(index + 1);
 }
 
+bool sb_graphics_sprite_region(sb_graphics_t *graphics, sb_texture_t texture,
+                               int x, int y,
+                               int src_x, int src_y, int src_width, int src_height,
+                               int dest_width, int dest_height,
+                               bool flip_x, bool flip_y) {
+    texture_slot_t *slot = find_texture(graphics, texture);
+    if (!slot || src_x < 0 || src_y < 0 || src_width <= 0 || src_height <= 0 ||
+        dest_width <= 0 || dest_height <= 0 ||
+        src_width > slot->width || src_height > slot->height ||
+        src_x > slot->width - src_width ||
+        src_y > slot->height - src_height) return false;
+
+    SDL_Rect source = { src_x, src_y, src_width, src_height };
+    SDL_Rect destination = { x, y, dest_width, dest_height };
+    SDL_RendererFlip flip = SDL_FLIP_NONE;
+    if (flip_x) flip = (SDL_RendererFlip)(flip | SDL_FLIP_HORIZONTAL);
+    if (flip_y) flip = (SDL_RendererFlip)(flip | SDL_FLIP_VERTICAL);
+    return SDL_RenderCopyEx(graphics->renderer, slot->texture, &source,
+                            &destination, 0.0, NULL, flip) == 0;
+}
+
 bool sb_graphics_sprite(sb_graphics_t *graphics, sb_texture_t texture,
                         int x, int y) {
     texture_slot_t *slot = find_texture(graphics, texture);
-    if (!slot) return false;
-    SDL_Rect destination = { x, y, slot->width, slot->height };
-    return SDL_RenderCopy(graphics->renderer, slot->texture, NULL, &destination) == 0;
+    return slot && sb_graphics_sprite_region(graphics, texture, x, y,
+                                              0, 0, slot->width, slot->height,
+                                              slot->width, slot->height,
+                                              false, false);
 }
 
 bool sb_graphics_texture_destroy(sb_graphics_t *graphics, sb_texture_t texture) {

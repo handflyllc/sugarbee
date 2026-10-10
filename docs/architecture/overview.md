@@ -18,12 +18,14 @@ SDL2 backend (src/sb_graphics_sdl.c)
 OS-provided display and input drivers
 ```
 
-The SDL2 graphics backend owns its window, renderer, and (as of milestone 3A)
-RGBA sprite textures. Games receive opaque numeric texture handles, never SDL
-texture pointers. The graphics core accepts raw in-memory RGBA bytes so
-cartridge decoding can be added without exposing file paths or SDL to games.
-The new Lua `texture_rgba`, `sprite`, and `texture_free` functions are
-experimental, and cartridge image loading is explicitly deferred.
+The SDL2 graphics backend owns its window, renderer, and RGBA sprite
+textures. Games receive opaque numeric texture handles, never SDL texture
+pointers. The C graphics core accepts raw in-memory RGBA bytes; the separate
+3B cartridge reader and PNG decoder load images from `.vcart` payloads. The
+3C `sprite_region()` call draws an in-bounds source rectangle to an optionally
+scaled/flipped destination using nearest-neighbor filtering. Frame selection
+and animation timing remain in Lua; SDL and Lua types do not leak into the
+C graphics interface.
 
 The SDL2 graphics backend owns its window and renderer. The language-neutral
 input service (`include/sb_input.h`, implemented by `src/sb_input_sdl.c`) owns

@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Milestone 3C: Added source-region rendering, destination scaling with
+  nearest-neighbor filtering, horizontal/vertical flips, and the Lua
+  `sprite_region()` binding. Included rendered-pixel assertions and a
+  four-frame animated PNG sprite-sheet cartridge example and atlas PNG test.
+
 - Added bounded, language-neutral `.vcart` resource reads and PNG-to-RGBA
   decoding, plus Lua `texture_load()`, a cartridge PNG example, asset/decoder
   tests, and matching build/API documentation. The game package format is

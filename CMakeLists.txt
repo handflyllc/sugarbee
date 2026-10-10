@@ -92,6 +92,8 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     sugarbee_warnings(test_png)
     add_test(NAME png_smoke COMMAND test_png
         "${PROJECT_SOURCE_DIR}/examples/asset-demo/assets/bee.png")
+    add_test(NAME sprite_sheet_png_smoke COMMAND test_png
+        "${PROJECT_SOURCE_DIR}/examples/sprite-sheet-demo/assets/bee-sheet.png" 192 32)
 
     add_executable(test_assets tests/test_assets.c)
     target_link_libraries(test_assets PRIVATE sugarbee_assets)

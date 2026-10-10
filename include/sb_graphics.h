@@ -55,6 +55,19 @@ sb_texture_t sb_graphics_texture_rgba(sb_graphics_t *graphics,
 bool sb_graphics_sprite(sb_graphics_t *graphics, sb_texture_t texture,
                         int x, int y);
 
+/* Draw a source rectangle from a texture into a destination rectangle.
+ * All rectangles use integer logical pixels. The source must be entirely
+ * inside the texture; widths and heights must be positive. Destination
+ * dimensions may differ from source dimensions (nearest-neighbor scaling).
+ * Flip flags mirror within the destination, without changing its position.
+ * Returns false on invalid dimensions, stale handles, or SDL failure.
+ */
+bool sb_graphics_sprite_region(sb_graphics_t *graphics, sb_texture_t texture,
+                               int x, int y,
+                               int src_x, int src_y, int src_width, int src_height,
+                               int dest_width, int dest_height,
+                               bool flip_x, bool flip_y);
+
 /* Release a texture. Returns false for unknown/stale handles. */
 bool sb_graphics_texture_destroy(sb_graphics_t *graphics, sb_texture_t texture);
 

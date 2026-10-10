@@ -138,7 +138,7 @@ static int l_sugarbee_print(lua_State* L) {
     return 0;
 }
 
-/* Phase 3A: in-memory RGBA textures only; .vcart asset reads arrive in 3B. */
+/* Upload packed RGBA pixels without going through a cartridge image decoder. */
 static int l_sugarbee_texture_rgba(lua_State *L) {
     lua_Integer w = luaL_checkinteger(L, 1);
     lua_Integer h = luaL_checkinteger(L, 2);
@@ -201,6 +201,35 @@ static int l_sugarbee_sprite(lua_State *L) {
     return 0;
 }
 
+/* Additional 3C sprite features stay in the same SDL-free C graphics API.
+ * Keep sprite(handle, x, y) unchanged for existing cartridges. */
+static int sprite_int_arg(lua_State *L, int arg) {
+    lua_Integer value = luaL_checkinteger(L, arg);
+    if (value < INT_MIN || value > INT_MAX)
+        luaL_argerror(L, arg, "integer outside supported range");
+    return (int)value;
+}
+
+static int l_sugarbee_sprite_region(lua_State *L) {
+    lua_Integer handle = luaL_checkinteger(L, 1);
+    int x = sprite_int_arg(L, 2);
+    int y = sprite_int_arg(L, 3);
+    int src_x = sprite_int_arg(L, 4);
+    int src_y = sprite_int_arg(L, 5);
+    int src_w = sprite_int_arg(L, 6);
+    int src_h = sprite_int_arg(L, 7);
+    int dest_w = lua_isnoneornil(L, 8) ? src_w : sprite_int_arg(L, 8);
+    int dest_h = lua_isnoneornil(L, 9) ? src_h : sprite_int_arg(L, 9);
+    bool flip_x = lua_toboolean(L, 10);
+    bool flip_y = lua_toboolean(L, 11);
+    if (handle <= 0 || (uint64_t)handle > UINT32_MAX ||
+        !sb_graphics_sprite_region(g_engine.graphics, (sb_texture_t)handle,
+                                    x, y, src_x, src_y, src_w, src_h,
+                                    dest_w, dest_h, flip_x, flip_y))
+        return luaL_error(L, "invalid texture handle, sprite region, or draw operation");
+    return 0;
+}
+
 static int l_sugarbee_texture_free(lua_State *L) {
     lua_Integer texture = luaL_checkinteger(L, 1);
     lua_pushboolean(L, texture > 0 && (uint64_t)texture <= UINT32_MAX &&
@@ -245,6 +274,7 @@ void register_sugarbee_api(lua_State* L) {
     lua_pushcfunction(L, l_sugarbee_texture_rgba); lua_setfield(L, -2, "texture_rgba");
     lua_pushcfunction(L, l_sugarbee_texture_load); lua_setfield(L, -2, "texture_load");
     lua_pushcfunction(L, l_sugarbee_sprite); lua_setfield(L, -2, "sprite");
+    lua_pushcfunction(L, l_sugarbee_sprite_region); lua_setfield(L, -2, "sprite_region");
     lua_pushcfunction(L, l_sugarbee_texture_free); lua_setfield(L, -2, "texture_free");
     lua_pushcfunction(L, l_sugarbee_btn);   lua_setfield(L, -2, "btn");
     lua_pushcfunction(L, l_sugarbee_btnp);  lua_setfield(L, -2, "btnp");
