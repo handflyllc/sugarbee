@@ -34,11 +34,21 @@ sb_input_t *sb_input_create(void);
 void sb_input_destroy(sb_input_t *input);
 
 /*
- * Poll pending platform events and sample logical input once per host loop.
+ * Poll pending platform events and collect button transitions once per host loop.
  * Returns false if the user requested window/application shutdown.
- * Call once before update/draw; consumes SDL's shared event queue.
+ * Call once before timing/update/draw; consumes SDL's shared event queue.
  */
 bool sb_input_poll(sb_input_t *input);
+
+/*
+ * A simulation update calls begin_update before invoking game update(dt) and
+ * end_update afterward. A new press is buffered even if zero simulation
+ * updates occurred since the last host poll. If a frame runs multiple
+ * simulation updates, the press is reported on the first one only.
+ * btnp/pressed is intended to be queried within update(dt), not draw().
+ */
+void sb_input_begin_update(sb_input_t *input);
+void sb_input_end_update(sb_input_t *input);
 
 /* Player indices are 0..SB_MAX_PLAYERS-1; invalid queries return false. */
 bool sb_input_down(const sb_input_t *input, int player, sb_button_t button);

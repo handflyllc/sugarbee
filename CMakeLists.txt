@@ -17,6 +17,11 @@ function(sugarbee_warnings target)
     endif()
 endfunction()
 
+# Pure-C fixed simulation scheduler is usable by every platform backend.
+add_library(sugarbee_timing STATIC src/sb_timing.c)
+target_include_directories(sugarbee_timing PUBLIC "${PROJECT_SOURCE_DIR}/include")
+sugarbee_warnings(sugarbee_timing)
+
 add_library(sugarbee_vcart STATIC src/vcart.c)
 target_include_directories(sugarbee_vcart PUBLIC "${PROJECT_SOURCE_DIR}/include")
 sugarbee_warnings(sugarbee_vcart)
@@ -50,6 +55,7 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sugarbee PRIVATE
         sugarbee_graphics
         sugarbee_input
+        sugarbee_timing
         sugarbee_vcart
         PkgConfig::SDL2
         PkgConfig::LUA54
@@ -75,6 +81,11 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
 endif()
 
 if(BUILD_TESTING)
+    add_executable(test_timing tests/test_timing.c)
+    target_link_libraries(test_timing PRIVATE sugarbee_timing)
+    sugarbee_warnings(test_timing)
+    add_test(NAME timing_smoke COMMAND test_timing)
+
     add_executable(test_vcart tests/test_vcart.c)
     target_link_libraries(test_vcart PRIVATE sugarbee_vcart)
     sugarbee_warnings(test_vcart)

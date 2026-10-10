@@ -16,6 +16,7 @@ struct sb_input {
     bool keyboard[SDL_NUM_SCANCODES];
     bool down[SB_MAX_PLAYERS][SB_BUTTON_COUNT];
     bool pressed[SB_MAX_PLAYERS][SB_BUTTON_COUNT];
+    bool pending_pressed[SB_MAX_PLAYERS][SB_BUTTON_COUNT];
     bool quit_requested;
 };
 
@@ -107,6 +108,30 @@ void sb_input_destroy(sb_input_t *input) {
     free(input);
 }
 
+/* Update the held snapshot and latch rising edges. Sampling after each
+ * event also catches quick down/up pairs drained in the same host poll. */
+static void sample_buttons(sb_input_t *input) {
+    for (int player = 0; player < SB_MAX_PLAYERS; ++player) {
+        for (int button = 0; button < SB_BUTTON_COUNT; ++button) {
+            bool next = input->pads[player].down[button];
+            if (player == 0) next |= keyboard_down(input, (sb_button_t)button);
+            if (next && !input->down[player][button])
+                input->pending_pressed[player][button] = true;
+            input->down[player][button] = next;
+        }
+    }
+}
+
+void sb_input_begin_update(sb_input_t *input) {
+    if (!input) return;
+    memcpy(input->pressed, input->pending_pressed, sizeof(input->pressed));
+    memset(input->pending_pressed, 0, sizeof(input->pending_pressed));
+}
+
+void sb_input_end_update(sb_input_t *input) {
+    if (input) memset(input->pressed, 0, sizeof(input->pressed));
+}
+
 bool sb_input_poll(sb_input_t *input) {
     if (!input || input->quit_requested) return false;
 
@@ -148,17 +173,9 @@ bool sb_input_poll(sb_input_t *input) {
             default:
                 break;
         }
+        sample_buttons(input);
     }
-
-    for (int player = 0; player < SB_MAX_PLAYERS; ++player) {
-        for (int button = 0; button < SB_BUTTON_COUNT; ++button) {
-            bool next = input->pads[player].down[button];
-            /* A keyboard is an optional second input device for player zero. */
-            if (player == 0) next |= keyboard_down(input, (sb_button_t)button);
-            input->pressed[player][button] = next && !input->down[player][button];
-            input->down[player][button] = next;
-        }
-    }
+    sample_buttons(input);
     return !input->quit_requested;
 }
 

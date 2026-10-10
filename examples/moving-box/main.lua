@@ -1,4 +1,4 @@
--- SugarBee input milestone demo; update() does not yet receive delta time.
+-- SugarBee fixed-step demo: update(dt) runs at 60 simulation updates/sec.
 local x = 100
 local y = 200
 
@@ -6,11 +6,12 @@ function init()
     print("SugarBee moving-box demo loaded")
 end
 
-function update()
-    if sugarbee.btn("left")  then x = x - 3 end
-    if sugarbee.btn("right") then x = x + 3 end
-    if sugarbee.btn("up")    then y = y - 3 end
-    if sugarbee.btn("down")  then y = y + 3 end
+function update(dt)
+    local speed = 180  -- logical pixels per second
+    if sugarbee.btn("left")  then x = x - speed * dt end
+    if sugarbee.btn("right") then x = x + speed * dt end
+    if sugarbee.btn("up")    then y = y - speed * dt end
+    if sugarbee.btn("down")  then y = y + speed * dt end
 
     if sugarbee.btnp("a") then
         print("A pressed")

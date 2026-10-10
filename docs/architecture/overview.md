@@ -22,8 +22,11 @@ The SDL2 graphics backend owns its window and renderer. The language-neutral
 input service (`include/sb_input.h`, implemented by `src/sb_input_sdl.c`) owns
 controller handles and currently polls the SDL event queue. Lua's `btn` and
 `btnp` functions in `src/main.c` read SugarBee logical button states, not SDL
-objects. The host still owns Lua, cartridge loading, and the main loop; these
-are not yet independently modularized.
+objects. Fixed-step scheduling lives behind the pure-C `sb_timing.h` interface
+(`src/sb_timing.c`); the host supplies elapsed time using SDL performance
+counters and invokes Lua `update(dt)` with a fixed 1/60-second step. The host
+still owns Lua, cartridge loading, and the main loop; these are not yet
+independently modularized.
 
 The same C source is intended to compile on Debian 12 x86_64 and a 64-bit
 Raspberry Pi 4 Linux environment. This is **source portability**, not a shared
@@ -41,9 +44,9 @@ release console *images* have not been built yet.
 
 - Manifest-defined logical resolutions (default 1280 x 720), aspect-preserving
   scaling, and pixel-art integer scaling.
-- A full input event router, analog controls, and robust fixed-step input delivery.
-- Fixed simulation timing, game shutdown callbacks, and save APIs tied to
-  persistent cartridge UUIDs.
+- A full input event router, analog controls, and lossless input-event queues.
+  Basic button-press delivery across zero/multiple simulation updates works.
+- Game shutdown callbacks and save APIs tied to persistent cartridge UUIDs.
 - A minimal Linux appliance image and a development image from shared build
   configuration.
 - Language adapters beyond Lua and an extensible plugin system (deferred).

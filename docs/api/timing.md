@@ -1,0 +1,69 @@
+# SugarBee timing and lifecycle (experimental v0.1)
+
+The game uses these Lua callbacks:
+
+| Callback | When it runs |
+| --- | --- |
+| `init()` | Once after a cartridge is successfully loaded |
+| `update(dt)` | Zero or more fixed simulation steps per host render iteration |
+| `draw()` | Once per host render iteration while the game is healthy |
+
+`dt` is **always 1/60 second** (`0.016666...`) at present, regardless of
+actual renderer speed. Lua functions declared as `update()` continue to work:
+Lua ignores extra arguments. An optional `shutdown()` callback is **not yet
+invoked** by the host.
+
+```lua
+local x = 100
+function init() end
+function update(dt)
+    if sugarbee.btn("right") then x = x + 180 * dt end
+    if sugarbee.btnp("a") then print("A pressed") end
+end
+function draw()
+    sugarbee.cls(8, 12, 32)
+    sugarbee.rect(x, 100, 32, 32, 240, 180, 50, true)
+end
+```
+
+## Scheduler behavior
+
+- The SDL host measures elapsed time with SDL performance counters.
+- `sb_timing_advance()` is a **pure-C**, platform-neutral accumulator.
+- One host render iteration can have zero, one, or several calls to `update`.
+- Up to five simulation updates are performed per host iteration. When rendering
+  stalls long enough to exceed that budget, excess accumulated time is dropped
+  to avoid an unbounded catch-up spiral. This means gameplay can **slow down**
+  under sustained overload; SugarBee does not guarantee real-time simulation.
+- A single measured elapsed interval is capped at 250 milliseconds before it is
+  added to the accumulator (e.g. after a debugger pause).
+- Rendering currently takes place once per host iteration with SDL VSync
+  requested. Rendering frequency and simulation frequency are not the same
+  guarantee. Interpolation between simulation states is **not implemented**.
+
+## Input at update boundaries
+
+The host polls SDL events each render iteration and stores press transitions
+until the next simulation update. `sb_input_begin_update()` exposes pending
+edges to that update, and `sb_input_end_update()` clears them. This ensures:
+
+1. When no `update` occurs during a rendered frame, a button press is retained.
+2. When multiple updates occur in one frame, `sugarbee.btnp()` is true during
+   **only the first** update after the press.
+3. A quick press and release received during a single SDL poll still produces
+   one `btnp` edge on the next update (although `btn` may already be false).
+
+`btn()` reports the most recently polled held state, not a full history of input
+events. Multiple presses between simulation updates are coalesced into one
+boolean edge; lossless input/event queues are out of scope for v0.1. Query
+`btnp()` in `update(dt)`, not in `draw()` or `init()`.
+
+## Tests and compatibility
+
+`timing_smoke` tests the accumulator without SDL or Lua, including zero/multiple
+updates, invalid elapsed values, and bounded catch-up. `input_smoke` tests
+buffered edges across zero and multiple simulation updates, short taps, and
+existing gamepad/keyboard behavior. The original no-argument `update()` Lua
+callback is compatible with `update(dt)` calls.
+
+This timing API is not yet a stable public SugarBee ABI.

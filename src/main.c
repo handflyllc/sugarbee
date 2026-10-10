@@ -21,6 +21,7 @@
 #include "vcart.h"
 #include "sb_graphics.h"
 #include "sb_input.h"
+#include "sb_timing.h"
 
 typedef struct {
     sb_graphics_t* graphics;
@@ -272,12 +273,14 @@ void render_guru_meditation(void) {
         60, 640, 150, 150, 150, 2);
 }
 
-void call_lua_global_function(const char* func_name) {
+/* A Lua callback may optionally receive the fixed simulation delta. */
+void call_lua_global_function(const char* func_name, bool with_dt, double dt) {
     if (!g_engine.L || g_engine.guru_active) return;
 
     lua_getglobal(g_engine.L, func_name);
     if (lua_isfunction(g_engine.L, -1)) {
-        if (lua_pcall(g_engine.L, 0, 0, 0) != LUA_OK) {
+        if (with_dt) lua_pushnumber(g_engine.L, dt);
+        if (lua_pcall(g_engine.L, with_dt ? 1 : 0, 0, 0) != LUA_OK) {
             const char* err = lua_tostring(g_engine.L, -1);
             trigger_guru_meditation(0x00000004, "LUA RUNTIME EXCEPTION", err, NULL);
             lua_pop(g_engine.L, 1);
@@ -307,23 +310,46 @@ bool init_engine(void) {
 }
 
 void main_loop(void) {
+    sb_timing_t timing;
+    sb_timing_reset(&timing);
+    const Uint64 frequency = SDL_GetPerformanceFrequency();
+    Uint64 last_counter = SDL_GetPerformanceCounter();
+
     while (g_engine.is_running) {
         if (!sb_input_poll(g_engine.input)) {
             g_engine.is_running = false;
             break;
         }
 
+        const Uint64 now = SDL_GetPerformanceCounter();
+        double elapsed = 0.0;
+        if (frequency != 0 && now >= last_counter)
+            elapsed = (double)(now - last_counter) / (double)frequency;
+        last_counter = now;
+
+        unsigned updates = 0;
+        if (!g_engine.guru_active) {
+            updates = sb_timing_advance(&timing, elapsed);
+            for (unsigned i = 0; i < updates; ++i) {
+                /* Only the first update after a press sees btnp == true. */
+                sb_input_begin_update(g_engine.input);
+                call_lua_global_function("update", true, sb_timing_step_seconds());
+                sb_input_end_update(g_engine.input);
+                if (g_engine.guru_active) break;
+            }
+        }
+
         if (g_engine.guru_active) {
             render_guru_meditation();
         } else {
-            call_lua_global_function("update");
-
             sb_graphics_clear(g_engine.graphics, 0, 0, 0);
-
-            call_lua_global_function("draw");
+            call_lua_global_function("draw", false, 0.0);
+            if (g_engine.guru_active) render_guru_meditation();
         }
 
         sb_graphics_present(g_engine.graphics);
+        /* Software-renderer fallback may not have VSync; don't spin idle. */
+        if (!g_engine.guru_active && updates == 0) SDL_Delay(1);
     }
 }
 
@@ -343,7 +369,7 @@ int main(int argc, char* argv[]) {
     if (argc > 1) {
         // Load target cartridge passed via command line
         if (load_virtual_cartridge(argv[1])) {
-            call_lua_global_function("init");
+            call_lua_global_function("init", false, 0.0);
         }
     } else {
         trigger_guru_meditation(0x00000000, "NO CARTRIDGE INSERTED", "Please specify a .vcart path: ./sugarbee game.vcart", NULL);

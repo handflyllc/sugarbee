@@ -7,7 +7,8 @@ for Raspberry Pi 4 (64-bit Linux). The primary developer environment is Debian
 **Status:** early prototype / API not stable. The graphics calls now use a
 language-neutral C interface with an SDL2 backend. The input subsystem now
 uses a separate C service for controllers and keyboard development controls;
-timing and other services still need extraction. Lua 5.4 is the first game language.
+the timing scheduler is now another language-independent C module, and
+Lua `update(dt)` uses a fixed 60 Hz timestep. Lua 5.4 is the first game language.
 
 ## Build
 
@@ -22,6 +23,7 @@ See [dependencies](docs/development/dependencies.md) and
 - [Current `.vcart` format](docs/specifications/cartridge-format.md)
 - [2D graphics API](docs/api/graphics.md)
 - [Controller/keyboard input API](docs/api/input.md)
+- [Simulation timing and callbacks](docs/api/timing.md)
 - [Current architecture](docs/architecture/overview.md)
 - [Imported historical design](docs/architecture/project_sugarbee_technical_design_specification.md)
 

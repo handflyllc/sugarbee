@@ -11,7 +11,7 @@ This interface may change before a stable SugarBee SDK is released.
 | Function | Meaning |
 | --- | --- |
 | `sugarbee.btn(name [, player])` | `true` while the logical button is held. |
-| `sugarbee.btnp(name [, player])` | `true` on the first poll after the logical button changes from released to held. |
+| `sugarbee.btnp(name [, player])` | `true` during the first simulation `update(dt)` after a released-to-held transition. |
 
 `player` defaults to `0` and is zero-based (0–3). Invalid button names and
 out-of-range players return `false`. Button names are lowercase and
@@ -24,9 +24,9 @@ Example:
 function init()
     x = 100
 end
-function update()
-    if sugarbee.btn("left") then x = x - 3 end
-    if sugarbee.btn("right") then x = x + 3 end
+function update(dt)
+    if sugarbee.btn("left") then x = x - 180 * dt end
+    if sugarbee.btn("right") then x = x + 180 * dt end
     if sugarbee.btnp("a") then print("A was pressed") end
 end
 function draw()
@@ -35,8 +35,8 @@ function draw()
 end
 ```
 
-The `3`-pixels-per-update speed is temporary; SugarBee does **not** yet provide
-a fixed-step update or `dt`, so movement is currently frame-rate-dependent.
+Movement now uses a nominal fixed 60 Hz simulation timestep. `dt` is measured
+in seconds and is currently always 1/60. See [timing](timing.md).
 
 ## Button mapping
 
@@ -66,8 +66,12 @@ to launch a cartridge. The keyboard fallback only applies to player 0.
   constructing the input context.
 - `sb_input_create()` discovers attached controllers and owns their handles.
 - `sb_input_poll()` drains SDL's event queue once per host loop, processes
-  input and device changes, and returns `false` for quit/window close.
-- `sb_input_down()` and `sb_input_pressed()` read the resulting snapshots.
+  input and device changes, and returns `false` for quit/window close. It also
+  buffers button-press edges until the next simulation update.
+- The host calls `sb_input_begin_update()` before each `update(dt)` and
+  `sb_input_end_update()` after it, consuming a press at most once.
+- `sb_input_down()` returns the most recently polled held state;
+  `sb_input_pressed()` reports an edge during the active simulation update.
 - `sb_input_destroy()` closes opened controllers before SDL shutdown.
 
 **Important:** The current input backend owns the SDL event queue, which is
@@ -75,10 +79,12 @@ sufficient while the host needs only input, focus, hotplug and quit events.
 A future platform event dispatcher may replace this when other subsystems
 require SDL window or device events.
 
-`btnp` is a transition between **polled snapshots**, not an event queue. A
-press and release entirely between two polls may not register. Fast taps,
-fixed-step update delivery, and precise input timing are future improvements.
-Keyboard state is cleared on focus loss so keys do not remain stuck.
+`btnp` edges are **buffered between SDL polls and fixed updates**, including
+press-and-release events processed in a single poll. Multiple presses before
+an update coalesce to one boolean edge; it is not a lossless event queue.
+`btnp` should be called in `update(dt)`, not in `draw()` or `init()`.
+See [timing](timing.md). Keyboard state is cleared on focus loss so keys do
+not remain stuck.
 
 ## Testing
 
@@ -89,3 +95,6 @@ and optional virtual-controller hotplug on SDL builds that support it.
 Also test manually with a real controller: connect before startup, move the
 sample box, disconnect/reconnect the controller, and try keyboard movement.
 The earlier gold-rectangle and no-cartridge Guru tests should still pass.
+Initial physical-controller reference: **Logitech Gamepad F310**, used by the
+project developer in **Flight Mode**. Other controllers may work through SDL;
+we are not undertaking a compatibility certification effort at this stage.

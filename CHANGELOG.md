@@ -2,6 +2,15 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added an SDL-independent, 60 Hz fixed-step C timing scheduler with a bounded
+  catch-up budget and `update(dt)` Lua callback (old `update()` remains valid).
+- Updated input smoke tests to tolerate already-connected SDL gamepads, while
+  verifying virtual controller hotplug relative to the initial device count.
+- Buffered logical input press edges across zero/multiple simulation updates,
+  including a press-and-release drained in one SDL event poll. Updated
+  moving-box to move in pixels/second, added timing tests, and synchronized
+  input/timing documentation.
+
 - Added SDL2 gamepad discovery/hotplug handling behind a language-independent
   `sb_input.h` interface, plus developer keyboard fallback for player zero.
 - Kept Lua `sugarbee.btn()` and added `sugarbee.btnp()` for pressed edges;
@@ -20,5 +29,5 @@
   added random UUIDv4 generation plus `--uuid` reuse for game save identity.
 - Added build, dependency, and cartridge-format documentation.
 
-Not a release: fixed-step timing, Lua sandboxing, analog input, and cartridge
-resource limits remain outstanding.
+Not a release: Lua sandboxing, analog input, cartridge resource limits,
+and a completed game lifecycle/shutdown callback remain outstanding.

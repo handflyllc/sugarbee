@@ -30,7 +30,10 @@ int main(void) {
     CHECK(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) == 0);
     sb_input_t *input = sb_input_create();
     CHECK(input != NULL);
-    CHECK(sb_input_controller_count(input) == 0);
+    /* Physical controllers may already be attached (e.g., the developer's F310).
+     * The test must not require developers to disconnect them. */
+    const int initial_controllers = sb_input_controller_count(input);
+    CHECK(initial_controllers >= 0 && initial_controllers <= SB_MAX_PLAYERS);
     CHECK(!sb_input_down(input, 0, SB_BUTTON_LEFT));
     CHECK(!sb_input_down(input, -1, SB_BUTTON_LEFT));
     CHECK(!sb_input_down(input, SB_MAX_PLAYERS, SB_BUTTON_LEFT));
@@ -39,18 +42,25 @@ int main(void) {
     CHECK(send_key(SDL_KEYDOWN, SDL_SCANCODE_LEFT) == 1);
     CHECK(sb_input_poll(input));
     CHECK(sb_input_down(input, 0, SB_BUTTON_LEFT));
+    sb_input_begin_update(input);
     CHECK(sb_input_pressed(input, 0, SB_BUTTON_LEFT));
+    sb_input_end_update(input);
+    CHECK(!sb_input_pressed(input, 0, SB_BUTTON_LEFT));
     CHECK(!sb_input_down(input, 1, SB_BUTTON_LEFT));
 
     CHECK(sb_input_poll(input));
     CHECK(sb_input_down(input, 0, SB_BUTTON_LEFT));
+    sb_input_begin_update(input);
     CHECK(!sb_input_pressed(input, 0, SB_BUTTON_LEFT));
+    sb_input_end_update(input);
 
     /* A second key mapped to the same direction does not create a new edge. */
     CHECK(send_key(SDL_KEYDOWN, SDL_SCANCODE_A) == 1);
     CHECK(sb_input_poll(input));
     CHECK(sb_input_down(input, 0, SB_BUTTON_LEFT));
+    sb_input_begin_update(input);
     CHECK(!sb_input_pressed(input, 0, SB_BUTTON_LEFT));
+    sb_input_end_update(input);
     CHECK(send_key(SDL_KEYUP, SDL_SCANCODE_LEFT) == 1);
     CHECK(sb_input_poll(input));
     CHECK(sb_input_down(input, 0, SB_BUTTON_LEFT));
@@ -61,10 +71,34 @@ int main(void) {
     CHECK(send_key(SDL_KEYDOWN, SDL_SCANCODE_J) == 1);
     CHECK(sb_input_poll(input));
     CHECK(sb_input_down(input, 0, SB_BUTTON_A));
+    sb_input_begin_update(input);
     CHECK(sb_input_pressed(input, 0, SB_BUTTON_A));
+    sb_input_end_update(input);
     CHECK(send_key(SDL_KEYUP, SDL_SCANCODE_J) == 1);
     CHECK(sb_input_poll(input));
     CHECK(!sb_input_down(input, 0, SB_BUTTON_A));
+
+    /* No simulation update for two host polls: edge must not be lost. */
+    CHECK(send_key(SDL_KEYDOWN, SDL_SCANCODE_J) == 1);
+    CHECK(sb_input_poll(input));
+    CHECK(sb_input_poll(input));
+    sb_input_begin_update(input);
+    CHECK(sb_input_pressed(input, 0, SB_BUTTON_A));
+    sb_input_end_update(input);
+    sb_input_begin_update(input);
+    CHECK(!sb_input_pressed(input, 0, SB_BUTTON_A));
+    sb_input_end_update(input);
+    CHECK(send_key(SDL_KEYUP, SDL_SCANCODE_J) == 1);
+    CHECK(sb_input_poll(input));
+
+    /* Down+up in one SDL event poll is still one game update edge. */
+    CHECK(send_key(SDL_KEYDOWN, SDL_SCANCODE_J) == 1);
+    CHECK(send_key(SDL_KEYUP, SDL_SCANCODE_J) == 1);
+    CHECK(sb_input_poll(input));
+    CHECK(!sb_input_down(input, 0, SB_BUTTON_A));
+    sb_input_begin_update(input);
+    CHECK(sb_input_pressed(input, 0, SB_BUTTON_A));
+    sb_input_end_update(input);
 
     CHECK(send_key(SDL_KEYDOWN, SDL_SCANCODE_RIGHT) == 1);
     CHECK(sb_input_poll(input));
@@ -78,8 +112,11 @@ int main(void) {
         SDL_JOYSTICK_TYPE_GAMECONTROLLER, 0, SDL_CONTROLLER_BUTTON_MAX, 0);
     if (virtual_index >= 0) {
         CHECK(sb_input_poll(input));
-        if (SDL_IsGameController(virtual_index)) {
-            CHECK(sb_input_controller_count(input) == 1);
+        if (SDL_IsGameController(virtual_index) && initial_controllers < SB_MAX_PLAYERS) {
+            /* Existing gamepads occupy the first slots; the virtual pad takes
+             * the next free slot. Only compare counts relative to baseline. */
+            const int virtual_player = initial_controllers;
+            CHECK(sb_input_controller_count(input) == initial_controllers + 1);
             SDL_JoystickID instance = SDL_JoystickGetDeviceInstanceID(virtual_index);
             SDL_Event press = {0};
             press.cbutton.type = SDL_CONTROLLERBUTTONDOWN;
@@ -87,10 +124,14 @@ int main(void) {
             press.cbutton.button = SDL_CONTROLLER_BUTTON_A;
             CHECK(SDL_PushEvent(&press) == 1);
             CHECK(sb_input_poll(input));
-            CHECK(sb_input_down(input, 0, SB_BUTTON_A));
-            CHECK(sb_input_pressed(input, 0, SB_BUTTON_A));
+            CHECK(sb_input_down(input, virtual_player, SB_BUTTON_A));
+            sb_input_begin_update(input);
+            CHECK(sb_input_pressed(input, virtual_player, SB_BUTTON_A));
+            sb_input_end_update(input);
             CHECK(sb_input_poll(input));
-            CHECK(!sb_input_pressed(input, 0, SB_BUTTON_A));
+            sb_input_begin_update(input);
+            CHECK(!sb_input_pressed(input, virtual_player, SB_BUTTON_A));
+            sb_input_end_update(input);
 
             SDL_Event release = {0};
             release.cbutton.type = SDL_CONTROLLERBUTTONUP;
@@ -98,11 +139,13 @@ int main(void) {
             release.cbutton.button = SDL_CONTROLLER_BUTTON_A;
             CHECK(SDL_PushEvent(&release) == 1);
             CHECK(sb_input_poll(input));
-            CHECK(!sb_input_down(input, 0, SB_BUTTON_A));
+            CHECK(!sb_input_down(input, virtual_player, SB_BUTTON_A));
+        } else {
+            fprintf(stderr, "Skipping virtual controller assertions: no free mapped slot\n");
         }
         CHECK(SDL_JoystickDetachVirtual(virtual_index) == 0);
         CHECK(sb_input_poll(input));
-        CHECK(sb_input_controller_count(input) == 0);
+        CHECK(sb_input_controller_count(input) == initial_controllers);
     } else {
         fprintf(stderr, "SDL virtual joystick unavailable: skipping hotplug test\n");
     }

@@ -16,6 +16,7 @@ Expected executables (when dependencies are available):
 - `build/sugarbee` — original SDL2/Lua host prototype
 - `build/sbee-pack` — Linux virtual cartridge packager
 - `build/test_vcart` — header parser tests
+- `build/test_timing` — pure-C fixed-timestep tests
 
 The same source can be built with release optimization:
 
@@ -62,8 +63,8 @@ manage this automatically in a later milestone.
 
 The existing host uses SDL2's desktop window through the C graphics backend.
 Exit with the window close
-control. Fixed simulation timing, proper game shutdown callbacks, ZIP bomb limits,
-and process isolation are **not yet implemented**. Controller discovery,
+control. Fixed simulation timing is implemented; game shutdown callbacks,
+ZIP bomb limits, and process isolation are **not yet implemented**. Controller discovery,
 hotplug, and a keyboard development fallback are implemented, but not analog input.
 Avoid running untrusted cartridges.
 
@@ -112,5 +113,17 @@ Press J or the controller's A button to print a message in the terminal.
 Close the SDL window to quit. Test controller connection and disconnection
 both before startup and while running. A real-controller regression test is
 still manual; the headless suite covers keyboard input and optional virtual
-controller hotplug. See [input API](../api/input.md) for mappings and current
-limitations. The fixed simulation timestep has not yet been implemented.
+controller hotplug. The input test tolerates controllers already plugged in,
+so unplugging your development controller is not normally required. Avoid
+pressing buttons or plugging/unplugging hardware during the automated test.
+See [input API](../api/input.md) for mappings and current limitations. The example uses fixed 60 Hz `update(dt)` simulation. See the
+[timing API](../api/timing.md) for timestep behavior, input-edge delivery,
+and catch-up limits.
+
+## Fixed-step regression check
+
+After CTest, rerun the moving-box `.vcart` and confirm that holding a
+direction moves the box smoothly. Briefly tap J or gamepad A: the terminal
+should print one message per press, including when frames are rendered without
+a simulation update. The original gold-rectangle and Guru screens must still
+render. Verify the program closes normally with the window close button.
