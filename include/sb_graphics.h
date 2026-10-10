@@ -7,11 +7,16 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #define SB_DEFAULT_WIDTH 1280
 #define SB_DEFAULT_HEIGHT 720
 
 typedef struct sb_graphics sb_graphics_t;
+/* 0 is never a valid texture handle. Handles belong to one graphics context. */
+typedef uint32_t sb_texture_t;
+#define SB_TEXTURE_INVALID ((sb_texture_t)0)
+
 
 /*
  * Requires SDL's video subsystem to have been initialized by the host.
@@ -33,6 +38,25 @@ void sb_graphics_rect(sb_graphics_t *graphics, int x, int y, int width,
 /* Temporary 8x8 bitmap font; scale is logical pixels per bitmap pixel. */
 void sb_graphics_text(sb_graphics_t *graphics, const char *text, int x, int y,
                       uint8_t r, uint8_t g, uint8_t b, int scale);
+
+/*
+ * Upload packed RGBA8 pixels, row-major, four bytes per pixel (R,G,B,A).
+ * Length must equal width * height * 4.  Pixels are copied; caller keeps
+ * ownership of its buffer. Returns 0 on failure. No filesystem access here.
+ * The graphics context owns the texture until texture_destroy or shutdown.
+ */
+sb_texture_t sb_graphics_texture_rgba(sb_graphics_t *graphics,
+                                      int width, int height,
+                                      const uint8_t *rgba, size_t length);
+
+/* Draw the texture at native dimensions in logical pixel coordinates.
+ * Returns false for unknown/stale handles or SDL rendering failure.
+ */
+bool sb_graphics_sprite(sb_graphics_t *graphics, sb_texture_t texture,
+                        int x, int y);
+
+/* Release a texture. Returns false for unknown/stale handles. */
+bool sb_graphics_texture_destroy(sb_graphics_t *graphics, sb_texture_t texture);
 
 /* Called once after drawing the current frame. */
 void sb_graphics_present(sb_graphics_t *graphics);

@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added an experimental language-independent RGBA8 texture handle API and SDL2
+  sprite drawing path, with Lua `texture_rgba`, `sprite`, and `texture_free`.
+  Added a procedural bee sprite example, headless texture checks, and updated
+  graphics/build/architecture documentation. Cartridge asset decoding is 3B.
+
 - Added an SDL-independent, 60 Hz fixed-step C timing scheduler with a bounded
   catch-up budget and `update(dt)` Lua callback (old `update()` remains valid).
 - Updated input smoke tests to tolerate already-connected SDL gamepads, while

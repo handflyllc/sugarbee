@@ -72,6 +72,13 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     set_tests_properties(graphics_smoke PROPERTIES
         ENVIRONMENT "SDL_VIDEODRIVER=dummy")
 
+    add_executable(test_texture tests/test_texture.c)
+    target_link_libraries(test_texture PRIVATE sugarbee_graphics PkgConfig::SDL2)
+    sugarbee_warnings(test_texture)
+    add_test(NAME texture_smoke COMMAND test_texture)
+    set_tests_properties(texture_smoke PROPERTIES
+        ENVIRONMENT "SDL_VIDEODRIVER=dummy")
+
     add_executable(test_input tests/test_input.c)
     target_link_libraries(test_input PRIVATE sugarbee_input PkgConfig::SDL2)
     sugarbee_warnings(test_input)

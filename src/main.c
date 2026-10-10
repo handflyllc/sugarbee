@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <limits.h>
 
 // minizip and zlib headers for in-memory / stream unpacking
 #include <zlib.h>
@@ -197,6 +198,40 @@ static int l_sugarbee_print(lua_State* L) {
     return 0;
 }
 
+/* Phase 3A: in-memory RGBA textures only; .vcart asset reads arrive in 3B. */
+static int l_sugarbee_texture_rgba(lua_State *L) {
+    lua_Integer w = luaL_checkinteger(L, 1);
+    lua_Integer h = luaL_checkinteger(L, 2);
+    size_t data_size = 0;
+    const char *data = luaL_checklstring(L, 3, &data_size);
+    if (w <= 0 || w > INT_MAX || h <= 0 || h > INT_MAX)
+        return luaL_error(L, "invalid texture dimensions");
+    sb_texture_t texture = sb_graphics_texture_rgba(g_engine.graphics,
+                                (int)w, (int)h,
+                                (const uint8_t *)data, data_size);
+    if (texture == SB_TEXTURE_INVALID)
+        return luaL_error(L, "failed to create RGBA texture (check dimensions and buffer size)");
+    lua_pushinteger(L, (lua_Integer)texture);
+    return 1;
+}
+
+static int l_sugarbee_sprite(lua_State *L) {
+    lua_Integer texture = luaL_checkinteger(L, 1);
+    int x = (int)luaL_checkinteger(L, 2);
+    int y = (int)luaL_checkinteger(L, 3);
+    if (texture <= 0 || (uint64_t)texture > UINT32_MAX ||
+        !sb_graphics_sprite(g_engine.graphics, (sb_texture_t)texture, x, y))
+        return luaL_error(L, "invalid texture handle or sprite drawing failed");
+    return 0;
+}
+
+static int l_sugarbee_texture_free(lua_State *L) {
+    lua_Integer texture = luaL_checkinteger(L, 1);
+    lua_pushboolean(L, texture > 0 && (uint64_t)texture <= UINT32_MAX &&
+        sb_graphics_texture_destroy(g_engine.graphics, (sb_texture_t)texture));
+    return 1;
+}
+
 static sb_button_t button_from_name(const char *name) {
     if (strcmp(name, "up") == 0) return SB_BUTTON_UP;
     if (strcmp(name, "down") == 0) return SB_BUTTON_DOWN;
@@ -231,6 +266,9 @@ void register_sugarbee_api(lua_State* L) {
     lua_pushcfunction(L, l_sugarbee_cls);   lua_setfield(L, -2, "cls");
     lua_pushcfunction(L, l_sugarbee_rect);  lua_setfield(L, -2, "rect");
     lua_pushcfunction(L, l_sugarbee_print); lua_setfield(L, -2, "print");
+    lua_pushcfunction(L, l_sugarbee_texture_rgba); lua_setfield(L, -2, "texture_rgba");
+    lua_pushcfunction(L, l_sugarbee_sprite); lua_setfield(L, -2, "sprite");
+    lua_pushcfunction(L, l_sugarbee_texture_free); lua_setfield(L, -2, "texture_free");
     lua_pushcfunction(L, l_sugarbee_btn);   lua_setfield(L, -2, "btn");
     lua_pushcfunction(L, l_sugarbee_btnp);  lua_setfield(L, -2, "btnp");
     lua_setglobal(L, "sugarbee");

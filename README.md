@@ -8,7 +8,9 @@ for Raspberry Pi 4 (64-bit Linux). The primary developer environment is Debian
 language-neutral C interface with an SDL2 backend. The input subsystem now
 uses a separate C service for controllers and keyboard development controls;
 the timing scheduler is now another language-independent C module, and
-Lua `update(dt)` uses a fixed 60 Hz timestep. Lua 5.4 is the first game language.
+Lua `update(dt)` uses a fixed 60 Hz timestep. An initial texture-handle and
+RGBA sprite path is available in both the C graphics core and Lua adapter.
+Lua 5.4 is the first game language.
 
 ## Build
 
