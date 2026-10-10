@@ -2,6 +2,12 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added bounded, language-neutral `.vcart` resource reads and PNG-to-RGBA
+  decoding, plus Lua `texture_load()`, a cartridge PNG example, asset/decoder
+  tests, and matching build/API documentation. The game package format is
+  unchanged; the host now requires libpng development/runtime support.
+
+
 - Added an experimental language-independent RGBA8 texture handle API and SDL2
   sprite drawing path, with Lua `texture_rgba`, `sprite`, and `texture_free`.
   Added a procedural bee sprite example, headless texture checks, and updated
@@ -34,5 +40,5 @@
   added random UUIDv4 generation plus `--uuid` reuse for game save identity.
 - Added build, dependency, and cartridge-format documentation.
 
-Not a release: Lua sandboxing, analog input, cartridge resource limits,
+Not a release: Lua sandboxing, analog input, complete script execution limits,
 and a completed game lifecycle/shutdown callback remain outstanding.

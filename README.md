@@ -41,3 +41,7 @@ profiles are future work.
 **Licensing:** The `LICENSE` placeholder has not yet been populated with an
 approved open-source license. Please settle licensing before public releases
 or accepting third-party code contributions.
+
+**Milestone 3B preview:** Load PNG assets from cartridges using
+`sugarbee.texture_load("assets/bee.png")`. See `examples/asset-demo/` and
+[`docs/api/assets.md`](docs/api/assets.md). Requires `libpng-dev` for the host.

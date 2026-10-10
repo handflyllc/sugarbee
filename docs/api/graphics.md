@@ -26,6 +26,7 @@ current Lua bindings convert values to 8-bit channels. Rectangles and text are o
 | `sugarbee.rect(x, y, w, h, r, g, b, filled)` | Draw a rectangle. Color channels default to 255. `filled` is false when omitted or `false`. |
 | `sugarbee.print(text, x, y, r, g, b, scale)` | Draw text with the built-in 8x8 font. Color defaults to white; `scale` defaults to 1. |
 | `sugarbee.texture_rgba(width, height, bytes)` | Upload packed RGBA8 bytes; returns a texture handle. |
+| `sugarbee.texture_load(path)` | Decode a PNG from the active `.vcart` and return a texture handle. |
 | `sugarbee.sprite(handle, x, y)` | Draw a texture at native pixel size in logical coordinates. |
 | `sugarbee.texture_free(handle)` | Release a texture handle; returns `true` when successful. |
 
@@ -81,9 +82,10 @@ Create textures in `init()`, not on every `draw()` call. Release temporary
 textures with `texture_free()`; any remaining textures are freed when the
 host's graphics context shuts down.
 
-The C graphics service is deliberately independent of files and image formats:
-`sb_graphics_texture_rgba()` accepts an in-memory RGBA buffer. This gives
-cartridge asset loading a single clear destination when it arrives in **3B**.
+The C graphics service is independent of files and image formats:
+`sb_graphics_texture_rgba()` accepts an in-memory RGBA buffer. Milestone 3B
+adds a cartridge reader and PNG decoder *outside* the graphics backend,
+then passes decoded RGBA pixels to this function.
 The SDL backend currently draws at native texture size only; scaling,
 rotation, source rectangles and animation frames belong to a later phase.
 
@@ -91,9 +93,33 @@ The sample `examples/sprite-demo/main.lua` builds a small pixel-art sprite
 in Lua, moves it using `update(dt)`, and displays it using `sprite()`. Pack and
 run it using the commands in the build guide.
 
-**Limitations:** This phase does not load PNG/BMP files, decode images from
-`.vcart` assets, specify a stable texture-handle ABI, enforce a memory budget,
-or add sprite scaling/rotation. These are future tasks, not current claims.
+**Limitations:** PNG files can now be loaded from `.vcart` assets, but BMP,
+JPEG, animations, hot reload, sprite scaling/rotation, stable native-game ABI,
+and a configurable texture-memory budget remain out of scope. An individual
+PNG is limited to 2048 × 2048 pixels.
+
+### PNG cartridge example (Milestone 3B)
+
+Put `assets/bee.png` alongside `main.lua` in the game directory before
+packaging. Load it once in `init()`:
+
+```lua
+local bee
+function init()
+    bee = sugarbee.texture_load("assets/bee.png")
+end
+function draw()
+    sugarbee.cls(8, 12, 32)
+    sugarbee.sprite(bee, 100, 100)
+end
+```
+
+Paths are *case-sensitive*, ZIP-relative paths with forward slashes. Absolute
+paths and `.`/`..` path segments are rejected. Missing, invalid, encrypted or
+oversized assets cause a Lua error; a Lua runtime error activates Guru Meditation.
+Image decompression takes place in a standalone libpng decoder, not SDL or Lua.
+The host reads resources only from the active cartridge, never from arbitrary
+host filesystem paths. See [cartridge assets](assets.md) for limits.
 
 ## Logical resolution and scaling
 

@@ -15,9 +15,9 @@
 #include <string.h>
 #include <limits.h>
 
-// minizip and zlib headers for in-memory / stream unpacking
-#include <zlib.h>
-#include <unzip.h>
+/* Cartridge asset readers and PNG decoding are outside the Lua adapter. */
+#include "sb_assets.h"
+#include "sb_png.h"
 
 #include "vcart.h"
 #include "sb_graphics.h"
@@ -40,78 +40,13 @@ typedef struct {
     // Active Cartridge Data
     vcart_header_t current_cart;
     bool cart_loaded;
+    const char *cartridge_path;  /* argv-owned, alive for the host lifetime */
 } sugarbee_engine_t;
 
 static sugarbee_engine_t g_engine = {0};
 
 void trigger_guru_meditation(uint32_t code, const char* title, const char* message, const char* trace);
 void render_guru_meditation(void);
-
-// --- IN-MEMORY ZIP EXTRACTION ---
-
-/* Reads a specific file (e.g. "main.lua") from a .vcart ZIP payload in memory */
-char* extract_file_from_vcart_payload(const char* vcart_path, const char* file_to_extract, size_t* out_size) {
-    unzFile zip_file = unzOpen(vcart_path);
-    if (!zip_file) {
-        return NULL;
-    }
-
-    // Seek past the 64-byte binary header to start of ZIP payload
-    // minizip unzOpen reads from byte 0, so we locate the first file
-    if (unzGoToFirstFile(zip_file) != UNZ_OK) {
-        unzClose(zip_file);
-        return NULL;
-    }
-
-    // Iterate through archive files searching for requested target
-    bool found = false;
-    char current_filename[256];
-    unz_file_info file_info;
-
-    do {
-        if (unzGetCurrentFileInfo(zip_file, &file_info, current_filename, sizeof(current_filename), NULL, 0, NULL, 0) == UNZ_OK) {
-            if (strcmp(current_filename, file_to_extract) == 0) {
-                found = true;
-                break;
-            }
-        }
-    } while (unzGoToNextFile(zip_file) == UNZ_OK);
-
-    if (!found) {
-        unzClose(zip_file);
-        return NULL;
-    }
-
-    // Open target file inside zip stream
-    if (unzOpenCurrentFile(zip_file) != UNZ_OK) {
-        unzClose(zip_file);
-        return NULL;
-    }
-
-    // Allocate heap buffer for extracted payload contents
-    size_t uncompressed_size = file_info.uncompressed_size;
-    char* buffer = (char*)malloc(uncompressed_size + 1);
-    if (!buffer) {
-        unzCloseCurrentFile(zip_file);
-        unzClose(zip_file);
-        return NULL;
-    }
-
-    int bytes_read = unzReadCurrentFile(zip_file, buffer, (unsigned int)uncompressed_size);
-    if (bytes_read < 0 || (size_t)bytes_read != uncompressed_size) {
-        free(buffer);
-        unzCloseCurrentFile(zip_file);
-        unzClose(zip_file);
-        return NULL;
-    }
-
-    buffer[uncompressed_size] = '\0'; // Null terminate string buffer
-    if (out_size) *out_size = uncompressed_size;
-
-    unzCloseCurrentFile(zip_file);
-    unzClose(zip_file);
-    return buffer;
-}
 
 // --- CARTRIDGE LOADER ROUTINE ---
 
@@ -137,24 +72,29 @@ bool load_virtual_cartridge(const char* filepath) {
     printf("  Title:        %s\n", g_engine.current_cart.title);
     printf("  Payload Size: %u Bytes\n", g_engine.current_cart.payload_size);
 
-    // Step 2: Unpack main.lua dynamically from embedded ZIP payload
+    /* Extract the entry point with the same size and ZIP-CRC checks as assets. */
     size_t script_size = 0;
-    char* main_lua_source = extract_file_from_vcart_payload(filepath, "main.lua", &script_size);
-
-    if (!main_lua_source) {
-        trigger_guru_meditation(0x00000003, "MISSING ENTRY POINT", "Archive contains no 'main.lua' script at cartridge root.", NULL);
+    uint8_t *main_lua_source = NULL;
+    sb_asset_result_t asset_status = sb_asset_read(filepath, "main.lua",
+                                                   &main_lua_source, &script_size);
+    if (asset_status != SB_ASSET_OK) {
+        trigger_guru_meditation(0x00000003, "CARTRIDGE ENTRY POINT",
+                                sb_asset_error_string(asset_status), NULL);
         return false;
     }
 
-    // Step 3: Execute in-memory script string inside embedded Lua VM
-    if (luaL_dostring(g_engine.L, main_lua_source) != LUA_OK) {
-        const char* lua_err = lua_tostring(g_engine.L, -1);
-        trigger_guru_meditation(0x00000004, "LUA COMPILATION ERROR", lua_err, NULL);
-        free(main_lua_source);
-        return false;
-    }
-
+    g_engine.cartridge_path = filepath;
+    /* Compile from bytes with an explicit length, not a NUL-terminated string. */
+    int lua_status = luaL_loadbuffer(g_engine.L, (const char *)main_lua_source,
+                                     script_size, "@main.lua");
     free(main_lua_source);
+    if (lua_status == LUA_OK) lua_status = lua_pcall(g_engine.L, 0, 0, 0);
+    if (lua_status != LUA_OK) {
+        const char* lua_err = lua_tostring(g_engine.L, -1);
+        trigger_guru_meditation(0x00000004, "LUA CARTRIDGE ERROR", lua_err, NULL);
+        lua_pop(g_engine.L, 1);
+        return false;
+    }
     g_engine.cart_loaded = true;
     return true;
 }
@@ -215,6 +155,42 @@ static int l_sugarbee_texture_rgba(lua_State *L) {
     return 1;
 }
 
+/* Load a PNG from the active cartridge, then upload it using the same
+ * language-neutral texture service as texture_rgba(). */
+static int l_sugarbee_texture_load(lua_State *L) {
+    size_t path_length = 0;
+    const char *path = luaL_checklstring(L, 1, &path_length);
+    if (strlen(path) != path_length)
+        return luaL_error(L, "asset path contains a NUL byte");
+    if (!g_engine.cartridge_path)
+        return luaL_error(L, "no active cartridge");
+    uint8_t *encoded = NULL;
+    size_t encoded_length = 0;
+    sb_asset_result_t result = sb_asset_read(g_engine.cartridge_path, path,
+                                              &encoded, &encoded_length);
+    if (result != SB_ASSET_OK)
+        return luaL_error(L, "cannot load asset '%s': %s", path,
+                          sb_asset_error_string(result));
+
+    uint8_t *rgba = NULL;
+    int width = 0, height = 0;
+    size_t rgba_length = 0;
+    bool valid_png = sb_png_decode_rgba(encoded, encoded_length,
+                                        &rgba, &width, &height, &rgba_length);
+    free(encoded);
+    if (!valid_png)
+        return luaL_error(L, "invalid or oversized PNG asset '%s'", path);
+
+    sb_texture_t texture = sb_graphics_texture_rgba(g_engine.graphics,
+                                                     width, height, rgba,
+                                                     rgba_length);
+    free(rgba);
+    if (texture == SB_TEXTURE_INVALID)
+        return luaL_error(L, "failed to create texture for '%s'", path);
+    lua_pushinteger(L, (lua_Integer)texture);
+    return 1;
+}
+
 static int l_sugarbee_sprite(lua_State *L) {
     lua_Integer texture = luaL_checkinteger(L, 1);
     int x = (int)luaL_checkinteger(L, 2);
@@ -267,6 +243,7 @@ void register_sugarbee_api(lua_State* L) {
     lua_pushcfunction(L, l_sugarbee_rect);  lua_setfield(L, -2, "rect");
     lua_pushcfunction(L, l_sugarbee_print); lua_setfield(L, -2, "print");
     lua_pushcfunction(L, l_sugarbee_texture_rgba); lua_setfield(L, -2, "texture_rgba");
+    lua_pushcfunction(L, l_sugarbee_texture_load); lua_setfield(L, -2, "texture_load");
     lua_pushcfunction(L, l_sugarbee_sprite); lua_setfield(L, -2, "sprite");
     lua_pushcfunction(L, l_sugarbee_texture_free); lua_setfield(L, -2, "texture_free");
     lua_pushcfunction(L, l_sugarbee_btn);   lua_setfield(L, -2, "btn");

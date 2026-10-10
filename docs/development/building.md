@@ -83,8 +83,9 @@ Guru screen as well. See [graphics API](../api/graphics.md).
 - The graphics Lua bindings now call the language-neutral C graphics service,
   but Lua bindings still reside in `src/main.c`. Input polling and controller handling now live in
   `src/sb_input_sdl.c`, with a language-neutral `sb_input.h` interface.
-- The ZIP reader currently calls `unzOpen` on the complete `.vcart` with its
-  64-byte prefix. ZIP library behavior needs verification on target systems.
+- The bounded ZIP reader uses minizip 1.x against the complete `.vcart` with
+  its 64-byte prefix; this has been tested on desktop Linux, but still needs
+  verification on the Raspberry Pi and with additional minizip versions.
 - Runtime graphics are currently fixed at 1280×720. Manifest-defined logical
   resolutions and scaling modes are planned, not implemented.
 - The imported historical documents contain design ideas, not a verified
@@ -149,3 +150,27 @@ are planned for separate milestones. See [graphics API](../api/graphics.md).
 the SDL dummy driver, checking texture handle creation, invalid byte lengths,
 stale handles and normal graphics-context cleanup. Verify the gold rectangle,
 Moving Box and Guru Meditation screens after applying this changeset.
+
+## Cartridge image assets (Milestone 3B)
+
+Install `libpng-dev` as listed in [dependencies.md](dependencies.md) and
+rerun CMake configuration after adding the package. The game in
+`examples/asset-demo/` includes a real PNG inside `assets/`:
+
+```sh
+./build/sbee-pack -i examples/asset-demo -o /tmp/asset-demo.vcart -t "Asset Demo"
+./build/sugarbee /tmp/asset-demo.vcart
+```
+
+Expected: a movable transparent bee, loaded by
+`sugarbee.texture_load("assets/bee.png")`, rather than assembled as RGBA bytes
+in Lua. The packager includes nested assets automatically. Test keyboard and
+controller movement, the older procedural sprite, the gold rectangle, and the
+Guru Meditation no-cartridge path. The new CTest cases `asset_smoke` and
+`png_smoke` validate the archive resource loader and PNG decoding.
+
+The built-in image loader supports PNG only in this milestone; it is limited
+to 2048 × 2048 pixels and applies ZIP entry and archive resource limits.
+Cartridges should be treated as untrusted code: Lua currently opens its normal
+standard libraries, so these limits do **not** constitute a Lua sandbox.
+See [cartridge asset reference](../api/assets.md).

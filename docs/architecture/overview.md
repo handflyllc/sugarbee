@@ -61,3 +61,11 @@ release console *images* have not been built yet.
 The imported design documents in this folder are **historical drafts**.
 They may differ from the currently implemented behavior; refer to source and
 current reference documentation for the present API.
+
+## Cartridge asset path (Milestone 3B)
+
+`Lua adapter (texture_load)` → `sb_assets` (bounded ZIP reads) → `sb_png`
+(libpng memory decode) → `sb_graphics_texture_rgba()` → SDL2 texture handle.
+Neither `sb_assets` nor `sb_png` depends on Lua or SDL2; future language
+adapters can reuse them. The packager and header format remain unchanged.
+The PNG backend is a replaceable implementation detail, not a public ABI.
