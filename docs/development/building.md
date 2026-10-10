@@ -60,18 +60,29 @@ project metadata** and supply it with `--uuid <the-uuid>` for future builds,
 so save files remain associated with the same game. A project manifest will
 manage this automatically in a later milestone.
 
-The existing host uses SDL2's desktop window. Exit with the window close
+The existing host uses SDL2's desktop window through the C graphics backend.
+Exit with the window close
 control. A controller manager, fixed simulation timestep, proper game shutdown
 callback, ZIP bomb limits, and process isolation are **not yet implemented**.
 Avoid running untrusted cartridges.
+
+## Graphics regression check
+
+The CTest suite includes a `graphics_smoke` test when host dependencies are
+installed. It uses the SDL dummy video driver and checks the graphics backend
+without opening a visible window. This is not a replacement for the manual
+cartridge test above: verify that the dark blue background, gold rectangle,
+and `SUGARBEE` text still render after this refactor. Verify the no-cartridge
+Guru screen as well. See [graphics API](../api/graphics.md).
 
 ## Known issues / limitations
 
 - The bitmap font recovered from the older template implements ASCII 32–95;
   current fallback glyphs display lowercase as uppercase and map some other
   punctuation to `?` until a complete font is added.
-- The imported `main.c` still exposes SDL calls directly in Lua bindings;
-  extraction into language-neutral SugarBee services is the next refactor.
+- The graphics Lua bindings now call the language-neutral C graphics service,
+  but Lua bindings still reside in `src/main.c`. Controller/event handling has
+  not yet been extracted into a separate core module.
 - The ZIP reader currently calls `unzOpen` on the complete `.vcart` with its
   64-byte prefix. ZIP library behavior needs verification on target systems.
 - Runtime graphics are currently fixed at 1280×720. Manifest-defined logical

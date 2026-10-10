@@ -34,14 +34,31 @@ if(SUGARBEE_BUILD_HOST)
     pkg_check_modules(MINIZIP REQUIRED IMPORTED_TARGET minizip)
     find_package(ZLIB REQUIRED)
 
-    add_executable(sugarbee src/main.c src/font8x8.c)
+    # SDL is confined to the backend; games and their language adapters use
+    # only include/sb_graphics.h for drawing services.
+    add_library(sugarbee_graphics STATIC src/sb_graphics_sdl.c src/font8x8.c)
+    target_include_directories(sugarbee_graphics PUBLIC "${PROJECT_SOURCE_DIR}/include")
+    target_link_libraries(sugarbee_graphics PRIVATE PkgConfig::SDL2)
+    sugarbee_warnings(sugarbee_graphics)
+
+    add_executable(sugarbee src/main.c)
     target_link_libraries(sugarbee PRIVATE
+        sugarbee_graphics
         sugarbee_vcart
         PkgConfig::SDL2
         PkgConfig::LUA54
         PkgConfig::MINIZIP
         ZLIB::ZLIB)
     sugarbee_warnings(sugarbee)
+endif()
+
+if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
+    add_executable(test_graphics tests/test_graphics.c)
+    target_link_libraries(test_graphics PRIVATE sugarbee_graphics PkgConfig::SDL2)
+    sugarbee_warnings(test_graphics)
+    add_test(NAME graphics_smoke COMMAND test_graphics)
+    set_tests_properties(graphics_smoke PROPERTIES
+        ENVIRONMENT "SDL_VIDEODRIVER=dummy")
 endif()
 
 if(BUILD_TESTING)

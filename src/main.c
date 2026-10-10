@@ -19,16 +19,12 @@
 #include <unzip.h>
 
 #include "vcart.h"
+#include "sb_graphics.h"
 
-extern const unsigned char font8x8_basic[128][8];
-
-#define INTERNAL_WIDTH   1280
-#define INTERNAL_HEIGHT  720
 #define MAX_CONTROLLERS  4
 
 typedef struct {
-    SDL_Window* window;
-    SDL_Renderer* renderer;
+    sb_graphics_t* graphics;
     SDL_GameController* controllers[MAX_CONTROLLERS];
     lua_State* L;
     bool is_running;
@@ -49,7 +45,6 @@ static sugarbee_engine_t g_engine = {0};
 
 void trigger_guru_meditation(uint32_t code, const char* title, const char* message, const char* trace);
 void render_guru_meditation(void);
-void draw_text(const char* text, int x, int y, uint8_t r, uint8_t g, uint8_t b, int scale);
 
 // --- IN-MEMORY ZIP EXTRACTION ---
 
@@ -169,8 +164,7 @@ static int l_sugarbee_cls(lua_State* L) {
     int r = (int)luaL_optinteger(L, 1, 0);
     int g = (int)luaL_optinteger(L, 2, 0);
     int b = (int)luaL_optinteger(L, 3, 0);
-    SDL_SetRenderDrawColor(g_engine.renderer, r, g, b, 255);
-    SDL_RenderClear(g_engine.renderer);
+    sb_graphics_clear(g_engine.graphics, (uint8_t)r, (uint8_t)g, (uint8_t)b);
     return 0;
 }
 
@@ -184,10 +178,8 @@ static int l_sugarbee_rect(lua_State* L) {
     int b = (int)luaL_optinteger(L, 7, 255);
     bool filled = lua_toboolean(L, 8);
 
-    SDL_Rect rect = { x, y, w, h };
-    SDL_SetRenderDrawColor(g_engine.renderer, r, g, b, 255);
-    if (filled) SDL_RenderFillRect(g_engine.renderer, &rect);
-    else SDL_RenderDrawRect(g_engine.renderer, &rect);
+    sb_graphics_rect(g_engine.graphics, x, y, w, h,
+                     (uint8_t)r, (uint8_t)g, (uint8_t)b, filled);
     return 0;
 }
 
@@ -200,7 +192,8 @@ static int l_sugarbee_print(lua_State* L) {
     int b = (int)luaL_optinteger(L, 6, 255);
     int scale = (int)luaL_optinteger(L, 7, 1);
 
-    draw_text(text, x, y, r, g, b, scale);
+    sb_graphics_text(g_engine.graphics, text, x, y,
+                     (uint8_t)r, (uint8_t)g, (uint8_t)b, scale);
     return 0;
 }
 
@@ -243,35 +236,6 @@ void register_sugarbee_api(lua_State* L) {
 
 // --- TEXT RENDERER & GURU MEDITATION ---
 
-void draw_char(char c, int x, int y, uint8_t r, uint8_t g, uint8_t b, int scale) {
-    if (c < 32 || c > 126) c = '?';
-    const unsigned char* glyph = font8x8_basic[(int)c];
-
-    SDL_SetRenderDrawColor(g_engine.renderer, r, g, b, 255);
-    for (int row = 0; row < 8; row++) {
-        for (int col = 0; col < 8; col++) {
-            if (glyph[row] & (1 << (7 - col))) {
-                SDL_Rect pixel = { x + (col * scale), y + (row * scale), scale, scale };
-                SDL_RenderFillRect(g_engine.renderer, &pixel);
-            }
-        }
-    }
-}
-
-void draw_text(const char* text, int x, int y, uint8_t r, uint8_t g, uint8_t b, int scale) {
-    int start_x = x;
-    while (*text) {
-        if (*text == '\n') {
-            y += 8 * scale + (2 * scale);
-            x = start_x;
-        } else {
-            draw_char(*text, x, y, r, g, b, scale);
-            x += 8 * scale;
-        }
-        text++;
-    }
-}
-
 void trigger_guru_meditation(uint32_t code, const char* title, const char* message, const char* trace) {
     g_engine.guru_active = true;
     g_engine.error_code = code;
@@ -281,28 +245,30 @@ void trigger_guru_meditation(uint32_t code, const char* title, const char* messa
 }
 
 void render_guru_meditation(void) {
-    SDL_SetRenderDrawColor(g_engine.renderer, 0, 0, 0, 255);
-    SDL_RenderClear(g_engine.renderer);
+    sb_graphics_clear(g_engine.graphics, 0, 0, 0);
 
     static uint32_t frame = 0;
     bool flash = ((frame++ / 30) % 2 == 0);
 
-    SDL_SetRenderDrawColor(g_engine.renderer, flash ? 255 : 128, 0, 0, 255);
-    SDL_Rect border = { 20, 20, INTERNAL_WIDTH - 40, INTERNAL_HEIGHT - 40 };
+    int width = sb_graphics_width(g_engine.graphics);
+    int height = sb_graphics_height(g_engine.graphics);
     for (int i = 0; i < 6; i++) {
-        SDL_RenderDrawRect(g_engine.renderer, &border);
-        border.x++; border.y++; border.w -= 2; border.h -= 2;
+        sb_graphics_rect(g_engine.graphics, 20 + i, 20 + i,
+                         width - 40 - (2 * i), height - 40 - (2 * i),
+                         flash ? 255 : 128, 0, 0, false);
     }
 
     char code_str[64];
     snprintf(code_str, sizeof(code_str), "SOFTWARE FAILURE #%08X", g_engine.error_code);
 
-    draw_text("GURU MEDITATION V2", 60, 60, 255, 0, 0, 4);
-    draw_text(code_str, 60, 110, 255, 0, 0, 3);
-    draw_text(g_engine.error_title, 60, 160, 255, 255, 255, 2);
-    draw_text(g_engine.error_msg, 60, 200, 200, 200, 200, 2);
+    sb_graphics_text(g_engine.graphics, "GURU MEDITATION V2", 60, 60, 255, 0, 0, 4);
+    sb_graphics_text(g_engine.graphics, code_str, 60, 110, 255, 0, 0, 3);
+    sb_graphics_text(g_engine.graphics, g_engine.error_title, 60, 160, 255, 255, 255, 2);
+    sb_graphics_text(g_engine.graphics, g_engine.error_msg, 60, 200, 200, 200, 200, 2);
 
-    draw_text("DEVELOPMENT BUILD - GURU RECOVERY CONTROLS NOT YET IMPLEMENTED", 60, 640, 150, 150, 150, 2);
+    sb_graphics_text(g_engine.graphics,
+        "DEVELOPMENT BUILD - GURU RECOVERY CONTROLS NOT YET IMPLEMENTED",
+        60, 640, 150, 150, 150, 2);
 }
 
 void call_lua_global_function(const char* func_name) {
@@ -323,16 +289,9 @@ void call_lua_global_function(const char* func_name) {
 bool init_engine(void) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0) return false;
 
-    g_engine.window = SDL_CreateWindow("SugarBee Console Host",
-                                       SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                       INTERNAL_WIDTH, INTERNAL_HEIGHT, SDL_WINDOW_SHOWN);
-    if (!g_engine.window) return false;
-
-    g_engine.renderer = SDL_CreateRenderer(g_engine.window, -1, 
-                                           SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!g_engine.renderer) return false;
-
-    SDL_RenderSetLogicalSize(g_engine.renderer, INTERNAL_WIDTH, INTERNAL_HEIGHT);
+    g_engine.graphics = sb_graphics_create("SugarBee Console Host",
+                                            SB_DEFAULT_WIDTH, SB_DEFAULT_HEIGHT);
+    if (!g_engine.graphics) return false;
 
     g_engine.L = luaL_newstate();
     if (!g_engine.L) return false;
@@ -356,20 +315,18 @@ void main_loop(void) {
         } else {
             call_lua_global_function("update");
 
-            SDL_SetRenderDrawColor(g_engine.renderer, 0, 0, 0, 255);
-            SDL_RenderClear(g_engine.renderer);
+            sb_graphics_clear(g_engine.graphics, 0, 0, 0);
 
             call_lua_global_function("draw");
         }
 
-        SDL_RenderPresent(g_engine.renderer);
+        sb_graphics_present(g_engine.graphics);
     }
 }
 
 void shutdown_engine(void) {
     if (g_engine.L) lua_close(g_engine.L);
-    if (g_engine.renderer) SDL_DestroyRenderer(g_engine.renderer);
-    if (g_engine.window) SDL_DestroyWindow(g_engine.window);
+    sb_graphics_destroy(g_engine.graphics);
     SDL_Quit();
 }
 
