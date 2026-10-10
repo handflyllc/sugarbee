@@ -38,6 +38,13 @@ if(SUGARBEE_BUILD_HOST)
     pkg_check_modules(LUA54 REQUIRED IMPORTED_TARGET lua5.4)
     pkg_check_modules(MINIZIP REQUIRED IMPORTED_TARGET minizip)
     find_package(ZLIB REQUIRED)
+    find_package(PNG REQUIRED)
+
+    # Cartridge reads and PNG decoding are independent of SDL and Lua.
+    add_library(sugarbee_assets STATIC src/sb_assets.c src/sb_png.c)
+    target_include_directories(sugarbee_assets PUBLIC "${PROJECT_SOURCE_DIR}/include")
+    target_link_libraries(sugarbee_assets PUBLIC sugarbee_vcart PkgConfig::MINIZIP PNG::PNG)
+    sugarbee_warnings(sugarbee_assets)
 
     # SDL is confined to the backend; games and their language adapters use
     # only include/sb_graphics.h for drawing services.
@@ -57,6 +64,7 @@ if(SUGARBEE_BUILD_HOST)
         sugarbee_input
         sugarbee_timing
         sugarbee_vcart
+        sugarbee_assets
         PkgConfig::SDL2
         PkgConfig::LUA54
         PkgConfig::MINIZIP
@@ -71,6 +79,34 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     add_test(NAME graphics_smoke COMMAND test_graphics)
     set_tests_properties(graphics_smoke PROPERTIES
         ENVIRONMENT "SDL_VIDEODRIVER=dummy")
+
+    add_executable(test_texture tests/test_texture.c)
+    target_link_libraries(test_texture PRIVATE sugarbee_graphics PkgConfig::SDL2)
+    sugarbee_warnings(test_texture)
+    add_test(NAME texture_smoke COMMAND test_texture)
+    set_tests_properties(texture_smoke PROPERTIES
+        ENVIRONMENT "SDL_VIDEODRIVER=dummy")
+
+    add_executable(test_png tests/test_png.c)
+    target_link_libraries(test_png PRIVATE sugarbee_assets)
+    sugarbee_warnings(test_png)
+    add_test(NAME png_smoke COMMAND test_png
+        "${PROJECT_SOURCE_DIR}/examples/asset-demo/assets/bee.png")
+    add_test(NAME sprite_sheet_png_smoke COMMAND test_png
+        "${PROJECT_SOURCE_DIR}/examples/sprite-sheet-demo/assets/bee-sheet.png" 192 32)
+
+    add_executable(test_assets tests/test_assets.c)
+    target_link_libraries(test_assets PRIVATE sugarbee_assets)
+    sugarbee_warnings(test_assets)
+    if(SUGARBEE_BUILD_PACKER)
+        add_test(NAME asset_smoke
+            COMMAND "${CMAKE_COMMAND}"
+                "-DPACKER=$<TARGET_FILE:sbee-pack>"
+                "-DREADER=$<TARGET_FILE:test_assets>"
+                "-DSOURCE_ROOT=${PROJECT_SOURCE_DIR}/examples/asset-demo"
+                "-DTEST_ROOT=${PROJECT_BINARY_DIR}/asset-smoke"
+                "-P" "${PROJECT_SOURCE_DIR}/tests/asset_smoke.cmake")
+    endif()
 
     add_executable(test_input tests/test_input.c)
     target_link_libraries(test_input PRIVATE sugarbee_input PkgConfig::SDL2)

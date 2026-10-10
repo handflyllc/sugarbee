@@ -18,6 +18,15 @@ SDL2 backend (src/sb_graphics_sdl.c)
 OS-provided display and input drivers
 ```
 
+The SDL2 graphics backend owns its window, renderer, and RGBA sprite
+textures. Games receive opaque numeric texture handles, never SDL texture
+pointers. The C graphics core accepts raw in-memory RGBA bytes; the separate
+3B cartridge reader and PNG decoder load images from `.vcart` payloads. The
+3C `sprite_region()` call draws an in-bounds source rectangle to an optionally
+scaled/flipped destination using nearest-neighbor filtering. Frame selection
+and animation timing remain in Lua; SDL and Lua types do not leak into the
+C graphics interface.
+
 The SDL2 graphics backend owns its window and renderer. The language-neutral
 input service (`include/sb_input.h`, implemented by `src/sb_input_sdl.c`) owns
 controller handles and currently polls the SDL event queue. Lua's `btn` and
@@ -54,3 +63,11 @@ release console *images* have not been built yet.
 The imported design documents in this folder are **historical drafts**.
 They may differ from the currently implemented behavior; refer to source and
 current reference documentation for the present API.
+
+## Cartridge asset path (Milestone 3B)
+
+`Lua adapter (texture_load)` → `sb_assets` (bounded ZIP reads) → `sb_png`
+(libpng memory decode) → `sb_graphics_texture_rgba()` → SDL2 texture handle.
+Neither `sb_assets` nor `sb_png` depends on Lua or SDL2; future language
+adapters can reuse them. The packager and header format remain unchanged.
+The PNG backend is a replaceable implementation detail, not a public ABI.

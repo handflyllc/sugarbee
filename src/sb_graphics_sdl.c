@@ -3,14 +3,26 @@
 
 #include <SDL2/SDL.h>
 #include <stdlib.h>
+#include <limits.h>
+#include <string.h>
 
 extern const unsigned char font8x8_basic[128][8];
+
+typedef struct {
+    SDL_Texture *texture;
+    uint16_t generation;
+    int width;
+    int height;
+} texture_slot_t;
 
 struct sb_graphics {
     SDL_Window *window;
     SDL_Renderer *renderer;
     int width;
     int height;
+    texture_slot_t *slots;
+    size_t slot_count;
+    size_t slot_capacity;
 };
 
 sb_graphics_t *sb_graphics_create(const char *title, int width, int height) {
@@ -45,6 +57,11 @@ error:
 
 void sb_graphics_destroy(sb_graphics_t *graphics) {
     if (!graphics) return;
+    for (size_t i = 0; i < graphics->slot_count; ++i) {
+        if (graphics->slots[i].texture)
+            SDL_DestroyTexture(graphics->slots[i].texture);
+    }
+    free(graphics->slots);
     if (graphics->renderer) SDL_DestroyRenderer(graphics->renderer);
     if (graphics->window) SDL_DestroyWindow(graphics->window);
     free(graphics);
@@ -106,4 +123,124 @@ void sb_graphics_text(sb_graphics_t *graphics, const char *text, int x, int y,
 
 void sb_graphics_present(sb_graphics_t *graphics) {
     if (graphics) SDL_RenderPresent(graphics->renderer);
+}
+
+/* Handle encoding: high 16 bits = generation; low 16 bits = slot + 1.
+ * Lookup during drawing is constant time. A destroyed handle remains invalid.
+ * A slot is retired rather than wrapping its generation after 65535 releases.
+ */
+#define SB_TEXTURE_SLOT_MASK 0xffffu
+#define SB_TEXTURE_MAX_SLOTS 65535u
+
+static texture_slot_t *find_texture(sb_graphics_t *graphics, sb_texture_t handle) {
+    if (!graphics || handle == SB_TEXTURE_INVALID) return NULL;
+    const uint32_t slot_plus_one = handle & SB_TEXTURE_SLOT_MASK;
+    const uint32_t generation = handle >> 16;
+    if (!slot_plus_one || !generation ||
+        (size_t)(slot_plus_one - 1) >= graphics->slot_count) return NULL;
+    texture_slot_t *slot = &graphics->slots[slot_plus_one - 1];
+    return slot->texture && slot->generation == generation ? slot : NULL;
+}
+
+static texture_slot_t *allocate_slot(sb_graphics_t *graphics, size_t *index) {
+    for (size_t i = 0; i < graphics->slot_count; ++i) {
+        if (!graphics->slots[i].texture && graphics->slots[i].generation != 0) {
+            *index = i;
+            return &graphics->slots[i];
+        }
+    }
+    if (graphics->slot_count == SB_TEXTURE_MAX_SLOTS) return NULL;
+    if (graphics->slot_count == graphics->slot_capacity) {
+        size_t new_capacity = graphics->slot_capacity ? graphics->slot_capacity * 2 : 8;
+        if (new_capacity < graphics->slot_capacity ||
+            new_capacity > SB_TEXTURE_MAX_SLOTS) new_capacity = SB_TEXTURE_MAX_SLOTS;
+        if (new_capacity > SIZE_MAX / sizeof(*graphics->slots)) return NULL;
+        texture_slot_t *slots = realloc(graphics->slots,
+                                        new_capacity * sizeof(*slots));
+        if (!slots) return NULL;
+        memset(slots + graphics->slot_capacity, 0,
+               (new_capacity - graphics->slot_capacity) * sizeof(*slots));
+        graphics->slots = slots;
+        graphics->slot_capacity = new_capacity;
+    }
+    *index = graphics->slot_count++;
+    graphics->slots[*index].generation = 1;
+    return &graphics->slots[*index];
+}
+
+sb_texture_t sb_graphics_texture_rgba(sb_graphics_t *graphics,
+                                      int width, int height,
+                                      const uint8_t *rgba, size_t length) {
+    if (!graphics || !rgba || width <= 0 || height <= 0 ||
+        width > INT_MAX / 4) return SB_TEXTURE_INVALID;
+    /* Avoid overflows before multiplying dimensions or passing an SDL pitch. */
+    const size_t row_bytes = (size_t)width * 4;
+    if ((size_t)height > SIZE_MAX / row_bytes ||
+        length != row_bytes * (size_t)height) return SB_TEXTURE_INVALID;
+
+    SDL_Texture *texture = SDL_CreateTexture(graphics->renderer,
+                                             SDL_PIXELFORMAT_RGBA32,
+                                             SDL_TEXTUREACCESS_STATIC,
+                                             width, height);
+    if (!texture) return SB_TEXTURE_INVALID;
+    /* Independent of the output/window scaling policy: enlarged sprite
+     * sheet pixels stay crisp instead of receiving linear interpolation. */
+    if (SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND) != 0 ||
+        SDL_SetTextureScaleMode(texture, SDL_ScaleModeNearest) != 0 ||
+        SDL_UpdateTexture(texture, NULL, rgba, (int)row_bytes) != 0) {
+        SDL_DestroyTexture(texture);
+        return SB_TEXTURE_INVALID;
+    }
+    size_t index = 0;
+    texture_slot_t *slot = allocate_slot(graphics, &index);
+    if (!slot) {
+        SDL_DestroyTexture(texture);
+        return SB_TEXTURE_INVALID;
+    }
+    slot->texture = texture;
+    slot->width = width;
+    slot->height = height;
+    return ((uint32_t)slot->generation << 16) | (uint32_t)(index + 1);
+}
+
+bool sb_graphics_sprite_region(sb_graphics_t *graphics, sb_texture_t texture,
+                               int x, int y,
+                               int src_x, int src_y, int src_width, int src_height,
+                               int dest_width, int dest_height,
+                               bool flip_x, bool flip_y) {
+    texture_slot_t *slot = find_texture(graphics, texture);
+    if (!slot || src_x < 0 || src_y < 0 || src_width <= 0 || src_height <= 0 ||
+        dest_width <= 0 || dest_height <= 0 ||
+        src_width > slot->width || src_height > slot->height ||
+        src_x > slot->width - src_width ||
+        src_y > slot->height - src_height) return false;
+
+    SDL_Rect source = { src_x, src_y, src_width, src_height };
+    SDL_Rect destination = { x, y, dest_width, dest_height };
+    SDL_RendererFlip flip = SDL_FLIP_NONE;
+    if (flip_x) flip = (SDL_RendererFlip)(flip | SDL_FLIP_HORIZONTAL);
+    if (flip_y) flip = (SDL_RendererFlip)(flip | SDL_FLIP_VERTICAL);
+    return SDL_RenderCopyEx(graphics->renderer, slot->texture, &source,
+                            &destination, 0.0, NULL, flip) == 0;
+}
+
+bool sb_graphics_sprite(sb_graphics_t *graphics, sb_texture_t texture,
+                        int x, int y) {
+    texture_slot_t *slot = find_texture(graphics, texture);
+    return slot && sb_graphics_sprite_region(graphics, texture, x, y,
+                                              0, 0, slot->width, slot->height,
+                                              slot->width, slot->height,
+                                              false, false);
+}
+
+bool sb_graphics_texture_destroy(sb_graphics_t *graphics, sb_texture_t texture) {
+    texture_slot_t *slot = find_texture(graphics, texture);
+    if (!slot) return false;
+    SDL_DestroyTexture(slot->texture);
+    slot->texture = NULL;
+    slot->width = 0;
+    slot->height = 0;
+    /* Generation 0 means retired; never reuse a slot after wraparound. */
+    slot->generation++;
+    return true;
 }

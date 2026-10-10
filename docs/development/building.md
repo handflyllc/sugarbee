@@ -38,23 +38,21 @@ cmake --build build-tools --parallel
 ctest --test-dir build-tools --output-on-failure
 ```
 
-## Package and launch a simple test cartridge
+## Package and launch the graphics regression cartridge
+
+The original gold-rectangle demonstration is checked in as
+[`examples/graphics-demo/main.lua`](../../examples/graphics-demo/main.lua),
+so its source does not depend on files under `/tmp` surviving between runs.
+From the repository root:
 
 ```sh
-mkdir -p /tmp/sugarbee-demo
-cat > /tmp/sugarbee-demo/main.lua <<'LUA'
-function init() end
-function update() end
-function draw()
-    sugarbee.cls(8, 12, 32)
-    sugarbee.rect(50, 50, 100, 80, 240, 180, 50, true)
-    sugarbee.print("SUGARBEE", 60, 150, 255, 255, 255, 2)
-end
-LUA
-
-./build/sbee-pack -i /tmp/sugarbee-demo -o /tmp/demo.vcart -t "Demo"
+./build/sbee-pack -i examples/graphics-demo -o /tmp/demo.vcart -t "SugarBee Demo"
 ./build/sugarbee /tmp/demo.vcart
 ```
+
+Expected: a dark-blue background, gold rectangle, and white `SUGARBEE`
+text beneath it. The packaged `.vcart` under `/tmp` is disposable; regenerate
+it using the command above whenever needed.
 
 The packager prints a randomly generated UUIDv4. **Save it in your game's
 project metadata** and supply it with `--uuid <the-uuid>` for future builds,
@@ -85,8 +83,9 @@ Guru screen as well. See [graphics API](../api/graphics.md).
 - The graphics Lua bindings now call the language-neutral C graphics service,
   but Lua bindings still reside in `src/main.c`. Input polling and controller handling now live in
   `src/sb_input_sdl.c`, with a language-neutral `sb_input.h` interface.
-- The ZIP reader currently calls `unzOpen` on the complete `.vcart` with its
-  64-byte prefix. ZIP library behavior needs verification on target systems.
+- The bounded ZIP reader uses minizip 1.x against the complete `.vcart` with
+  its 64-byte prefix; this has been tested on desktop Linux, but still needs
+  verification on the Raspberry Pi and with additional minizip versions.
 - Runtime graphics are currently fixed at 1280×720. Manifest-defined logical
   resolutions and scaling modes are planned, not implemented.
 - The imported historical documents contain design ideas, not a verified
@@ -127,3 +126,70 @@ direction moves the box smoothly. Briefly tap J or gamepad A: the terminal
 should print one message per press, including when frames are rendered without
 a simulation update. The original gold-rectangle and Guru screens must still
 render. Verify the program closes normally with the window close button.
+
+## Sprite demo (Milestone 3A)
+
+After configuring and building the host, package and run the procedural bee
+sprite demonstration:
+
+```sh
+./build/sbee-pack -i examples/sprite-demo -o /tmp/sprite-demo.vcart -t "Sprite Demo"
+./build/sugarbee /tmp/sprite-demo.vcart
+```
+
+Expected: the dark-blue display shows `SUGARBEE SPRITES` and a small
+black-and-gold sprite with transparent surroundings. Move it using the arrow
+keys, WASD, or a controller D-pad. The `init()` callback creates a single
+RGBA texture; `draw()` reuses it each frame.
+
+The example generates pixel data in Lua and does **not** yet read images from
+cartridge files. File-based cartridge assets, decoding and sprite transforms
+are planned for separate milestones. See [graphics API](../api/graphics.md).
+
+`ctest --test-dir build --output-on-failure` also runs `texture_smoke` using
+the SDL dummy driver, checking texture handle creation, invalid byte lengths,
+stale handles and normal graphics-context cleanup. Verify the gold rectangle,
+Moving Box and Guru Meditation screens after applying this changeset.
+
+## Cartridge image assets (Milestone 3B)
+
+Install `libpng-dev` as listed in [dependencies.md](dependencies.md) and
+rerun CMake configuration after adding the package. The game in
+`examples/asset-demo/` includes a real PNG inside `assets/`:
+
+```sh
+./build/sbee-pack -i examples/asset-demo -o /tmp/asset-demo.vcart -t "Asset Demo"
+./build/sugarbee /tmp/asset-demo.vcart
+```
+
+Expected: a movable transparent bee, loaded by
+`sugarbee.texture_load("assets/bee.png")`, rather than assembled as RGBA bytes
+in Lua. The packager includes nested assets automatically. Test keyboard and
+controller movement, the older procedural sprite, the gold rectangle, and the
+Guru Meditation no-cartridge path. The new CTest cases `asset_smoke` and
+`png_smoke` validate the archive resource loader and PNG decoding.
+
+The built-in image loader supports PNG only in this milestone; it is limited
+to 2048 × 2048 pixels and applies ZIP entry and archive resource limits.
+Cartridges should be treated as untrusted code: Lua currently opens its normal
+standard libraries, so these limits do **not** constitute a Lua sandbox.
+See [cartridge asset reference](../api/assets.md).
+
+## Sprite-sheet demo (Milestone 3C)
+
+The 3C example includes a four-frame PNG atlas (48 × 32 pixels per frame)
+with 3× animated drawing, and separate samples of horizontal/vertical flips.
+
+```sh
+./build/sbee-pack -i examples/sprite-sheet-demo -o /tmp/sprite-sheet-demo.vcart -t "Sprite Sheet Demo"
+./build/sugarbee /tmp/sprite-sheet-demo.vcart
+```
+
+Move the large bee with arrow keys, WASD, or the controller D-pad. It faces
+left/right with horizontal movement. Watch wing motion, crisp enlarged pixels,
+the four static frames along the bottom, and the horizontal/vertical mirrors.
+The new `sprite_region()` API validates source bounds and sizes; the expanded
+`texture_smoke` checks pixel-level crop, nearest-neighbor scale, and both flips
+using the SDL dummy driver. `sprite_sheet_png_smoke` also validates the
+192×32 atlas. Follow with the old gold-rectangle, Moving Box,
+asset-demo and no-cartridge Guru regressions.

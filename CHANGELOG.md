@@ -2,6 +2,22 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Milestone 3C: Added source-region rendering, destination scaling with
+  nearest-neighbor filtering, horizontal/vertical flips, and the Lua
+  `sprite_region()` binding. Included rendered-pixel assertions and a
+  four-frame animated PNG sprite-sheet cartridge example and atlas PNG test.
+
+- Added bounded, language-neutral `.vcart` resource reads and PNG-to-RGBA
+  decoding, plus Lua `texture_load()`, a cartridge PNG example, asset/decoder
+  tests, and matching build/API documentation. The game package format is
+  unchanged; the host now requires libpng development/runtime support.
+
+
+- Added an experimental language-independent RGBA8 texture handle API and SDL2
+  sprite drawing path, with Lua `texture_rgba`, `sprite`, and `texture_free`.
+  Added a procedural bee sprite example, headless texture checks, and updated
+  graphics/build/architecture documentation. Cartridge asset decoding is 3B.
+
 - Added an SDL-independent, 60 Hz fixed-step C timing scheduler with a bounded
   catch-up budget and `update(dt)` Lua callback (old `update()` remains valid).
 - Updated input smoke tests to tolerate already-connected SDL gamepads, while
@@ -29,5 +45,5 @@
   added random UUIDv4 generation plus `--uuid` reuse for game save identity.
 - Added build, dependency, and cartridge-format documentation.
 
-Not a release: Lua sandboxing, analog input, cartridge resource limits,
+Not a release: Lua sandboxing, analog input, complete script execution limits,
 and a completed game lifecycle/shutdown callback remain outstanding.

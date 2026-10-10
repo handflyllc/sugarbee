@@ -8,7 +8,9 @@ for Raspberry Pi 4 (64-bit Linux). The primary developer environment is Debian
 language-neutral C interface with an SDL2 backend. The input subsystem now
 uses a separate C service for controllers and keyboard development controls;
 the timing scheduler is now another language-independent C module, and
-Lua `update(dt)` uses a fixed 60 Hz timestep. Lua 5.4 is the first game language.
+Lua `update(dt)` uses a fixed 60 Hz timestep. An initial texture-handle and
+RGBA sprite path is available in both the C graphics core and Lua adapter.
+Lua 5.4 is the first game language.
 
 ## Build
 
@@ -39,3 +41,13 @@ profiles are future work.
 **Licensing:** The `LICENSE` placeholder has not yet been populated with an
 approved open-source license. Please settle licensing before public releases
 or accepting third-party code contributions.
+
+**Milestone 3C preview:** Crop, scale, mirror and animate a sprite sheet from
+one cartridge PNG using `sugarbee.sprite_region(...)`. Try
+`examples/sprite-sheet-demo/` and see
+[`docs/api/graphics.md`](docs/api/graphics.md). Existing `sprite(...)` calls
+still work as before.
+
+**Milestone 3B preview:** Load PNG assets from cartridges using
+`sugarbee.texture_load("assets/bee.png")`. See `examples/asset-demo/` and
+[`docs/api/assets.md`](docs/api/assets.md). Requires `libpng-dev` for the host.
