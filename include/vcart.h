@@ -24,6 +24,7 @@ typedef enum {
     VCART_OK = 0,
     VCART_ERR_FILE_READ,
     VCART_ERR_INVALID_MAGIC,
+    VCART_ERR_UNSUPPORTED_HEADER_VERSION,
     VCART_ERR_VERSION_MISMATCH,
     VCART_ERR_CORRUPT_HEADER,
     VCART_ERR_PAYLOAD_TRUNCATED
@@ -46,6 +47,7 @@ typedef struct {
 
 // API Functions
 vcart_err_t vcart_parse_header(FILE* fp, vcart_header_t* out_header);
+vcart_err_t vcart_write_header(FILE* fp, const vcart_header_t* header);
 const char* vcart_error_string(vcart_err_t err);
 void vcart_uuid_to_string(const uint8_t uuid[16], char out_str[37]);
 

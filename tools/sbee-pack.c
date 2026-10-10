@@ -1,199 +1,209 @@
 /*
- * PROJECT SUGARBEE - Cartridge Packager Utility (sbee-pack)
- * Usage: sbee-pack -i <source_dir> -o <output.vcart> -t "Game Title" [options]
+ * Project SugarBee - Linux .vcart packager.
+ * Creates a ZIP payload in a private temporary directory and prefixes it
+ * with a 64-byte, little-endian SBEE header. No shell command construction.
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <time.h>
-#include <sys/stat.h>
-
-#if defined(_WIN32)
-  #include <direct.h>
-  #define GetCurrentDir _getcwd
-#else
-  #include <unistd.h>
-  #define GetCurrentDir getcwd
-#endif
+#define _POSIX_C_SOURCE 200809L
 
 #include "vcart.h"
 
-#define TOOL_VERSION "1.0.0"
-#define TEMP_ZIP_FILE "sbee_temp_payload.zip"
+#include <errno.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
-// CLI Configuration Flags
-typedef struct {
-    char input_dir[256];
-    char output_file[256];
-    char title[32];
-    uint8_t target_os_major;
-    uint8_t target_os_minor;
-    uint8_t target_os_patch;
-    uint8_t hw_flags[3];
-    bool verbose;
-} pack_config_t;
+#define TOOL_VERSION "0.1.0"
 
-// Standard Pseudo-UUID Generator for Cartridge Identification
-void generate_uuid(uint8_t uuid[16]) {
-    srand((unsigned int)time(NULL));
-    for (int i = 0; i < 16; i++) {
-        uuid[i] = (uint8_t)(rand() % 256);
-    }
-    // Set RFC 4122 variant & version 4 bits
-    uuid[6] = (uuid[6] & 0x0F) | 0x40; // Version 4
-    uuid[8] = (uuid[8] & 0x3F) | 0x80; // Variant 10xx
+static void usage(const char* prog) {
+    fprintf(stderr,
+        "SugarBee Cartridge Packager v%s\n"
+        "Usage: %s -i <game-dir> -o <game.vcart> -t <title> [options]\n"
+        "  --os M.m.p      Minimum runtime version (default %d.%d.%d)\n"
+        "  --uuid UUID     Reuse a game's existing UUIDv4 across releases\n"
+        "  -v              Verbose output\n"
+        "  -h, --help      Show help\n",
+        TOOL_VERSION, prog, VCART_OS_MAJOR, VCART_OS_MINOR, VCART_OS_PATCH);
 }
 
-void print_usage(const char* prog_name) {
-    printf("Project SugarBee Cartridge Packager v%s\n", TOOL_VERSION);
-    printf("Usage: %s -i <input_dir> -o <output.vcart> -t \"Game Title\" [options]\n\n", prog_name);
-    printf("Required Arguments:\n");
-    printf("  -i, --input <dir>        Directory containing game assets and main.lua\n");
-    printf("  -o, --output <file>      Target .vcart output file path\n");
-    printf("  -t, --title <name>       Game title (max 31 chars)\n\n");
-    printf("Optional Arguments:\n");
-    printf("  --os <major.minor.patch> Minimum SugarBee OS required (default: %d.%d.%d)\n",
-           VCART_OS_MAJOR, VCART_OS_MINOR, VCART_OS_PATCH);
-    printf("  -v, --verbose            Enable verbose build logging\n");
-    printf("  -h, --help               Display this help dialog\n");
-}
-
-long get_file_size(const char* filepath) {
-    struct stat st;
-    if (stat(filepath, &st) == 0) {
-        return st.st_size;
-    }
+static int hex_digit(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
     return -1;
 }
 
-bool create_zip_payload(const char* input_dir, const char* zip_output) {
-    char command[1024];
-    
-    // Uses system zip CLI utility available on Linux/macOS
-#if defined(_WIN32)
-    snprintf(command, sizeof(command), "powershell -Command \"Compress-Archive -Path '%s\\*' -DestinationPath '%s' -Force\"", input_dir, zip_output);
-#else
-    snprintf(command, sizeof(command), "cd \"%s\" && zip -q -r \"../%s\" .", input_dir, zip_output);
-#endif
+static bool parse_uuid(const char* str, uint8_t uuid[16]) {
+    static const int hyphens[] = {8, 13, 18, 23};
+    if (!str || strlen(str) != 36) return false;
+    for (int i = 0, j = 0; i < 36; ) {
+        bool is_hyphen = false;
+        for (unsigned n = 0; n < sizeof(hyphens) / sizeof(hyphens[0]); n++) {
+            if (i == hyphens[n]) is_hyphen = true;
+        }
+        if (is_hyphen) {
+            if (str[i++] != '-') return false;
+            continue;
+        }
+        int hi = hex_digit(str[i++]);
+        int lo = hex_digit(str[i++]);
+        if (hi < 0 || lo < 0) return false;
+        uuid[j++] = (uint8_t)((hi << 4) | lo);
+    }
+    return (uuid[6] & 0xF0u) == 0x40u && (uuid[8] & 0xC0u) == 0x80u;
+}
 
-    int ret = system(command);
-    return (ret == 0);
+static bool generate_uuid(uint8_t uuid[16]) {
+    FILE* random_file = fopen("/dev/urandom", "rb");
+    if (!random_file) return false;
+    bool ok = fread(uuid, 1, 16, random_file) == 16;
+    fclose(random_file);
+    if (!ok) return false;
+    uuid[6] = (uint8_t)((uuid[6] & 0x0Fu) | 0x40u);
+    uuid[8] = (uint8_t)((uuid[8] & 0x3Fu) | 0x80u);
+    return true;
+}
+
+static bool parse_version(const char* s, uint8_t* major, uint8_t* minor, uint8_t* patch) {
+    unsigned m, n, p;
+    char extra;
+    if (sscanf(s, "%u.%u.%u%c", &m, &n, &p, &extra) != 3 ||
+        m > 255 || n > 255 || p > 255) return false;
+    *major = (uint8_t)m; *minor = (uint8_t)n; *patch = (uint8_t)p;
+    return true;
+}
+
+static bool make_zip(const char* input_dir, const char* zip_path) {
+    pid_t pid = fork();
+    if (pid < 0) return false;
+    if (pid == 0) {
+        if (chdir(input_dir) != 0) {
+            perror("chdir(game-dir)");
+            _exit(127);
+        }
+        execlp("zip", "zip", "-q", "-r", zip_path, ".", (char*)NULL);
+        perror("exec zip");
+        _exit(127);
+    }
+    int status;
+    pid_t finished;
+    do { finished = waitpid(pid, &status, 0); }
+    while (finished == -1 && errno == EINTR);
+    return finished == pid && WIFEXITED(status) && WEXITSTATUS(status) == 0;
+}
+
+static bool assemble_cartridge(const char* zip_path, const char* output_path,
+                               const vcart_header_t* header) {
+    FILE* src = fopen(zip_path, "rb");
+    if (!src) { perror("open zip"); return false; }
+    FILE* dst = fopen(output_path, "wb");
+    if (!dst) { perror("open cartridge"); fclose(src); return false; }
+
+    bool ok = vcart_write_header(dst, header) == VCART_OK;
+    unsigned char buf[8192];
+    size_t n;
+    while (ok && (n = fread(buf, 1, sizeof(buf), src)) != 0) {
+        if (fwrite(buf, 1, n, dst) != n) ok = false;
+    }
+    if (ferror(src)) ok = false;
+    if (fclose(src) != 0) ok = false;
+    if (fclose(dst) != 0) ok = false;
+    if (!ok) {
+        fprintf(stderr, "Error writing cartridge: %s\n", output_path);
+        remove(output_path);
+    }
+    return ok;
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        print_usage(argv[0]);
-        return 1;
-    }
-
-    pack_config_t config = {0};
-    config.target_os_major = VCART_OS_MAJOR;
-    config.target_os_minor = VCART_OS_MINOR;
-    config.target_os_patch = VCART_OS_PATCH;
-
-    // Parse Command-Line Arguments
-    for (int i = 1; i < argc; i++) {
-        if ((strcmp(argv[i], "-i") == 0 || strcmp(argv[i], "--input") == 0) && i + 1 < argc) {
-            strncpy(config.input_dir, argv[++i], sizeof(config.input_dir) - 1);
-        } else if ((strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0) && i + 1 < argc) {
-            strncpy(config.output_file, argv[++i], sizeof(config.output_file) - 1);
-        } else if ((strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--title") == 0) && i + 1 < argc) {
-            strncpy(config.title, argv[++i], sizeof(config.title) - 1);
-        } else if (strcmp(argv[i], "--os") == 0 && i + 1 < argc) {
-            int maj, min, pat;
-            if (sscanf(argv[++i], "%d.%d.%d", &maj, &min, &pat) == 3) {
-                config.target_os_major = (uint8_t)maj;
-                config.target_os_minor = (uint8_t)min;
-                config.target_os_patch = (uint8_t)pat;
-            }
-        } else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0) {
-            config.verbose = true;
-        } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
-            print_usage(argv[0]);
-            return 0;
-        }
-    }
-
-    // Validate Required Inputs
-    if (strlen(config.input_dir) == 0 || strlen(config.output_file) == 0 || strlen(config.title) == 0) {
-        fprintf(stderr, "Error: Missing required arguments (-i, -o, -t).\n\n");
-        print_usage(argv[0]);
-        return 1;
-    }
-
-    printf("[sbee-pack] Packing target directory: '%s'\n", config.input_dir);
-
-    // Step 1: Compress Payload Directory to Temporary ZIP
-    if (config.verbose) printf("[sbee-pack] Compressing payload directory into ZIP archive...\n");
-    if (!create_zip_payload(config.input_dir, TEMP_ZIP_FILE)) {
-        fprintf(stderr, "Error: Failed to compress directory '%s'. Ensure 'zip' CLI utility is installed.\n", config.input_dir);
-        return 1;
-    }
-
-    long payload_size = get_file_size(TEMP_ZIP_FILE);
-    if (payload_size <= 0) {
-        fprintf(stderr, "Error: Generated payload ZIP is empty or unreadable.\n");
-        remove(TEMP_ZIP_FILE);
-        return 1;
-    }
-
-    // Step 2: Build 64-Byte Binary Header
+    const char* input_dir = NULL;
+    const char* output_file = NULL;
+    const char* title = NULL;
+    const char* uuid_string = NULL;
+    bool verbose = false;
     vcart_header_t header = {0};
     memcpy(header.magic, VCART_MAGIC, 4);
     header.header_version = VCART_STRUCT_VERSION;
-    header.min_os_major = config.target_os_major;
-    header.min_os_minor = config.target_os_minor;
-    header.min_os_patch = config.target_os_patch;
-    header.payload_size = (uint32_t)payload_size;
-    
-    strncpy(header.title, config.title, sizeof(header.title) - 1);
-    generate_uuid(header.cart_uuid);
+    header.min_os_major = VCART_OS_MAJOR;
+    header.min_os_minor = VCART_OS_MINOR;
+    header.min_os_patch = VCART_OS_PATCH;
 
-    // Step 3: Write Output .vcart File
-    FILE* out_fp = fopen(config.output_file, "wb");
-    if (!out_fp) {
-        fprintf(stderr, "Error: Cannot open output file '%s' for writing.\n", config.output_file);
-        remove(TEMP_ZIP_FILE);
+    for (int i = 1; i < argc; i++) {
+        if ((!strcmp(argv[i], "-i") || !strcmp(argv[i], "--input")) && i + 1 < argc)
+            input_dir = argv[++i];
+        else if ((!strcmp(argv[i], "-o") || !strcmp(argv[i], "--output")) && i + 1 < argc)
+            output_file = argv[++i];
+        else if ((!strcmp(argv[i], "-t") || !strcmp(argv[i], "--title")) && i + 1 < argc)
+            title = argv[++i];
+        else if (!strcmp(argv[i], "--uuid") && i + 1 < argc)
+            uuid_string = argv[++i];
+        else if (!strcmp(argv[i], "--os") && i + 1 < argc) {
+            if (!parse_version(argv[++i], &header.min_os_major,
+                               &header.min_os_minor, &header.min_os_patch)) {
+                fprintf(stderr, "Invalid --os version (expected 0..255.0..255.0..255)\n");
+                return 1;
+            }
+        } else if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--verbose"))
+            verbose = true;
+        else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
+            usage(argv[0]); return 0;
+        } else {
+            fprintf(stderr, "Unknown or incomplete argument: %s\n", argv[i]);
+            usage(argv[0]); return 1;
+        }
+    }
+    if (!input_dir || !output_file || !title || strlen(title) > 31 || !*title) {
+        fprintf(stderr, "Provide -i, -o, and a nonempty title of at most 31 bytes.\n");
+        usage(argv[0]);
         return 1;
     }
-
-    FILE* zip_fp = fopen(TEMP_ZIP_FILE, "rb");
-    if (!zip_fp) {
-        fprintf(stderr, "Error: Cannot open temporary ZIP file for reading.\n");
-        fclose(out_fp);
-        remove(TEMP_ZIP_FILE);
+    struct stat st;
+    if (stat(input_dir, &st) != 0 || !S_ISDIR(st.st_mode)) {
+        fprintf(stderr, "Game directory is missing or invalid: %s\n", input_dir);
         return 1;
     }
-
-    // Write Header
-    fwrite(&header, sizeof(vcart_header_t), 1, out_fp);
-
-    // Stream Payload Bytes
-    char buffer[8192];
-    size_t bytes_read = 0;
-    while ((bytes_read = fread(buffer, 1, sizeof(buffer), zip_fp)) > 0) {
-        fwrite(buffer, 1, bytes_read, out_fp);
+    if (uuid_string) {
+        if (!parse_uuid(uuid_string, header.cart_uuid)) {
+            fprintf(stderr, "Invalid UUIDv4 (expected canonical 8-4-4-4-12 form).\n");
+            return 1;
+        }
+    } else if (!generate_uuid(header.cart_uuid)) {
+        fprintf(stderr, "Unable to generate a random UUID.\n");
+        return 1;
     }
+    memcpy(header.title, title, strlen(title));
 
-    fclose(zip_fp);
-    fclose(out_fp);
+    char tmpdir[] = "/tmp/sbee-pack-XXXXXX";
+    if (!mkdtemp(tmpdir)) { perror("mkdtemp"); return 1; }
+    char zip_path[sizeof(tmpdir) + 16];
+    snprintf(zip_path, sizeof(zip_path), "%s/payload.zip", tmpdir);
 
-    // Clean up temporary files
-    remove(TEMP_ZIP_FILE);
-
-    // Print Packaging Summary
-    printf("\n==================================================\n");
-    printf(" SUCCESS: Cartridge compiled to '%s'\n", config.output_file);
-    printf(" Title:            %s\n", header.title);
-    printf(" Required OS:      v%d.%d.%d\n", header.min_os_major, header.min_os_minor, header.min_os_patch);
-    printf(" Header Size:      64 Bytes\n");
-    printf(" Payload Size:     %u Bytes (%.2f KB)\n", header.payload_size, header.payload_size / 1024.0);
-    printf(" Cartridge UUID:   ");
-    for (int i = 0; i < 16; i++) printf("%02x", header.cart_uuid[i]);
-    printf("\n==================================================\n");
-
+    if (verbose) fprintf(stderr, "[sbee-pack] Compressing %s\n", input_dir);
+    bool ok = make_zip(input_dir, zip_path);
+    if (ok && stat(zip_path, &st) != 0) ok = false;
+    if (ok && (st.st_size <= 0 || (uint64_t)st.st_size > UINT32_MAX)) {
+        fprintf(stderr, "ZIP payload must be between 1 byte and 4 GiB.\n");
+        ok = false;
+    }
+    if (ok) {
+        header.payload_size = (uint32_t)st.st_size;
+        ok = assemble_cartridge(zip_path, output_file, &header);
+    }
+    remove(zip_path);
+    rmdir(tmpdir);
+    if (!ok) {
+        fprintf(stderr, "Cartridge packaging failed (is the 'zip' command installed?).\n");
+        return 1;
+    }
+    char uuid_text[37];
+    vcart_uuid_to_string(header.cart_uuid, uuid_text);
+    printf("Wrote %s (%u ZIP bytes)\nGame UUID: %s\n", output_file,
+           header.payload_size, uuid_text);
+    if (!uuid_string) printf("Keep this UUID and pass --uuid on subsequent builds to preserve saves.\n");
     return 0;
 }

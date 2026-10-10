@@ -250,7 +250,7 @@ void draw_char(char c, int x, int y, uint8_t r, uint8_t g, uint8_t b, int scale)
     SDL_SetRenderDrawColor(g_engine.renderer, r, g, b, 255);
     for (int row = 0; row < 8; row++) {
         for (int col = 0; col < 8; col++) {
-            if (glyph[row] & (1 << col)) {
+            if (glyph[row] & (1 << (7 - col))) {
                 SDL_Rect pixel = { x + (col * scale), y + (row * scale), scale, scale };
                 SDL_RenderFillRect(g_engine.renderer, &pixel);
             }
@@ -302,7 +302,7 @@ void render_guru_meditation(void) {
     draw_text(g_engine.error_title, 60, 160, 255, 255, 255, 2);
     draw_text(g_engine.error_msg, 60, 200, 200, 200, 200, 2);
 
-    draw_text("PRESS [START] TO SAVE LOG TO USB | PRESS [A] TO SOFT RESET", 60, 640, 150, 150, 150, 2);
+    draw_text("DEVELOPMENT BUILD - GURU RECOVERY CONTROLS NOT YET IMPLEMENTED", 60, 640, 150, 150, 150, 2);
 }
 
 void call_lua_global_function(const char* func_name) {

@@ -1,1 +1,16 @@
- 
+# CMake / local builds
+/build/
+/build-*/
+/cmake-build-*/
+/CMakeFiles/
+/CMakeCache.txt
+/compile_commands.json
+
+# Editor and temporary artifacts
+*.swp
+*~
+*.tmp
+.DS_Store
+
+# Generated cartridges (add a tracked fixture explicitly if needed)
+*.vcart
