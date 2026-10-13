@@ -21,7 +21,8 @@ local bullet_speed = 500
 
 -- Enemy formation
 local enemy_positions = {360, 480, 600, 720, 840}
-local enemy_y = 140
+local enemy_start_y = 140
+local enemy_y = enemy_start_y
 local enemy_width = 48
 local enemy_height = 24
 local formation_offset = 0
@@ -40,8 +41,11 @@ function init()             -- required Lua callback, runs once when the cartrid
     print("Invaders Lab: flight test loaded") -- prints to the console
 end
 
--- HELPER FUNCTIONS --
+--[[
+*** HELPER FUNCTIONS *** ------------------------------------------------------
+  ]]--
 
+-- Fire a bullet
 local function fire_bullet()
     bullet_active = true                                -- turn bullet on
     bullet_x = ship_x + (ship_width - bullet_width) / 2 -- center bullet with center of ship's x-axis
@@ -55,10 +59,43 @@ local function descend_formation()
     enemy_y = enemy_y + formation_descent
 
     print("Enemy formation descended to Y:", enemy_y)
+
+    if not game_over and enemy_y + enemy_height >= ship_y then              -- we enter the fuction with game_over set to false AND check the current, calculated
+        game_over = true                                                    -- bottom of enemy position against (>=) the top of the ship's defensive line. If the
+        print("GAME OVER! The invaders have reached the defensive line.")   -- enemy has reached the line, game_over is set to true. Either game_over = true OR
+    end                                                                     -- enemy at the defensive line should bypass this if block.
 end
 
+--[[ >>> Restore the game to its starting condition <<< ]]--
+local function reset_game()
+    -- Player
+    ship_x = (screen_width - ship_width) / 2                                -- reset the ship's initial position
+
+    -- Projectile
+    bullet_active = false                                                   -- Turn off the bullet and zero the starting position,
+    bullet_x = 0                                                            -- we don't want any strays!'
+    bullet_y = 0
+
+    -- Enemy formation
+    enemy_y = enemy_start_y                                                 -- Move enemy formation to the top position
+    formation_offset = 0                                                    -- reset offset
+    formation_direction = 1                                                 -- reset direction to 'move right'
+
+    -- Game state
+    game_over = false                                                       -- Game state is now playable again
+    print("New Game Started!")
+end
 
 function update(dt)         -- required Lua callback, runs at 60 Hz
+    -- When game is over, only allow a restart
+    if game_over then
+        if sugarbee.btnp("b") then
+            reset_game()
+        end
+        return              -- if game_over is true, we return [i.e. exit out of update(dt)]
+    end
+
+
     if sugarbee.btn("left") then
         ship_x = ship_x - ship_speed * dt
     end
@@ -89,11 +126,6 @@ function update(dt)         -- required Lua callback, runs at 60 Hz
         descend_formation()
         formation_direction = 1
     end
-
-    if sugarbee.btnp("b") then
-        print("B was pressed")
-    end
-
 
     -- Keep the entire ship inside the logical viewport.
     ship_x = math.max(0, math.min(screen_width - ship_width, ship_x))
@@ -132,4 +164,19 @@ function draw()             -- required Lua callback, runs per each host render 
     sugarbee.print("INVADERS LAB - FLIGHT TEST", 30, 25,
                    255, 255, 255, 2)
     sugarbee.print("MOVE: LEFT/RIGHT, A/D, OR GAMEPAD", 30, 60)
+
+    if game_over then
+        sugarbee.print(
+        "GAME OVER - INVADERS WIN",
+        400, 340,
+        255, 80, 80, 3
+        )
+        sugarbee.print(
+        "PRESS B TO RESTART",
+        450, 390,
+        255, 255, 255, 2
+        )
+    end
+
+
 end
