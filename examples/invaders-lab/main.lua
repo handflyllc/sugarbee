@@ -20,7 +20,8 @@ local bullet_height = 12
 local bullet_speed = 500
 
 -- Enemy formation
-local enemy_positions = {360, 480, 600, 720, 840}
+local enemy_positions = {360, 480, 600, 720, 840}       -- one line of enemies
+local enemy_alive = {true, true, true, true, true}      -- initialize enemy_alive to true
 local enemy_start_y = 140
 local enemy_y = enemy_start_y
 local enemy_width = 48
@@ -35,18 +36,18 @@ local formation_right_limit = screen_width - formation_margin - (enemy_positions
 
 -- game state
 local game_over = false
+local victory = false
+
 
 
 function init()             -- required Lua callback, runs once when the cartridge is loaded
     print("Invaders Lab: flight test loaded") -- prints to the console
 end
 
---[[
-*** HELPER FUNCTIONS *** ------------------------------------------------------
-  ]]--
+--[[ *** *** *** HELPER FUNCTIONS *** *** *** ]]--
 
 -- Fire a bullet
-local function fire_bullet()
+local function fire_bullet()                            --[[ FIRE_BULLET ]]--
     bullet_active = true                                -- turn bullet on
     bullet_x = ship_x + (ship_width - bullet_width) / 2 -- center bullet with center of ship's x-axis
     bullet_y = ship_y - bullet_height                   -- place bullet at top of ship
@@ -55,7 +56,7 @@ local function fire_bullet()
 end
 
 -- Move the entire enemy formation down one step
-local function descend_formation()
+local function descend_formation()                      --[[ DESCEND_FORMATION ]]--
     enemy_y = enemy_y + formation_descent
 
     print("Enemy formation descended to Y:", enemy_y)
@@ -67,7 +68,7 @@ local function descend_formation()
 end
 
 --[[ >>> Restore the game to its starting condition <<< ]]--
-local function reset_game()
+local function reset_game()                             --[[ RESET_GAME ]]--
     -- Player
     ship_x = (screen_width - ship_width) / 2                                -- reset the ship's initial position
 
@@ -81,14 +82,21 @@ local function reset_game()
     formation_offset = 0                                                    -- reset offset
     formation_direction = 1                                                 -- reset direction to 'move right'
 
+    for i = 1, #enemy_positions do
+        enemy_alive[i] = true                                               -- iterating through all enemies to revive their alive state to true
+    end
+
     -- Game state
-    game_over = false                                                       -- Game state is now playable again
+    game_over = false   
+    victory = false                                                    -- Game state is now playable again
     print("New Game Started!")
 end
 
-function update(dt)         -- required Lua callback, runs at 60 Hz
+--[[ END OF HELPER FUNCTIONS ]]--
+
+function update(dt)                                     --[[ ................. UPDATE(DT) ** ]]--
     -- When game is over, only allow a restart
-    if game_over then
+    if game_over or victory then
         if sugarbee.btnp("b") then
             reset_game()
         end
@@ -127,6 +135,34 @@ function update(dt)         -- required Lua callback, runs at 60 Hz
         formation_direction = 1
     end
 
+    -- Check the active bullet against living enemies
+    if bullet_active then                                   -- true: we have an active bullet. false: this is skipped entirely
+        for i = 1, #enemy_positions do                      -- index through all available enemy_positions
+            if enemy_alive[i] then                          -- true: enemy alive, continue. false: skip
+                local enemy_x = enemy_positions[i] + formation_offset -- derives the enemy's current x coordinate
+
+                if bullet_x < enemy_x + enemy_width and bullet_x + bullet_width > enemy_x and bullet_y < enemy_y + enemy_height and bullet_y + bullet_height > enemy_y then
+                        enemy_alive[i] = false              -- set alive to false for the specified enemy
+                        bullet_active = false               -- bullet cannot continue to be used this cycle
+                        print("Enemy hit: ",i)
+                        local any_alive = false
+                        for j = 1, #enemy_positions do
+                            if enemy_alive[j] then
+                                any_alive = true
+                                break
+                            end
+                        end
+                        if not any_alive then
+                            victory = true
+                            print("Victory is mine!")
+                        end
+                        break                               -- we don't need to continue this check because the enemy is dead, the bullet is gone
+                end
+            end
+        end
+    end
+
+
     -- Keep the entire ship inside the logical viewport.
     ship_x = math.max(0, math.min(screen_width - ship_width, ship_x))
 end
@@ -151,21 +187,34 @@ function draw()             -- required Lua callback, runs per each host render 
 
     -- Draw the enemy formation
     for i=1, #enemy_positions do
-        local enemy_x = enemy_positions[i] + formation_offset
-
-        sugarbee.rect(
-        math.floor(enemy_x),
-        math.floor(enemy_y),
-        enemy_width, enemy_height,
-        220, 100, 120, true
-        )
+        if enemy_alive[i] then
+            local enemy_x = enemy_positions[i] + formation_offset
+            
+            sugarbee.rect(
+            math.floor(enemy_x),
+            math.floor(enemy_y),
+            enemy_width, enemy_height,
+            220, 100, 120, true
+            )
+        end
     end
 
     sugarbee.print("INVADERS LAB - FLIGHT TEST", 30, 25,
                    255, 255, 255, 2)
     sugarbee.print("MOVE: LEFT/RIGHT, A/D, OR GAMEPAD", 30, 60)
 
-    if game_over then
+    if victory then
+        sugarbee.print(
+            "VICTORY - EARTH SAVED",
+            400, 340,
+            80, 255, 160, 3
+        )
+        sugarbee.print(
+            "PRESS B TO RESTART",
+            450, 390,
+            255, 255, 255, 2
+        )
+    elseif game_over then
         sugarbee.print(
         "GAME OVER - INVADERS WIN",
         400, 340,
