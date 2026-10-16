@@ -39,70 +39,89 @@ local game_over = false
 local victory = false
 
 
-
-function init()             -- required Lua callback, runs once when the cartridge is loaded
-    print("Invaders Lab: flight test loaded") -- prints to the console
+--[[ Required Lua callback ]]--
+function init() 
+    print("Invaders Lab: flight test loaded")
 end
 
 --[[ *** *** *** HELPER FUNCTIONS *** *** *** ]]--
 
--- Fire a bullet
-local function fire_bullet()                            --[[ FIRE_BULLET ]]--
-    bullet_active = true                                -- turn bullet on
-    bullet_x = ship_x + (ship_width - bullet_width) / 2 -- center bullet with center of ship's x-axis
-    bullet_y = ship_y - bullet_height                   -- place bullet at top of ship
+-- FIRE BULLET
+-- --------------------------------------------------------------------------
+-- turn bullet on, center bullet with center of ship's x-axis, place
+-- bullet at top of ship
+local function fire_bullet()
+    bullet_active = true
+    bullet_x = ship_x + (ship_width - bullet_width) / 2
+    bullet_y = ship_y - bullet_height
 
     print("Pew! Projectile launched")
 end
 
+-- DESCEND FORMATION
+-- --------------------------------------------------------------------------
 -- Move the entire enemy formation down one step
-local function descend_formation()                      --[[ DESCEND_FORMATION ]]--
+local function descend_formation()
     enemy_y = enemy_y + formation_descent
 
     print("Enemy formation descended to Y:", enemy_y)
 
-    if not game_over and enemy_y + enemy_height >= ship_y then              -- we enter the fuction with game_over set to false AND check the current, calculated
-        game_over = true                                                    -- bottom of enemy position against (>=) the top of the ship's defensive line. If the
-        print("GAME OVER! The invaders have reached the defensive line.")   -- enemy has reached the line, game_over is set to true. Either game_over = true OR
-    end                                                                     -- enemy at the defensive line should bypass this if block.
+    -- we enter the function with game_over set to false AND check the
+    -- current, calculated bottom of enemy position against (>=) the top of
+    -- the ship's defensive line. Reaching the defensive line enters the if
+    -- block. It’s skipped when game_over is already true or the enemies
+    -- haven’t reached the line
+    if not game_over and enemy_y + enemy_height >= ship_y then
+        game_over = true
+        print("GAME OVER! The invaders have reached the defensive line.")
+    end
 end
 
---[[ >>> Restore the game to its starting condition <<< ]]--
-local function reset_game()                             --[[ RESET_GAME ]]--
+-- RESET GAME
+-- --------------------------------------------------------------------------
+-- Restore game to its starting condition. Reset the ship's initial position,
+-- turn off the bullet, and zero the starting position, we don't want
+-- any strays! <<>> In the Enemy Formation: move the enemy formation to the
+-- top position, reset the offset, reset direction to 'move right' then 
+-- iterate through all enemies to revive their alive state to true.
+-- <<>> Game State: reset game state variables to make the game playable
+local function reset_game()
     -- Player
-    ship_x = (screen_width - ship_width) / 2                                -- reset the ship's initial position
+    ship_x = (screen_width - ship_width) / 2
 
     -- Projectile
-    bullet_active = false                                                   -- Turn off the bullet and zero the starting position,
-    bullet_x = 0                                                            -- we don't want any strays!'
+    bullet_active = false
+    bullet_x = 0
     bullet_y = 0
 
     -- Enemy formation
-    enemy_y = enemy_start_y                                                 -- Move enemy formation to the top position
-    formation_offset = 0                                                    -- reset offset
-    formation_direction = 1                                                 -- reset direction to 'move right'
+    enemy_y = enemy_start_y
+    formation_offset = 0
+    formation_direction = 1
 
     for i = 1, #enemy_positions do
-        enemy_alive[i] = true                                               -- iterating through all enemies to revive their alive state to true
+        enemy_alive[i] = true
     end
 
     -- Game state
     game_over = false   
-    victory = false                                                    -- Game state is now playable again
+    victory = false
     print("New Game Started!")
 end
 
---[[ END OF HELPER FUNCTIONS ]]--
-
-function update(dt)                                     --[[ ................. UPDATE(DT) ** ]]--
+-- UPDATE(DT)
+-- --------------------------------------------------------------------------
+-- Because update(dt) runs at 60 Hz, we first check to see if the game_over 
+-- flag is set, if it is, we exit (return) out of the function. Then we set
+-- up some button recodnition for ship controls. 
+function update(dt)
     -- When game is over, only allow a restart
     if game_over or victory then
         if sugarbee.btnp("b") then
             reset_game()
         end
-        return              -- if game_over is true, we return [i.e. exit out of update(dt)]
+        return
     end
-
 
     if sugarbee.btn("left") then
         ship_x = ship_x - ship_speed * dt
@@ -135,15 +154,25 @@ function update(dt)                                     --[[ ................. U
         formation_direction = 1
     end
 
+    -- Reaching the defensive line ends this update before bullet collisions
+    if game_over then
+        return
+    end
     -- Check the active bullet against living enemies
-    if bullet_active then                                   -- true: we have an active bullet. false: this is skipped entirely
-        for i = 1, #enemy_positions do                      -- index through all available enemy_positions
-            if enemy_alive[i] then                          -- true: enemy alive, continue. false: skip
-                local enemy_x = enemy_positions[i] + formation_offset -- derives the enemy's current x coordinate
+    -- ----------------------------------------------------------------------
+    -- Collision: we check whether the bullet’s rectangle overlaps the
+    -- enemy’s rectangle, rather than whether one coordinate falls inside it.
+    if bullet_active then
+        for i = 1, #enemy_positions do
+            if enemy_alive[i] then
+                local enemy_x = enemy_positions[i] + formation_offset
 
-                if bullet_x < enemy_x + enemy_width and bullet_x + bullet_width > enemy_x and bullet_y < enemy_y + enemy_height and bullet_y + bullet_height > enemy_y then
-                        enemy_alive[i] = false              -- set alive to false for the specified enemy
-                        bullet_active = false               -- bullet cannot continue to be used this cycle
+                if bullet_x < enemy_x + enemy_width
+                and bullet_x + bullet_width > enemy_x
+                and bullet_y < enemy_y + enemy_height
+                and bullet_y + bullet_height > enemy_y then
+                        enemy_alive[i] = false
+                        bullet_active = false
                         print("Enemy hit: ",i)
                         local any_alive = false
                         for j = 1, #enemy_positions do
@@ -156,32 +185,38 @@ function update(dt)                                     --[[ ................. U
                             victory = true
                             print("Victory is mine!")
                         end
-                        break                               -- we don't need to continue this check because the enemy is dead, the bullet is gone
+                        break
                 end
             end
         end
     end
-
-
     -- Keep the entire ship inside the logical viewport.
     ship_x = math.max(0, math.min(screen_width - ship_width, ship_x))
 end
 
-function draw()             -- required Lua callback, runs per each host render iteration while the game is healthy
-    sugarbee.cls(8, 12, 32) -- clear screen, RGB colors 8,12,32 (dark blue-midnight sky)
+-- DRAW()
+-- --------------------------------------------------------------------------
+-- This is a required Lua callback that runs per each host render iteration
+-- while the game is healthy.
 
-    local x = math.floor(ship_x) -- local var 'x' to draw(), sets ship_x to integer value in the event the calculated position from above results in a float
+function draw()
+    sugarbee.cls(8, 12, 32) -- RGB colors 8,12,32 (dark blue-midnight sky)
+    -- Drawing: math.floor(ship_x) creates an integer drawing coordinate
+    -- without changing ship_x. It doesn’t prevent floating-point calculation
+    -- errors.
+    -- Round down for drawing; preserve ship_x's fractional simulation position.
+    local x = math.floor(ship_x)
     sugarbee.rect(x, ship_y, ship_width, ship_height,
                   80, 220, 160, true)
     sugarbee.rect(x + 24, ship_y - 12, 12, 12,
                   170, 255, 210, true)
     if bullet_active then
         sugarbee.rect(
-	    math.floor(bullet_x), -- make integer
-	    math.floor(bullet_y), -- make integer
-	    bullet_width,         -- set at head
-	    bullet_height,        -- set at head
-	    255, 215, 100, true   -- color, the bool represents filled or outlined
+	    math.floor(bullet_x),
+	    math.floor(bullet_y),
+	    bullet_width,
+	    bullet_height,
+	    255, 215, 100, true
         )
     end
 
