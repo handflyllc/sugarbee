@@ -2,6 +2,12 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added optional Lua `shutdown()` invocation on normal application exit
+  after successful cartridge initialization. The callback runs before
+  native teardown and is skipped while Guru Meditation is active.
+  Shutdown errors are reported to the console without preventing cleanup.
+  Added a manual five-case regression cartridge and lifecycle documentation.
+
 - Milestone 3C: Added source-region rendering, destination scaling with
   nearest-neighbor filtering, horizontal/vertical flips, and the Lua
   `sprite_region()` binding. Included rendered-pixel assertions and a
@@ -45,5 +51,5 @@
   added random UUIDv4 generation plus `--uuid` reuse for game save identity.
 - Added build, dependency, and cartridge-format documentation.
 
-Not a release: Lua sandboxing, analog input, complete script execution limits,
-and a completed game lifecycle/shutdown callback remain outstanding.
+Not a release: Lua sandboxing, analog input, and complete script execution
+limits remain outstanding.

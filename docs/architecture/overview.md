@@ -49,13 +49,19 @@ in the same pull request. All build profiles share one source tree. CMake's
 Debug/Release modes currently control compiler builds; separate developer and
 release console *images* have not been built yet.
 
+On normal application exit, the host invokes an optional Lua `shutdown()`
+callback after successful cartridge initialization, unless Guru Meditation
+is active. It runs before Lua, input, and graphics are destroyed. Callback
+errors are reported to the console, and native cleanup continues.
+Cartridge switching and returning to a menu are not implemented.
+
 ## Agreed design goals that are not yet features
 
 - Manifest-defined logical resolutions (default 1280 x 720), aspect-preserving
   scaling, and pixel-art integer scaling.
 - A full input event router, analog controls, and lossless input-event queues.
   Basic button-press delivery across zero/multiple simulation updates works.
-- Game shutdown callbacks and save APIs tied to persistent cartridge UUIDs.
+- Save APIs tied to persistent cartridge UUIDs.
 - A minimal Linux appliance image and a development image from shared build
   configuration.
 - Language adapters beyond Lua and an extensible plugin system (deferred).

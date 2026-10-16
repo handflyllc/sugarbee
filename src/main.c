@@ -40,6 +40,7 @@ typedef struct {
     // Active Cartridge Data
     vcart_header_t current_cart;
     bool cart_loaded;
+    bool cart_initialized;
     const char *cartridge_path;  /* argv-owned, alive for the host lifetime */
 } sugarbee_engine_t;
 
@@ -398,7 +399,33 @@ void main_loop(void) {
     }
 }
 
+/* Stack: unchanged on return; no arguments or results. */
+static void call_lua_shutdown(void) {
+    if (!g_engine.L || !g_engine.cart_initialized || g_engine.guru_active) {
+        return;
+    }
+
+    /* Consume eligibility before calling Lua: invoke at most once. */
+    g_engine.cart_initialized = false;
+
+    lua_getglobal(g_engine.L, "shutdown");
+    if (!lua_isfunction(g_engine.L, -1)) {
+        lua_pop(g_engine.L, 1);
+        return;
+    }
+
+    if (lua_pcall(g_engine.L, 0, 0, 0) != LUA_OK) {
+        const char *err = lua_tostring(g_engine.L, -1);
+        fprintf(stderr, "Lua shutdown error: %s\n",
+        err ? err : "(non-string error)");
+        lua_pop(g_engine.L, 1);
+    }
+}
+
+
 void shutdown_engine(void) {
+    call_lua_shutdown();
+
     if (g_engine.L) lua_close(g_engine.L);
     sb_input_destroy(g_engine.input);
     sb_graphics_destroy(g_engine.graphics);
@@ -415,6 +442,7 @@ int main(int argc, char* argv[]) {
         // Load target cartridge passed via command line
         if (load_virtual_cartridge(argv[1])) {
             call_lua_global_function("init", false, 0.0);
+            g_engine.cart_initialized = !g_engine.guru_active;
         }
     } else {
         trigger_guru_meditation(0x00000000, "NO CARTRIDGE INSERTED", "Please specify a .vcart path: ./sugarbee game.vcart", NULL);

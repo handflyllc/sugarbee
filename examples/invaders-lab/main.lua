@@ -284,3 +284,7 @@ function draw()
 
 
 end
+
+function shutdown()
+    print("Invaders Lab: Shutdown called")
+end
