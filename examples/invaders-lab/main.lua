@@ -103,6 +103,9 @@ local function reset_game()
         enemy_alive[i] = true
     end
 
+    formation_left_limit = formation_margin - enemy_positions[1]
+    formation_right_limit = screen_width - formation_margin - (enemy_positions[#enemy_positions] + enemy_width)
+
     -- Game state
     game_over = false   
     victory = false
@@ -172,6 +175,23 @@ function update(dt)
                 and bullet_y < enemy_y + enemy_height
                 and bullet_y + bullet_height > enemy_y then
                         enemy_alive[i] = false
+                        local first_alive = nil
+                        local last_alive = nil
+                        for j = 1, #enemy_positions do
+                            if enemy_alive[j] then
+                                if first_alive == nil then
+                                    first_alive = j
+                                end
+                                last_alive = j
+                            end
+                        end
+                        print("Living outer slots: ", first_alive, last_alive)
+
+                        if first_alive ~= nil then
+                            formation_left_limit = formation_margin - enemy_positions[first_alive]
+                            formation_right_limit = screen_width - formation_margin - (enemy_positions[last_alive] + enemy_width)
+                        end
+
                         bullet_active = false
                         print("Enemy hit: ",i)
                         local any_alive = false
@@ -235,7 +255,7 @@ function draw()
     end
 
     sugarbee.print("INVADERS LAB - FLIGHT TEST", 30, 25,
-                   255, 255, 255, 2)
+                   255, 255, 255, 3)
     sugarbee.print("MOVE: LEFT/RIGHT, A/D, OR GAMEPAD", 30, 60)
 
     if victory then
