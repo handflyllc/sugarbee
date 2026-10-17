@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added Guru Meditation message wrapping at spaces, splitting of long words,
+  and a continuation notice when message storage or screen height is exceeded.
+  Complete supplied diagnostics are written to standard error before the
+  bounded screen copy is made. Added a manual three-case regression cartridge.
+
 - Added optional Lua `shutdown()` invocation on normal application exit
   after successful cartridge initialization. The callback runs before
   native teardown and is skipped while Guru Meditation is active.

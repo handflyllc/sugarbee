@@ -35,6 +35,7 @@ typedef struct {
     uint32_t error_code;
     char error_title[64];
     char error_msg[256];
+    bool error_msg_truncated;
     char stack_trace[512];
     
     // Active Cartridge Data
@@ -285,11 +286,78 @@ void register_sugarbee_api(lua_State* L) {
 // --- TEXT RENDERER & GURU MEDITATION ---
 
 void trigger_guru_meditation(uint32_t code, const char* title, const char* message, const char* trace) {
+    fprintf(stderr, "\n[SugarBee] SOFTWARE FAILURE #%08X\n", code);
+    fprintf(stderr, "%s\n", title ? title : "(no title)");
+    fprintf(stderr, "%s\n", message ? message : "(no message)");
+
+    if (trace && trace[0] != '\0') {
+        fprintf(stderr, "%s\n", trace);
+    }
+
+    fflush(stderr);
     g_engine.guru_active = true;
     g_engine.error_code = code;
     strncpy(g_engine.error_title, title, sizeof(g_engine.error_title) - 1);
-    strncpy(g_engine.error_msg, message, sizeof(g_engine.error_msg) - 1);
+    const char *display_message = message ? message : "(no message)";
+
+    g_engine.error_msg_truncated = strlen(display_message) >= sizeof(g_engine.error_msg);
+
+    snprintf(g_engine.error_msg, sizeof(g_engine.error_msg), "%s", display_message);
     if (trace) strncpy(g_engine.stack_trace, trace, sizeof(g_engine.stack_trace) - 1);
+}
+
+/* Returns true if some text could not fit on screen. */
+static bool draw_guru_message(const char *text) {
+    enum { columns = 72, max_lines = 19 };
+    char line[columns + 1];
+    const char *cursor = text;
+    int y = 200;
+
+    for (int row = 0; row < max_lines && *cursor; ++row) {
+        size_t count = 0;
+
+        /* Find the end of this line or the available width. */
+        while (count < columns &&
+               cursor[count] != '\0' &&
+               cursor[count] != '\n') {
+            ++count;
+        }
+
+        /* Prefer a word boundary when more text follows. */
+        if (count == columns &&
+            cursor[count] != '\0' &&
+            cursor[count] != '\n' &&
+            cursor[count] != ' ') {
+            size_t split = count;
+
+            while (split > 0 && cursor[split - 1] != ' ') {
+                --split;
+            }
+
+            if (split > 0) {
+                count = split;
+            }
+        }
+
+        memcpy(line, cursor, count);
+        line[count] = '\0';
+
+        sb_graphics_text(g_engine.graphics, line,
+                         60, y, 200, 200, 200, 2);
+        y += 20;
+        cursor += count;
+
+        /* Discard spaces at the wrap boundary. */
+        while (*cursor == ' ') {
+            ++cursor;
+        }
+
+        if (*cursor == '\n') {
+            ++cursor;
+        }
+    }
+
+    return *cursor != '\0';
 }
 
 void render_guru_meditation(void) {
@@ -312,7 +380,11 @@ void render_guru_meditation(void) {
     sb_graphics_text(g_engine.graphics, "GURU MEDITATION V2", 60, 60, 255, 0, 0, 4);
     sb_graphics_text(g_engine.graphics, code_str, 60, 110, 255, 0, 0, 3);
     sb_graphics_text(g_engine.graphics, g_engine.error_title, 60, 160, 255, 255, 255, 2);
-    sb_graphics_text(g_engine.graphics, g_engine.error_msg, 60, 200, 200, 200, 200, 2);
+    bool message_overflow = draw_guru_message(g_engine.error_msg);
+
+    if (g_engine.error_msg_truncated || message_overflow) {
+        sb_graphics_text(g_engine.graphics, "Message continues in console", 60, 600, 255, 215, 100, 2);
+    }
 
     sb_graphics_text(g_engine.graphics,
         "DEVELOPMENT BUILD - GURU RECOVERY CONTROLS NOT YET IMPLEMENTED",
