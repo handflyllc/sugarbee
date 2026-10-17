@@ -7,11 +7,23 @@ The game uses these Lua callbacks:
 | `init()` | Once after a cartridge is successfully loaded |
 | `update(dt)` | Zero or more fixed simulation steps per host render iteration |
 | `draw()` | Once per host render iteration while the game is healthy |
+| `shutdown()` | Optional; called once during normal application exit after successful cartridge initialization, unless Guru Meditation is active |
 
 `dt` is **always 1/60 second** (`0.016666...`) at present, regardless of
 actual renderer speed. Lua functions declared as `update()` continue to work:
-Lua ignores extra arguments. An optional `shutdown()` callback is **not yet
-invoked** by the host.
+Lua ignores extra arguments. An optional `shutdown()` callback runs before the host closes Lua and
+destroys its input and graphics services. It receives no arguments, and
+its return values are ignored.
+
+The callback is skipped if cartridge initialization failed or Guru
+Meditation is active. An absent or non-function `shutdown` value is
+ignored. Errors raised by the callback are reported to the console;
+native cleanup still continues.
+
+Currently, closing the application ends the cartridge session. Returning
+to a menu or switching cartridges is not implemented. Callback execution
+has no time limit, so a shutdown callback that never returns can prevent
+normal exit.
 
 ```lua
 local x = 100

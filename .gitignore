@@ -14,3 +14,9 @@
 
 # Generated cartridges (add a tracked fixture explicitly if needed)
 *.vcart
+
+# File manager personalization
+.directory
+
+# Collaboration Files
+SUGARBEE_COLLABORATION_RULES.md

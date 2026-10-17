@@ -24,7 +24,7 @@ current Lua bindings convert values to 8-bit channels. Rectangles and text are o
 | --- | --- |
 | `sugarbee.cls(r, g, b)` | Clear the frame to a color. Missing channels default to 0. |
 | `sugarbee.rect(x, y, w, h, r, g, b, filled)` | Draw a rectangle. Color channels default to 255. `filled` is false when omitted or `false`. |
-| `sugarbee.print(text, x, y, r, g, b, scale)` | Draw text with the built-in 8x8 font. Color defaults to white; `scale` defaults to 1. |
+| `sugarbee.print(text, x, y, r, g, b, scale)` | Draw text with the built-in 8x8 font. Color defaults to white. `scale` is an optional integer scale factor, defaulting to 1; values of 0 or less draw nothing. |
 | `sugarbee.texture_rgba(width, height, bytes)` | Upload packed RGBA8 bytes; returns a texture handle. |
 | `sugarbee.texture_load(path)` | Decode a PNG from the active `.vcart` and return a texture handle. |
 | `sugarbee.sprite(handle, x, y)` | Draw a texture at native pixel size in logical coordinates. |
