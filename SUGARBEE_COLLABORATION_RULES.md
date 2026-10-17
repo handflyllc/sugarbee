@@ -1,4 +1,4 @@
-# Project SugarBee — Custom Ruleset for ChatGPT
+# Project SugarBee — Collaboration Ruleset
 
 ## 1. Project Identity and Goals
 
