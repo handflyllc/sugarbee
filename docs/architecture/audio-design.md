@@ -110,15 +110,107 @@ future discussion topics rather than initial requirements.
 
 ## Sample playback
 
-WAV sound effects remain the tentative starting format. Define supported WAV
-encodings, loading limits, asset lifetime, and playback controls before coding.
+Use eight WAV playback voices, separate from the nine synth voices. These are
+initial budgets to validate on hardware, not measured Pi performance claims.
+A loaded asset holds shared decoded data; each successful playback receives a
+separate opaque handle with its own position, volume, and pan.
 
-Repeated triggers may overlap using separate playback voices sharing loaded
-sound data. Use a bounded sample-voice pool, separate from the nine synth voices.
-When full, decline the new request and return a result the game can inspect.
-Existing playback continues. Exhaustion is an expected condition, not a Guru
-Meditation error or a reason to flood the console. The pool size and result
-representation remain open.
+Illustrative API:
+
+```lua
+local sound = sugarbee.audio.load("assets/laser.wav")
+local playback, reason = sugarbee.audio.play(sound, {
+    loop = false,
+    volume = 0.5,
+    pan = 0.0
+})
+sugarbee.audio.is_playing(playback)
+sugarbee.audio.set_pan(playback, 0.5)
+sugarbee.audio.set_volume(playback, 0.4)
+sugarbee.audio.stop(playback)
+local released, reason = sugarbee.audio.unload(sound)
+```
+
+The illustrated playback options are the defaults. Repeated triggers may overlap.
+When all eight slots are occupied, `play` returns `nil, "voices_full"`; existing
+sounds continue. This is an expected result, not a Guru error or console flood.
+Invalid asset handles, malformed arguments, and out-of-range controls raise
+descriptive Lua errors. Ended playback handles are treated differently:
+
+- `is_playing` returns false after playback finishes.
+- Volume and pan setters return false for ended playback, true when applied.
+- An old playback handle never controls a new sound that reuses its slot.
+- Invalid arguments remain errors even when a playback has ended.
+
+### Playback and stopping states
+
+| State | `is_playing` | `stop` |
+| --- | --- | --- |
+| Playing | true | Begins a brief smoothing fade; returns true |
+| Already stopping | true | Returns false without restarting the fade |
+| Finished | false | Returns false |
+
+A stopping playback retains its slot and keeps its asset in use until the fade
+finishes. Exact fade duration and control changes during stopping remain open.
+
+One-shot playback frees its slot at the end. Whole-sound loops retain one slot
+until stopped or the session ends. Loop boundaries are not automatically
+crossfaded; authors should prepare seamless loops. Seeking, pause/resume,
+playback-speed changes, and custom loop regions are deferred.
+
+`unload` returns `false, "asset_in_use"` while any playback uses the asset;
+otherwise it releases the asset and returns true. Cartridge teardown stops its
+playbacks and releases its assets.
+
+### Initial WAV support
+
+- Uncompressed signed 16-bit PCM WAV, mono or stereo.
+- Sample rates of 22,050, 44,100, or 48,000 Hz.
+- Convert supported assets to a common internal format at load time.
+- Load the complete decoded sound into memory; streaming is deferred.
+- Mono pan distributes sound between stereo outputs. Stereo pan acts as balance:
+  center preserves both channels, left attenuates right, and right attenuates left.
+  The exact pan/balance gain curves remain to be specified.
+
+Missing, malformed, or unsupported files raise descriptive Lua errors.
+
+### Initial memory budgets
+
+| Resource | Testing limit |
+| --- | --- |
+| One decoded WAV asset | 4 MiB |
+| All loaded WAV assets | 32 MiB |
+| Loaded WAV asset count | 64 |
+| Simultaneous WAV playbacks | 8 |
+
+Size limits apply after conversion to the internal format. Overlapping playbacks
+share the asset data. Exceeding the total memory or asset-count budget returns
+`nil` and a checkable reason (reason strings remain to be chosen). Exceeding the
+per-asset limit raises an error identifying that limit.
+
+These memory budgets are for initial testing, not permanent platform limits.
+Incoming file-size limits, temporary conversion-memory bounds, and compatibility
+with the existing cartridge asset-reader limits must be checked before coding.
+Longer WAV background music is a future use case: evaluate increased limits
+versus streaming rather than assuming every track fits the initial budget.
+
+## Audio availability and cartridge lifecycle
+
+Unavailable audio allows silent gameplay and produces one explanatory diagnostic.
+Expose availability to Lua; the query name remains undecided. Asset loading still
+validates and prepares sounds, and synth configuration remains usable.
+WAV playback returns `nil, "audio_unavailable"`; synth note-on returns
+`false, "audio_unavailable"`. Automatic device reconnection is deferred;
+restoring audio initially requires restarting SugarBee.
+
+When Guru Meditation activates, stop WAV and synth voices with a brief fade and
+reject new playback while the cartridge is failed. Exact refusal results remain
+open. This prevents sounds from continuing indefinitely after game logic fails.
+
+On normal application exit, keep audio available during Lua's `shutdown()` callback.
+Then stop voices and release assets in native teardown; do not wait for sounds
+started by that callback to finish. Fade completion and device teardown ordering
+must be implemented without an unbounded wait.
 
 ## Agreed mixing policy
 
@@ -152,8 +244,8 @@ final attenuation remain to be specified. A more sophisticated limiter is deferr
 
 - Audio backend, dependencies, device format, buffering, and latency.
 - Thread-safe communication between Lua/game updates and audio processing.
-- Behavior when no audio device is available or an active device fails.
-- Resource ownership, cartridge teardown, and behavior during Guru Meditation.
+- Detecting an active audio-device failure and transitioning to unavailable audio.
+- Implementing the agreed resource ownership and teardown rules.
 - Parameter validation limits, smoothing, defaults not specified above, and
   exact error/result contracts.
 - Tests for synthesis, bounds, mixing, lifecycle, and real hardware output.
