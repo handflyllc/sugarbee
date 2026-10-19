@@ -1,8 +1,11 @@
-# SugarBee audio — working design
+# SugarBee audio — settled initial design
 
-Status: design agreement only. Audio and the illustrated API are not implemented.
-This document records discussion decisions; it is not an available API reference.
-Names and signatures below are illustrative until implementation is reviewed.
+Status: initial scope and behavioral design settled on 2026-10-18.
+Audio and the illustrated API are not implemented. This is a design checkpoint,
+not an available API reference or a claim of measured hardware performance.
+Names and signatures remain illustrative until implementation review. The
+remaining engineering details below must be resolved before an implementation
+is considered complete; they do not expand the agreed scope.
 
 ## Purpose and scope
 
@@ -58,7 +61,8 @@ Configuration updates only supplied fields, including fields in nested tables.
 Validate the entire request before changing anything. Invalid values and unknown
 fields reject the entire request, with a diagnostic identifying the voice, field,
 and problem. Configuration changes do not implicitly start or retrigger a note.
-Exact error-delivery semantics remain to be finalized.
+Out-of-range values are rejected rather than silently clamped. Exact synth
+error-delivery and success-return semantics remain to be finalized.
 
 ## Voice lifecycle
 
@@ -67,6 +71,13 @@ Exact error-delivery semantics remain to be finalized.
   it replaces the pitch and retriggers the envelope. The precise retrigger
   transition and smoothing remain implementation decisions.
 - `set_pitch` changes frequency without retriggering the envelope.
+- Each `note_on` captures attack, decay, sustain, and release settings for that
+  note, including its later release. Envelope configuration edits apply to the
+  next note; a sustained note may continue indefinitely until released or stopped.
+- Pitch, volume, pan, and filter changes affect the current sound.
+- Waveform and pulse-width changes also affect the current sound without
+  retriggering its envelope. Smooth pulse-width changes and use a brief waveform
+  transition to reduce clicks; transition details remain implementation work.
 - Overlapping synthesized notes require separate explicit voices.
 - `note_off` starts release from the current envelope level. Repeating it during
   release does not restart the fade.
@@ -95,9 +106,34 @@ Retain pulse width while other waveforms are selected and retain filter settings
 while bypassed. Sustain and voice volume use 0–1 values; pan uses -1 (left)
 through 0 (center) to 1 (right). Envelope times are in seconds.
 
-Triangle, saw, pulse, and noise are the initial waveform candidates. Noise
-behavior, frequency and timing bounds, pulse-width limits, filter cutoff bounds,
-and the normalized resonance mapping still require definition.
+The initial waveforms are triangle, saw, pulse, and noise. For noise, frequency
+controls the rate of random-value changes, not a musical pitch. Envelopes,
+filtering, volume, and pan apply as for other waveforms. The random generator,
+noise-value distribution, and scheduling details remain implementation choices.
+
+## Agreed parameter limits
+
+| Parameter | Accepted range |
+| --- | --- |
+| Synth voice number | Integers 1–9 |
+| Pitch / noise change rate | 20–20,000 Hz, also strictly below half the internal sample rate |
+| Pulse width | 0.05–0.95 |
+| Attack, decay, release | 0–10 seconds each |
+| Sustain and voice volume | 0–1 |
+| Pan | -1–1 |
+| Filter cutoff | 20–20,000 Hz, also strictly below half the internal sample rate |
+| Resonance | 0–1; mapping to the filter remains to be specified |
+
+Reject non-finite values (NaN and infinity), invalid voice indices, and values
+outside these ranges. Controls accept fractional values, not only tenths;
+precision follows the implementation's floating-point representation.
+Zero envelope duration means an immediate stage transition; click-reduction
+behavior must be reconciled with that meaning during implementation. The
+10-second limit applies to transitions, not total note duration.
+
+Longer ambience can use WAV loops; externally authored scores remain deferred.
+The internal sample rate and any additional numerical stability margin for the
+filter must be specified and tested before publishing a concrete API contract.
 
 ## Filtering
 
@@ -216,7 +252,11 @@ must be implemented without an unbounded wait.
 
 - Mix using floating-point accumulation.
 - Provide per-voice volume, synth and sample group volumes, and master volume.
+- Synth group, WAV group, and master volume each default to 1.0.
 - Group and master controls use 0–1 values with smoothly applied changes.
+  A value of 1.0 means no additional attenuation at that control, not maximum
+  hardware loudness. Per-voice default volume remains 0.5, and fixed internal
+  headroom attenuation applies independently.
 - Master volume zero mutes output without stopping playback.
 - Reserve fixed internal headroom based on supported voice budgets, not the
   instantaneous number of active voices. Starting a voice must not automatically
@@ -237,8 +277,8 @@ sugarbee.audio.set_master_volume(0.7)
 ```
 
 Fixed headroom does not guarantee that arbitrary resonant signals cannot exceed
-the output range. Group/master defaults, panning law, filter gain handling, and
-final attenuation remain to be specified. A more sophisticated limiter is deferred.
+the output range. Panning law, filter gain handling, and final attenuation
+remain to be specified. A more sophisticated limiter is deferred.
 
 ## Remaining implementation questions
 
@@ -246,8 +286,14 @@ final attenuation remain to be specified. A more sophisticated limiter is deferr
 - Thread-safe communication between Lua/game updates and audio processing.
 - Detecting an active audio-device failure and transitioning to unavailable audio.
 - Implementing the agreed resource ownership and teardown rules.
-- Parameter validation limits, smoothing, defaults not specified above, and
-  exact error/result contracts.
+- Filter mathematics, resonance mapping, aliasing control, internal sample rate,
+  panning law, smoothing durations, envelope curves, and retrigger transitions.
+- Exact error/result contracts, including success results for synth calls,
+  unknown versus ended playback handles, validation/refusal precedence,
+  load-budget reason strings, and control changes during a stop fade.
+- Public names for availability and clipping diagnostics, and their reset rules.
+- Bounded source/temporary memory during decoding and conversion; verify the
+  existing cartridge-reader limits before selecting the internal asset format.
 - Tests for synthesis, bounds, mixing, lifecycle, and real hardware output.
 
 ## Deferred topics
@@ -258,3 +304,16 @@ final attenuation remain to be specified. A more sophisticated limiter is deferr
 - MIDI and possible instrument-provider plugins are distant exploratory topics.
   A built-in general-purpose instrument bank is not a requirement.
 - Higher synth voice counts and more advanced synthesis features.
+
+## Hiatus checkpoint — 2026-10-18
+
+The initial audio design discussion is settled. Resume by reviewing the engineering
+questions above and choosing one small implementation slice; do not treat all
+nine-voice synthesis and WAV playback as one coding iteration. No audio runtime
+code has been added or tested as part of this design work.
+
+Pong Lab remains paused pending two-controller access. Persistent logging and
+Lua sandboxing/execution limits remain separate engine work deferred until Pong
+is complete. Pi DEV/Console deployment and audio performance require hardware
+access. This checkpoint does not schedule those items or revive deferred MIDI,
+composition-format, or advanced synthesis work.
