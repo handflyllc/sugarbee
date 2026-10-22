@@ -4,14 +4,18 @@ A small Lua learning exercise using SugarBee’s existing graphics, input, and t
 
 ## Current behavior
 
-- Move one paddle vertically using Up/Down or W/S.
+- Two players control independent paddles using their controllers’ D-pads.
+- Player 1 can also use Up/Down or W/S on the keyboard.
+- Controllers use input slots 0 and 1, assigned in discovery order.
 - The ball starts in a randomly selected diagonal direction.
-- It bounces off the top, bottom, and right screen edges.
-- A paddle hit reverses horizontal velocity while preserving vertical velocity.
-- A miss is counted when the ball’s left edge reaches the left screen boundary.
-- After a miss, the ball returns to the center and travels right, with a randomized vertical direction.
+- It bounces off the top and bottom screen edges.
+- Either paddle reverses horizontal velocity while preserving vertical velocity.
+- When the ball reaches a left or right screen boundary, the opponent earns one point.
+- After a point, the ball returns to center and travels toward the player who scored, with a randomized vertical direction.
+- First to five points wins, and movement stops.
+- After a win, B on either controller—or keyboard K—resets both scores and paddle positions and starts a new match.
 
-The drawn court is cosmetic. Movement and wall collisions use the full 1280×720 viewport.
+The drawn court is cosmetic. Movement and scoring boundaries use the full 1280×720 viewport.
 
 ## Package and run
 
@@ -26,11 +30,13 @@ Repack after changing the Lua source.
 
 ## Manual checks
 
-- Move the paddle to both vertical limits; it should remain inside the screen.
-- Launch several times to observe different initial ball directions. Repeated directions are normal.
-- Observe bounces at the top, bottom, and right boundaries.
-- Intercept the ball; it should bounce right without changing vertical velocity.
-- Miss the ball; the counter should increase once and the ball should restart from the center toward the right.
-- Miss again; the counter should increase again.
-
-This checkpoint has one paddle and a practice backstop. Two-player controls and competitive scoring are not implemented.
+- Move both paddles independently and simultaneously.
+- Move each paddle to both vertical limits; neither should leave the screen.
+- Observe ball bounces at the top and bottom boundaries.
+- Return the ball with either paddle; vertical velocity should remain unchanged.
+- Miss on each side; only the opponent’s score should increase, once per miss.
+- Confirm each new rally starts at center, traveling toward the player who scored.
+- Reach five points with either player; confirm the correct winner appears and movement stops.
+- Restart after a win using B on each controller in separate tests.
+- Confirm restart clears scores, centers the paddles, and resumes play.
+- Confirm B has no effect during an active match.

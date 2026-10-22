@@ -5,7 +5,9 @@ local paddle_x = 60
 local paddle_y = 300
 local paddle_width = 20
 local paddle_height = 120
-local paddle_speed = 300
+local paddle_speed = 310
+local right_paddle_x = screen_width - paddle_x - paddle_width
+local right_paddle_y = paddle_y
 
 local ball_size = 16
 local ball_x = 632
@@ -13,7 +15,10 @@ local ball_y = 352
 local ball_velocity_y = 240
 local ball_velocity_x = 200
 
-local misses = 0
+local left_score = 0
+local right_score = 0
+local winning_score = 5
+local winner = nil
 
 function init()
     print("Pong Lab: paddle test loaded")
@@ -28,13 +33,51 @@ function init()
 end
 
 function update(dt)
-    if sugarbee.btn("up") then
+    if winner then
+        if sugarbee.btnp("b", 0) or sugarbee.btnp("b", 1) then
+            left_score = 0
+            right_score = 0
+            winner = nil
+
+            paddle_y = (screen_height - paddle_height) / 2
+            right_paddle_y = paddle_y
+
+            ball_x = (screen_width - ball_size) / 2
+            ball_y = (screen_height - ball_size) / 2
+
+            if math.random(0, 1) == 0 then
+                ball_velocity_x = -ball_velocity_x
+            end
+
+            if math.random(0, 1) == 0 then
+                ball_velocity_y = -ball_velocity_y
+            end
+        end
+
+        return
+    end
+
+    if sugarbee.btn("up", 0) then
         paddle_y = paddle_y - paddle_speed * dt
     end
 
-    if sugarbee.btn("down") then
+    if sugarbee.btn("down", 0) then
         paddle_y = paddle_y + paddle_speed * dt
     end
+
+    -- move right paddle using player 2
+    if sugarbee.btn("up", 1) then
+        right_paddle_y = right_paddle_y - paddle_speed * dt
+    end
+
+    if sugarbee.btn("down", 1) then
+        right_paddle_y = right_paddle_y + paddle_speed * dt
+    end
+
+    right_paddle_y = math.max(
+        0,
+        math.min(screen_height - paddle_height, right_paddle_y)
+    )
 
     paddle_y = math.max(
         0,
@@ -55,20 +98,34 @@ function update(dt)
     end
 
     -- screen boundary check - horizontal
+    local point_scored = false
+
     if ball_x + ball_size >= screen_width then
-        ball_x = screen_width - ball_size
-        ball_velocity_x = -ball_velocity_x
+        left_score = left_score + 1
+        ball_velocity_x = -math.abs(ball_velocity_x)
+        point_scored = true
     elseif ball_x <= 0 then
-        -- record a point
-        misses = misses + 1
-        -- return ball to center of the screen
+        right_score = right_score + 1
+        ball_velocity_x = math.abs(ball_velocity_x)
+        point_scored = true
+    end
+
+    -- start the next rally after either player scores
+    if point_scored then
         ball_x = (screen_width - ball_size) / 2
         ball_y = (screen_height - ball_size) / 2
-        ball_velocity_x = math.abs(ball_velocity_x)
-        -- reset random trajectory
+
         if math.random(0, 1) == 0 then
             ball_velocity_y = -ball_velocity_y
         end
+
+        if left_score >= winning_score then
+            winner = "LEFT"
+        elseif right_score >= winning_score then
+            winner = "RIGHT"
+        end
+
+        return
     end
 
     -- detect bounce off left paddle
@@ -79,6 +136,17 @@ function update(dt)
         and ball_y + ball_size > paddle_y then
 
         ball_x = paddle_x + paddle_width
+        ball_velocity_x = -ball_velocity_x
+    end
+
+    -- detect bounce off right paddle
+    if ball_velocity_x > 0
+        and ball_x < right_paddle_x + paddle_width
+        and ball_x + ball_size > right_paddle_x
+        and ball_y < right_paddle_y + paddle_height
+        and ball_y + ball_size > right_paddle_y then
+
+        ball_x = right_paddle_x - ball_size
         ball_velocity_x = -ball_velocity_x
     end
 
@@ -116,7 +184,11 @@ function draw()
     )
 
     -- draw right paddle
-    -- TBD
+    sugarbee.rect(
+        right_paddle_x, math.floor(right_paddle_y),
+        paddle_width, paddle_height,
+        80, 220, 160, true
+    )
 
     -- draw ball
     sugarbee.rect(
@@ -127,5 +199,12 @@ function draw()
 
     sugarbee.print("PONG LAB - PADDLE TEST", 160, 30)
     sugarbee.print("MOVE: UP/DOWN OR W/S", 160, 60)
-    sugarbee.print("MISSES: " .. misses, 160, 90)
+    sugarbee.print("LEFT: " .. left_score .. "   RIGHT: " .. right_score, 160, 90)
+
+    if winner then
+        sugarbee.print(
+            winner .. " WINS! PRESS B TO RESTART",
+            160, 120
+        )
+    end
 end
