@@ -13,5 +13,17 @@ SugarBee is in the prototyping stage. Please keep patches small and focused.
 There is no stable public ABI yet. Changes to the cartridge format require
 careful review and corresponding format tests.
 
-The project's open-source license is not selected yet; do not submit
-third-party code without checking its provenance and license compatibility.
+## Licensing and provenance
+
+SugarBee's original code is available under the [zlib license](LICENSE).
+Contribute original project code under those terms, and submit only material
+that you have the right to contribute. Preserve applicable copyright and
+license notices; do not relabel third-party material as SugarBee-owned code.
+
+Before adding third-party code, fonts, images, or other assets, verify their
+source and applicable terms. Include the source URL, a pinned version or
+revision where available, required notices, and any local adaptations. Record
+that information alongside the material or in `third_party/`; the
+[embedded font provenance](third_party/font8x8/README.md) is an example.
+Dependencies and third-party assets retain their own terms, which must be
+compatible with their intended distribution and use.

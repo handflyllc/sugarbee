@@ -73,6 +73,12 @@ if(SUGARBEE_BUILD_HOST)
 endif()
 
 if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
+    add_executable(test_font tests/test_font.c)
+    target_link_libraries(test_font PRIVATE sugarbee_graphics PkgConfig::SDL2)
+    sugarbee_warnings(test_font)
+    add_test(NAME font_smoke COMMAND test_font)
+    set_tests_properties(font_smoke PROPERTIES ENVIRONMENT "SDL_VIDEODRIVER=dummy")
+
     add_executable(test_graphics tests/test_graphics.c)
     target_link_libraries(test_graphics PRIVATE sugarbee_graphics PkgConfig::SDL2)
     sugarbee_warnings(test_graphics)

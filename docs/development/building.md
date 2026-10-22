@@ -13,10 +13,11 @@ ctest --test-dir build --output-on-failure
 
 Expected executables (when dependencies are available):
 
-- `build/sugarbee` — original SDL2/Lua host prototype
+- `build/sugarbee` — SDL2/Lua host prototype
 - `build/sbee-pack` — Linux virtual cartridge packager
 - `build/test_vcart` — header parser tests
 - `build/test_timing` — pure-C fixed-timestep tests
+- `build/test_font` — rendered-pixel font regression test (when host tests are enabled)
 
 The same source can be built with release optimization:
 
@@ -59,11 +60,31 @@ project metadata** and supply it with `--uuid <the-uuid>` for future builds,
 so save files remain associated with the same game. A project manifest will
 manage this automatically in a later milestone.
 
-The existing host uses SDL2's desktop window through the C graphics backend.
-Exit with the window close
-control. Fixed simulation timing is implemented; game shutdown callbacks,
-ZIP bomb limits, and process isolation are **not yet implemented**. Controller discovery,
-hotplug, and a keyboard development fallback are implemented, but not analog input.
+The host uses SDL2's desktop window through the C graphics backend. Exit with
+the window close control. Fixed simulation timing, controller discovery,
+hotplug, and a keyboard development fallback are implemented; analog input
+is not yet implemented.
+
+On normal exit after successful cartridge initialization, the host invokes an
+optional Lua `shutdown()` before closing Lua and destroying input/graphics
+services. It skips that callback while Guru Meditation is active. Errors in
+`shutdown()` are reported to the console and native cleanup continues. The
+callback has no execution time limit. See the [lifecycle reference](../api/timing.md)
+and [manual shutdown regression procedure](../../tests/shutdown/README.md).
+
+### Cartridge resource limits
+
+The same bounded ZIP reader loads `main.lua` and requested assets. Its current
+limits are a 64 MiB ZIP payload, 16 MiB per requested uncompressed member,
+128 MiB total declared uncompressed size, and 1024 archive entries. It scans
+the directory, validates paths, and verifies the requested member's actual
+read length and CRC. It reads members into memory rather than extracting
+files onto the host filesystem. See [asset limits](../api/assets.md) for details.
+
+These are safeguards against excessive ZIP expansion, not comprehensive
+ZIP-bomb protection or process isolation. There is no decompression-time
+budget or aggregate per-game memory budget. Lua still opens its standard
+libraries; sandboxing and complete script execution limits are unimplemented.
 Avoid running untrusted cartridges.
 
 ## Graphics regression check
@@ -72,14 +93,26 @@ The CTest suite includes a `graphics_smoke` test when host dependencies are
 installed. It uses the SDL dummy video driver and checks the graphics backend
 without opening a visible window. This is not a replacement for the manual
 cartridge test above: verify that the dark blue background, gold rectangle,
-and `SUGARBEE` text still render after this refactor. Verify the no-cartridge
+and `SUGARBEE` text still render correctly. Verify the no-cartridge
 Guru screen as well. See [graphics API](../api/graphics.md).
+
+The built-in font now covers printable ASCII, including real lowercase and
+punctuation, using a pinned font8x8 source with an upstream public-domain
+declaration. Attribution and the bit-order adaptation are recorded in
+[font provenance](../../third_party/font8x8/README.md). The 8x8 character cells,
+integer scaling, and newline spacing are unchanged; glyph shapes differ from
+the earlier template font. `font_smoke` checks orientation, lowercase,
+punctuation, scaling, newline placement, and unsupported-character fallback.
+This is printable-ASCII rendering, not Unicode/UTF-8 decoding.
+
+Guru error messages wrap within the viewport and show a continuation notice
+when storage or display limits omit text. Complete supplied diagnostics go to
+standard error. Follow the [manual Guru text test](../../tests/guru-text/README.md)
+for word wrapping and vertical overflow checks. The shutdown and Guru test
+cartridges are manual checks, not CTest entries.
 
 ## Known issues / limitations
 
-- The bitmap font recovered from the older template implements ASCII 32–95;
-  current fallback glyphs display lowercase as uppercase and map some other
-  punctuation to `?` until a complete font is added.
 - The graphics Lua bindings now call the language-neutral C graphics service,
   but Lua bindings still reside in `src/main.c`. Input polling and controller handling now live in
   `src/sb_input_sdl.c`, with a language-neutral `sb_input.h` interface.
@@ -142,9 +175,9 @@ black-and-gold sprite with transparent surroundings. Move it using the arrow
 keys, WASD, or a controller D-pad. The `init()` callback creates a single
 RGBA texture; `draw()` reuses it each frame.
 
-The example generates pixel data in Lua and does **not** yet read images from
-cartridge files. File-based cartridge assets, decoding and sprite transforms
-are planned for separate milestones. See [graphics API](../api/graphics.md).
+This example generates pixel data in Lua. File-based PNG loading and sprite
+transforms are also implemented; the asset and sprite-sheet examples below
+exercise those paths. See [graphics API](../api/graphics.md).
 
 `ctest --test-dir build --output-on-failure` also runs `texture_smoke` using
 the SDL dummy driver, checking texture handle creation, invalid byte lengths,

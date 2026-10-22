@@ -38,9 +38,9 @@ Engine changes, documentation, and relevant tests should be updated in the same
 pull request. Release and developer builds share a source tree; appliance-image
 profiles are future work.
 
-**Licensing:** The `LICENSE` placeholder has not yet been populated with an
-approved open-source license. Please settle licensing before public releases
-or accepting third-party code contributions.
+**Licensing:** SugarBee's original code is available under the
+[zlib license](LICENSE). Third-party material retains its own terms;
+see the [embedded font provenance](third_party/font8x8/README.md).
 
 **Milestone 3C preview:** Crop, scale, mirror and animate a sprite sheet from
 one cartridge PNG using `sugarbee.sprite_region(...)`. Try
@@ -51,3 +51,6 @@ still work as before.
 **Milestone 3B preview:** Load PNG assets from cartridges using
 `sugarbee.texture_load("assets/bee.png")`. See `examples/asset-demo/` and
 [`docs/api/assets.md`](docs/api/assets.md). Requires `libpng-dev` for the host.
+
+The embedded font has separate documented provenance and an upstream public-domain
+declaration; see [font attribution](third_party/font8x8/README.md).

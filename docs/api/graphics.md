@@ -63,8 +63,9 @@ movement limits, cameras, and world boundaries when needed.
 For an example of primitive drawing and text order, see
 [`examples/graphics-demo/main.lua`](../../examples/graphics-demo/main.lua).
 
-The bitmap font is incomplete: the imported historical font covers only part
-of ASCII, with temporary fallback glyphs for the remaining printable characters.
+The bitmap font covers printable ASCII, including lowercase letters. Its source,
+public-domain declaration, and bit-order adaptation are documented in
+[`third_party/font8x8/README.md`](../../third_party/font8x8/README.md).
 A newline advances 10 scaled logical pixels and resets the text cursor to its
 initial x position. Unsupported characters are rendered as `?`.
 

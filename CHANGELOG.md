@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Replaced the unattributed template font with a pinned, upstream-declared
+  public-domain font8x8 table, preserving attribution and documenting provenance.
+  Added lowercase and remaining printable ASCII glyphs; retained 8x8 metrics.
+  Removed the old bitmap copy from the historical template.
+
 - Added Guru Meditation message wrapping at spaces, splitting of long words,
   and a continuation notice when message storage or screen height is exceeded.
   Complete supplied diagnostics are written to standard error before the
