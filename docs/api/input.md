@@ -38,6 +38,28 @@ end
 Movement now uses a nominal fixed 60 Hz simulation timestep. `dt` is measured
 in seconds and is currently always 1/60. See [timing](timing.md).
 
+## Host pause menu
+
+Start on any connected controller, or Enter on the keyboard, opens the
+host-controlled pause menu. Resume is selected each time the menu opens.
+
+- Up/Down selects Resume or Exit Game.
+- A confirms the selected action.
+- B or Start resumes play regardless of the selection.
+- Keyboard equivalents are Up/Down or W/S, J to confirm, and K to resume.
+
+Start is reserved for the host. Cartridge calls to `sugarbee.btn("start")`
+and `sugarbee.btnp("start")` always return false.
+
+While paused, the host stops calling Lua `update()` and `draw()`. It displays
+the retained game image beneath the menu. Menu input is consumed by the host;
+buttons still held when resuming remain hidden from the cartridge until
+released.
+
+Exit Game closes SugarBee through its normal shutdown path, including the
+optional Lua `shutdown()` callback when eligible. Returning to a cartridge
+launcher and powering off the operating system are not implemented.
+
 ## Button mapping
 
 SDL's standardized GameController buttons map to SugarBee's logical buttons:
@@ -68,8 +90,9 @@ to launch a cartridge. The keyboard fallback only applies to player 0.
 - `sb_input_poll()` drains SDL's event queue once per host loop, processes
   input and device changes, and returns `false` for quit/window close. It also
   buffers button-press edges until the next simulation update.
-- The host calls `sb_input_begin_update()` before each `update(dt)` and
-  `sb_input_end_update()` after it, consuming a press at most once.
+- The host calls `sb_input_begin_update()` and `sb_input_end_update()` around
+  each fixed host step, consuming a press at most once. During pause these
+  steps continue handling menu input, but do not invoke Lua `update(dt)`.
 - `sb_input_down()` returns the most recently polled held state;
   `sb_input_pressed()` reports an edge during the active simulation update.
 - `sb_input_destroy()` closes opened controllers before SDL shutdown.

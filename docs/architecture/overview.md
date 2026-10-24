@@ -37,6 +37,13 @@ counters and invokes Lua `update(dt)` with a fixed 1/60-second step. The host
 still owns Lua, cartridge loading, and the main loop; these are not yet
 independently modularized.
 
+The graphics backend also owns a retained game-frame render-target texture.
+During gameplay, Lua drawing targets that texture; the host then copies it
+to the window. During pause, the host reuses the retained image without
+calling Lua update or draw. Host overlays are drawn onto the window, leaving
+the saved game image unchanged. The selected SDL renderer must support
+render-target textures.
+
 The same C source is intended to compile on Debian 12 x86_64 and a 64-bit
 Raspberry Pi 4 Linux environment. This is **source portability**, not a shared
 native binary. The initial game cartridge runs Lua code, which is independent
@@ -53,7 +60,12 @@ On normal application exit, the host invokes an optional Lua `shutdown()`
 callback after successful cartridge initialization, unless Guru Meditation
 is active. It runs before Lua, input, and graphics are destroyed. Callback
 errors are reported to the console, and native cleanup continues.
-Cartridge switching and returning to a menu are not implemented.
+
+The host pause menu offers Resume and Exit Game. Exit Game uses the normal
+application shutdown path. Cartridge switching and returning to a cartridge
+launcher are not implemented.
+
+
 
 ## Agreed design goals that are not yet features
 

@@ -5,8 +5,8 @@ The game uses these Lua callbacks:
 | Callback | When it runs |
 | --- | --- |
 | `init()` | Once after a cartridge is successfully loaded |
-| `update(dt)` | Zero or more fixed simulation steps per host render iteration |
-| `draw()` | Once per host render iteration while the game is healthy |
+| `update(dt)` | Zero or more fixed simulation steps per host render iteration while healthy and unpaused |
+| `draw()` | Once per host render iteration while healthy and unpaused |
 | `shutdown()` | Optional; called once during normal application exit after successful cartridge initialization, unless Guru Meditation is active |
 
 `dt` is **always 1/60 second** (`0.016666...`) at present, regardless of
@@ -20,10 +20,11 @@ Meditation is active. An absent or non-function `shutdown` value is
 ignored. Errors raised by the callback are reported to the console;
 native cleanup still continues.
 
-Currently, closing the application ends the cartridge session. Returning
-to a menu or switching cartridges is not implemented. Callback execution
-has no time limit, so a shutdown callback that never returns can prevent
-normal exit.
+Closing the window or selecting Exit Game from the host pause menu ends the
+cartridge session and closes SugarBee. Returning to a cartridge launcher or
+switching cartridges is not implemented. Callback execution has no time limit,
+so a callback that never returns can prevent the host from processing menu
+input or completing normal exit.
 
 ```lua
 local x = 100
@@ -52,6 +53,19 @@ end
 - Rendering currently takes place once per host iteration with SDL VSync
   requested. Rendering frequency and simulation frequency are not the same
   guarantee. Interpolation between simulation states is **not implemented**.
+
+## Host pause behavior
+
+While the host menu is open, neither Lua `update()` nor `draw()` is called.
+The host continues polling input and advancing its scheduler, so paused time
+does not accumulate into catch-up updates on resume.
+
+The graphics backend retains the last game frame and copies it to the window
+before drawing the host menu. Menu overlays do not modify the retained image.
+
+The input guarantees below describe normal gameplay. Start is host-reserved,
+menu presses are consumed, and buttons held across resume are suppressed until
+released. See [input](input.md#host-pause-menu) for controls.
 
 ## Input at update boundaries
 
