@@ -2,6 +2,13 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Separated cartridge cleanup from host shutdown. The cartridge-ending
+  operation invokes the eligible Lua shutdown callback, closes Lua, releases
+  cartridge textures, and clears session flags. Texture cleanup preserves
+  host graphics resources and invalidates old handles. Added regression
+  checks for repeated cleanup, retained-frame preservation, and texture reuse.
+  Exit Game still closes the application; returning to a launcher is pending.
+
 - Added a host-controlled pause menu with Resume and Exit Game, operated by
   any controller or the keyboard. Start is now host-reserved and unavailable
   to cartridge input queries. Pause stops Lua update and draw callbacks,

@@ -625,14 +625,29 @@ static void call_lua_shutdown(void) {
     }
 }
 
-void shutdown_engine(void) {
+static void end_cartridge(void) {
     call_lua_shutdown();
 
-    if (g_engine.L) lua_close(g_engine.L);
+    if (g_engine.L) {
+        lua_close(g_engine.L);
+        g_engine.L = NULL;
+    }
+
+    sb_graphics_clear_cartridge_textures(g_engine.graphics);
+
+    g_engine.cart_initialized = false;
+    g_engine.cart_loaded = false;
+    g_engine.cartridge_path = NULL;
+}
+
+void shutdown_engine(void) {
+    end_cartridge();
+
     sb_input_destroy(g_engine.input);
     sb_graphics_destroy(g_engine.graphics);
     SDL_Quit();
 }
+
 
 int main(int argc, char* argv[]) {
     if (!init_engine()) {

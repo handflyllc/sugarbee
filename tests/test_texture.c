@@ -105,7 +105,36 @@ int main(void) {
     CHECK(!sb_graphics_sprite(gfx, first, 0, 0));
     CHECK(sb_graphics_sprite(gfx, next, 10, 10));
     sb_graphics_present(gfx);
-    /* Intentionally leave next alive to test graphics-context cleanup. */
+    /* Clear multiple cartridge textures without destroying the host frame. */
+    sb_texture_t extra = sb_graphics_texture_rgba(gfx, 2, 2, pixels, sizeof(pixels));
+    CHECK(extra != SB_TEXTURE_INVALID);
+
+    CHECK(sb_graphics_begin_game_frame(gfx));
+    sb_graphics_clear(gfx, 12, 34, 56);
+    CHECK(sb_graphics_show_game_frame(gfx));
+
+    sb_graphics_clear_cartridge_textures(gfx);
+
+    CHECK(!sb_graphics_sprite(gfx, next, 0, 0));
+    CHECK(!sb_graphics_sprite(gfx, extra, 0, 0));
+    CHECK(!sb_graphics_texture_destroy(gfx, next));
+
+    /* Repeating cleanup should be harmless. */
+    sb_graphics_clear_cartridge_textures(gfx);
+
+    CHECK(sb_graphics_show_game_frame(gfx));
+    CHECK(pixel_rgb(renderer, 0, 0, 12, 34, 56));
+
+    sb_texture_t replacement = sb_graphics_texture_rgba(gfx, 2, 2, pixels, sizeof(pixels));
+    CHECK(replacement != SB_TEXTURE_INVALID);
+    CHECK(replacement != first && replacement != next && replacement != extra);
+    CHECK(!sb_graphics_sprite(gfx, next, 0, 0));
+    CHECK(!sb_graphics_sprite(gfx, extra, 0, 0));
+    CHECK(sb_graphics_sprite(gfx, replacement, 10, 10));
+    CHECK(pixel_rgb(renderer, 10, 10, 255, 0, 0));
+
+    /* Leave replacement alive to test final graphics-context cleanup. */
+
     sb_graphics_destroy(gfx);
     SDL_Quit();
     return 0;
