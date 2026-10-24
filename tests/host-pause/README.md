@@ -25,11 +25,27 @@ Run these checks with two controllers and the keyboard.
 
 ## Exit and error handling
 
-- Select Exit Game with each controller and with keyboard J in separate runs.
-  SugarBee should close.
+- Select Exit Game with each controller and keyboard J in separate runs.
+  The idle host screen should appear and the window should remain open.
+- Confirm Start and directions have no effect on the idle screen.
+- Close the idle host with a fresh B press or keyboard K.
 - Run the shutdown-test cartridge in its normal case and exit through the
   menu. The callback's entered/completed messages should each appear once.
+  Closing the idle host afterward must not print them again.
 - Run an existing Guru test case and confirm its error screen still displays.
+
+## Relaunch
+
+- Score points in Pong, exit to the host, and press A or keyboard J.
+  Pong should start with zero scores and fresh paddle and ball state.
+- Repeat exit/relaunch several times without closing SugarBee.
+- Hold a direction while confirming relaunch. The paddle should remain still
+  until that direction is released and pressed again.
+- Repeat relaunch checks with both controllers and the keyboard.
+- With the shutdown-test normal case, confirm one initialization message per
+  launch and one pair of shutdown messages per cartridge exit.
+- Closing the idle host must not invoke the cartridge shutdown callback again.
+- Confirm B or keyboard K still closes the idle host.
 
 ## Automated coverage
 

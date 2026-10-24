@@ -71,6 +71,9 @@ bool sb_graphics_sprite_region(sb_graphics_t *graphics, sb_texture_t texture,
 /* Release a texture. Returns false for unknown/stale handles. */
 bool sb_graphics_texture_destroy(sb_graphics_t *graphics, sb_texture_t texture);
 
+/* Release all cartridge texture handles; preserve host graphics resources. */
+void sb_graphics_clear_cartridge_textures(sb_graphics_t *graphics);
+
 /* Select and clear the retained game frame for fresh cartridge drawing. */
 bool sb_graphics_begin_game_frame(sb_graphics_t *graphics);
 

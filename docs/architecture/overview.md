@@ -56,14 +56,29 @@ in the same pull request. All build profiles share one source tree. CMake's
 Debug/Release modes currently control compiler builds; separate developer and
 release console *images* have not been built yet.
 
-On normal application exit, the host invokes an optional Lua `shutdown()`
-callback after successful cartridge initialization, unless Guru Meditation
-is active. It runs before Lua, input, and graphics are destroyed. Callback
-errors are reported to the console, and native cleanup continues.
+When an initialized cartridge session ends, the host invokes its optional
+Lua `shutdown()` callback unless Guru Meditation is active. The callback
+runs before Lua and cartridge textures are released, while input and graphics
+services remain available. Callback errors are reported to the console,
+and cleanup continues.
 
-The host pause menu offers Resume and Exit Game. Exit Game uses the normal
-application shutdown path. Cartridge switching and returning to a cartridge
-launcher are not implemented.
+The host pause menu offers Resume and Exit Game. Exit Game requests a
+transition that the main loop handles after finishing its current input
+step. `end_cartridge()` invokes the eligible shutdown callback, closes Lua,
+releases cartridge textures, and clears session and pause state.
+
+The host then displays an idle screen without calling cartridge update or
+draw callbacks. Its window, renderer, retained-frame texture, and controllers
+remain alive. B or keyboard K closes the idle host.
+
+A or keyboard J requests relaunch of the startup cartridge. The host retains
+the argv-owned startup path separately from the active session path.
+`start_cartridge()` creates a fresh Lua state and initializes the cartridge.
+Launch input is consumed and held buttons are suppressed until released.
+
+Cartridge discovery and selection are not implemented. Starting without a
+cartridge argument still uses the no-cartridge Guru screen, and failed launches
+still display Guru Meditation.
 
 
 

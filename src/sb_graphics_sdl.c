@@ -306,3 +306,16 @@ bool sb_graphics_texture_destroy(sb_graphics_t *graphics, sb_texture_t texture) 
     slot->generation++;
     return true;
 }
+
+void sb_graphics_clear_cartridge_textures(sb_graphics_t *graphics) {
+    if (!graphics) return;
+
+    for (size_t i = 0; i < graphics->slot_count; ++i) {
+        texture_slot_t *slot = &graphics->slots[i];
+        if (!slot->texture) continue;
+
+        sb_texture_t handle = ((uint32_t)slot->generation << 16) | (uint32_t)(i + 1);
+
+        sb_graphics_texture_destroy(graphics, handle);
+    }
+}

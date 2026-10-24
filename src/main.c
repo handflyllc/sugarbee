@@ -49,14 +49,18 @@ typedef struct {
     // Active Cartridge Data
     vcart_header_t current_cart;
     bool cart_loaded;
+    bool cartridge_exit_requested;
     bool cart_initialized;
     const char *cartridge_path;  /* argv-owned, alive for the host lifetime */
+    const char *startup_cartridge_path; /* argv-owned; survives session cleanup */
+    bool cartridge_launch_requested;
 } sugarbee_engine_t;
 
 static sugarbee_engine_t g_engine = {0};
 
 void trigger_guru_meditation(uint32_t code, const char* title, const char* message, const char* trace);
 void render_guru_meditation(void);
+static void end_cartridge(void);
 
 // --- CARTRIDGE LOADER ROUTINE ---
 
@@ -434,6 +438,39 @@ void call_lua_global_function(const char* func_name, bool with_dt, double dt) {
     }
 }
 
+static bool start_cartridge(const char *filepath) {
+    /* A new session must not overwrite an existing Lua state. */
+    if (!filepath || g_engine.L) return false;
+
+    g_engine.L = luaL_newstate();
+    if (!g_engine.L) {
+        trigger_guru_meditation(
+            0x00000004,
+            "LUA INITIALIZATION FAILED",
+            "Could not create a Lua state for the cartridge.",
+            NULL);
+        return false;
+    }
+
+    luaL_openlibs(g_engine.L);
+    register_sugarbee_api(g_engine.L);
+
+    if (!load_virtual_cartridge(filepath)) {
+        end_cartridge();
+        return false;
+    }
+
+    call_lua_global_function("init", false, 0.0);
+    g_engine.cart_initialized = !g_engine.guru_active;
+
+    if (!g_engine.cart_initialized) {
+        end_cartridge();
+        return false;
+    }
+
+    return true;
+}
+
 bool init_engine(void) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0) return false;
 
@@ -443,11 +480,6 @@ bool init_engine(void) {
 
     g_engine.input = sb_input_create();
     if (!g_engine.input) return false;
-
-    g_engine.L = luaL_newstate();
-    if (!g_engine.L) return false;
-    luaL_openlibs(g_engine.L);
-    register_sugarbee_api(g_engine.L);
 
     g_engine.is_running = true;
     return true;
@@ -507,8 +539,18 @@ void main_loop(void) {
 
                 bool pause_changed = false;
 
+                /* Idle-host controls: B closes; A relaunches. */
+                if (!g_engine.cart_loaded) {
+                    if (back_pressed) {
+                        g_engine.is_running = false;
+                    } else if (confirm_pressed &&
+                               g_engine.startup_cartridge_path) {
+                        g_engine.cartridge_launch_requested = true;
+                    }
+                }
+
                 /* Pause toggle block */
-                if (start_pressed) {
+                if (g_engine.cart_loaded && start_pressed) {
                     g_engine.paused = !g_engine.paused;
                     pause_changed = true;
 
@@ -527,7 +569,7 @@ void main_loop(void) {
                             g_engine.paused = false;
                             pause_changed = true;
                         } else if (g_engine.pause_selection == PAUSE_MENU_EXIT) {
-                            g_engine.is_running = false;
+                            g_engine.cartridge_exit_requested = true;
                         }
                     } else if (up_pressed && !down_pressed) {
                         g_engine.pause_selection = PAUSE_MENU_RESUME;
@@ -542,29 +584,61 @@ void main_loop(void) {
                         bool down = sb_input_down(g_engine.input, player, (sb_button_t)button);
                         bool pressed = sb_input_pressed(g_engine.input, player, (sb_button_t)button);
 
-                        if (g_engine.paused || pause_changed) {
+                        if (g_engine.paused || pause_changed ||
+                            g_engine.cartridge_launch_requested) {
                             g_engine.blocked_buttons[player][button] = down || pressed;
                         } else if (!down && !pressed) {
                             g_engine.blocked_buttons[player][button] = false;
                         }
                     }
                 }
-
-                if (!g_engine.paused && !pause_changed) {
+                if (g_engine.cart_loaded && !g_engine.paused && !pause_changed) {
                     call_lua_global_function(
                         "update", true, sb_timing_step_seconds());
                 }
 
                 sb_input_end_update(g_engine.input);
 
-                if (!g_engine.is_running || g_engine.guru_active) break;
+                if (!g_engine.is_running || g_engine.guru_active ||
+                    g_engine.cartridge_exit_requested ||
+                    g_engine.cartridge_launch_requested) {
+                    break;
+                }
             }
         }
 
         if (!g_engine.is_running) break;
 
+        if (g_engine.cartridge_exit_requested) {
+            end_cartridge();
+            sb_timing_reset(&timing);
+            last_counter = SDL_GetPerformanceCounter();
+        } else if (g_engine.cartridge_launch_requested) {
+            g_engine.cartridge_launch_requested = false;
+            start_cartridge(g_engine.startup_cartridge_path);
+            sb_timing_reset(&timing);
+            last_counter = SDL_GetPerformanceCounter();
+        }
+
         if (g_engine.guru_active) {
             render_guru_meditation();
+        } else if (!g_engine.cart_loaded) {
+            sb_graphics_clear(g_engine.graphics, 20, 20, 20);
+            sb_graphics_text(g_engine.graphics,
+                             "SugarBee", 512, 260,
+                             255, 220, 80, 4);
+            sb_graphics_text(g_engine.graphics,
+                             "No cartridge running", 480, 340,
+                             255, 255, 255, 2);
+            if (g_engine.startup_cartridge_path) {
+                sb_graphics_text(g_engine.graphics,
+                                 "A / J: Relaunch cartridge", 448, 390,
+                                 255, 255, 255, 2);
+            }
+
+            sb_graphics_text(g_engine.graphics,
+                             "B / K: Close SugarBee", 480, 430,
+                             255, 255, 255, 2);
         } else {
             if (!g_engine.paused) {
                 if (!sb_graphics_begin_game_frame(g_engine.graphics)) {
@@ -625,14 +699,32 @@ static void call_lua_shutdown(void) {
     }
 }
 
-void shutdown_engine(void) {
+static void end_cartridge(void) {
     call_lua_shutdown();
 
-    if (g_engine.L) lua_close(g_engine.L);
+    if (g_engine.L) {
+        lua_close(g_engine.L);
+        g_engine.L = NULL;
+    }
+
+    sb_graphics_clear_cartridge_textures(g_engine.graphics);
+
+    g_engine.cart_initialized = false;
+    g_engine.cart_loaded = false;
+    g_engine.cartridge_path = NULL;
+    g_engine.cartridge_exit_requested = false;
+    g_engine.paused = false;
+    g_engine.pause_selection = PAUSE_MENU_RESUME;
+}
+
+void shutdown_engine(void) {
+    end_cartridge();
+
     sb_input_destroy(g_engine.input);
     sb_graphics_destroy(g_engine.graphics);
     SDL_Quit();
 }
+
 
 int main(int argc, char* argv[]) {
     if (!init_engine()) {
@@ -641,11 +733,8 @@ int main(int argc, char* argv[]) {
     }
 
     if (argc > 1) {
-        // Load target cartridge passed via command line
-        if (load_virtual_cartridge(argv[1])) {
-            call_lua_global_function("init", false, 0.0);
-            g_engine.cart_initialized = !g_engine.guru_active;
-        }
+        g_engine.startup_cartridge_path = argv[1];
+        start_cartridge(g_engine.startup_cartridge_path);
     } else {
         trigger_guru_meditation(0x00000000, "NO CARTRIDGE INSERTED", "Please specify a .vcart path: ./sugarbee game.vcart", NULL);
     }
