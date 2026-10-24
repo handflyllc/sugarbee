@@ -25,10 +25,13 @@ Run these checks with two controllers and the keyboard.
 
 ## Exit and error handling
 
-- Select Exit Game with each controller and with keyboard J in separate runs.
-  SugarBee should close.
+- Select Exit Game with each controller and keyboard J in separate runs.
+  The idle host screen should appear and the window should remain open.
+- Confirm Start, directions, and A have no effect on the idle screen.
+- Close the idle host with a fresh B press or keyboard K.
 - Run the shutdown-test cartridge in its normal case and exit through the
   menu. The callback's entered/completed messages should each appear once.
+  Closing the idle host afterward must not print them again.
 - Run an existing Guru test case and confirm its error screen still displays.
 
 ## Automated coverage

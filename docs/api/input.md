@@ -56,9 +56,13 @@ the retained game image beneath the menu. Menu input is consumed by the host;
 buttons still held when resuming remain hidden from the cartridge until
 released.
 
-Exit Game closes SugarBee through its normal shutdown path, including the
-optional Lua `shutdown()` callback when eligible. Returning to a cartridge
-launcher and powering off the operating system are not implemented.
+Exit Game ends the cartridge session, invokes the optional Lua `shutdown()`
+callback when eligible, and returns to an idle host screen. The window and
+controllers remain available. On that screen, B on any controller or keyboard
+K closes SugarBee; other gameplay controls have no effect.
+
+Cartridge selection, launching another cartridge from the idle host, and
+powering off the operating system are not implemented.
 
 ## Button mapping
 

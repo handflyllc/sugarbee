@@ -61,9 +61,16 @@ callback after successful cartridge initialization, unless Guru Meditation
 is active. It runs before Lua, input, and graphics are destroyed. Callback
 errors are reported to the console, and native cleanup continues.
 
-The host pause menu offers Resume and Exit Game. Exit Game uses the normal
-application shutdown path. Cartridge switching and returning to a cartridge
-launcher are not implemented.
+The host pause menu offers Resume and Exit Game. Exit Game requests a
+transition that the main loop handles after finishing its current input
+step. `end_cartridge()` invokes the eligible shutdown callback, closes Lua,
+releases cartridge textures, and clears session and pause state.
+
+The host then displays an idle screen without calling cartridge update or
+draw callbacks. Its window, renderer, retained-frame texture, and controllers
+remain alive. B or keyboard K closes the idle host. Cartridge selection and
+relaunch are not implemented; starting without a cartridge argument still
+uses the existing no-cartridge Guru screen.
 
 
 

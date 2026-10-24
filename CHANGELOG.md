@@ -7,7 +7,8 @@
   cartridge textures, and clears session flags. Texture cleanup preserves
   host graphics resources and invalidates old handles. Added regression
   checks for repeated cleanup, retained-frame preservation, and texture reuse.
-  Exit Game still closes the application; returning to a launcher is pending.
+  Exit Game now returns to an idle host screen; B or keyboard K closes the
+  host. Cartridge selection and relaunch remain pending.
 
 - Added a host-controlled pause menu with Resume and Exit Game, operated by
   any controller or the keyboard. Start is now host-reserved and unavailable

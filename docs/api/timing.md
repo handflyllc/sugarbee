@@ -7,7 +7,7 @@ The game uses these Lua callbacks:
 | `init()` | Once after a cartridge is successfully loaded |
 | `update(dt)` | Zero or more fixed simulation steps per host render iteration while healthy and unpaused |
 | `draw()` | Once per host render iteration while healthy and unpaused |
-| `shutdown()` | Optional; called once during normal application exit after successful cartridge initialization, unless Guru Meditation is active |
+| `shutdown()` | Optional; called once when an initialized cartridge session ends, unless Guru Meditation is active |
 
 `dt` is **always 1/60 second** (`0.016666...`) at present, regardless of
 actual renderer speed. Lua functions declared as `update()` continue to work:
@@ -20,11 +20,15 @@ Meditation is active. An absent or non-function `shutdown` value is
 ignored. Errors raised by the callback are reported to the console;
 native cleanup still continues.
 
-Closing the window or selecting Exit Game from the host pause menu ends the
-cartridge session and closes SugarBee. Returning to a cartridge launcher or
-switching cartridges is not implemented. Callback execution has no time limit,
-so a callback that never returns can prevent the host from processing menu
-input or completing normal exit.
+Closing the window ends the cartridge session and closes SugarBee. Selecting
+Exit Game instead ends the cartridge session and returns to an idle host.
+The host closes Lua and releases cartridge textures while retaining its
+window, renderer, and input services. Closing the idle host does not call the
+cartridge shutdown callback again.
+
+Launching another cartridge from the idle host is not implemented. Callback
+execution has no time limit, so a callback that never returns can prevent
+the host from processing menu input or completing cartridge cleanup.
 
 ```lua
 local x = 100
