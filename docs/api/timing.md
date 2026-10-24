@@ -4,16 +4,17 @@ The game uses these Lua callbacks:
 
 | Callback | When it runs |
 | --- | --- |
-| `init()` | Once after a cartridge is successfully loaded |
+| `init()` | Once per launch after the cartridge script loads successfully |
 | `update(dt)` | Zero or more fixed simulation steps per host render iteration while healthy and unpaused |
 | `draw()` | Once per host render iteration while healthy and unpaused |
 | `shutdown()` | Optional; called once when an initialized cartridge session ends, unless Guru Meditation is active |
 
 `dt` is **always 1/60 second** (`0.016666...`) at present, regardless of
 actual renderer speed. Lua functions declared as `update()` continue to work:
-Lua ignores extra arguments. An optional `shutdown()` callback runs before the host closes Lua and
-destroys its input and graphics services. It receives no arguments, and
-its return values are ignored.
+Lua ignores extra arguments. An optional `shutdown()` callback runs before
+the host closes the cartridge's Lua state and releases its textures. Input and
+graphics services remain available during the callback. It receives no arguments,
+and its return values are ignored.
 
 The callback is skipped if cartridge initialization failed or Guru
 Meditation is active. An absent or non-function `shutdown` value is
@@ -26,9 +27,15 @@ The host closes Lua and releases cartridge textures while retaining its
 window, renderer, and input services. Closing the idle host does not call the
 cartridge shutdown callback again.
 
-Launching another cartridge from the idle host is not implemented. Callback
-execution has no time limit, so a callback that never returns can prevent
-the host from processing menu input or completing cartridge cleanup.
+The idle host can relaunch the cartridge supplied at startup. Each launch
+creates a fresh Lua state, registers the SugarBee API, loads the script, and
+calls `init()`. Lua globals from the previous session do not carry over.
+The scheduler is reset after launch so loading time does not become catch-up
+gameplay. A failed launch displays Guru Meditation.
+
+Selecting a different cartridge from the idle host is not implemented.
+Callback execution has no time limit, so a callback that never returns can
+prevent the host from processing menu input or completing cartridge cleanup.
 
 ```lua
 local x = 100

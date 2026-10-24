@@ -58,11 +58,15 @@ released.
 
 Exit Game ends the cartridge session, invokes the optional Lua `shutdown()`
 callback when eligible, and returns to an idle host screen. The window and
-controllers remain available. On that screen, B on any controller or keyboard
-K closes SugarBee; other gameplay controls have no effect.
+controllers remain available.
 
-Cartridge selection, launching another cartridge from the idle host, and
-powering off the operating system are not implemented.
+On the idle screen, A on any controller or keyboard J relaunches the cartridge
+supplied at startup. B or keyboard K closes SugarBee. Start and directions
+have no effect there. Buttons held during relaunch remain hidden from the
+cartridge until released.
+
+Cartridge discovery, selecting a different cartridge, and powering off the
+operating system are not implemented.
 
 ## Button mapping
 
