@@ -2,6 +2,13 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added a host-controlled pause menu with Resume and Exit Game, operated by
+  any controller or the keyboard. Start is now host-reserved and unavailable
+  to cartridge input queries. Pause stops Lua update and draw callbacks,
+  retains the game image, and suppresses held menu inputs until released.
+  Exit Game follows the normal shutdown callback and cleanup path.
+  Added retained-frame pixel checks to the graphics regression test.
+
 - Replaced the unattributed template font with a pinned, upstream-declared
   public-domain font8x8 table, preserving attribution and documenting provenance.
   Added lowercase and remaining printable ASCII glyphs; retained 8x8 metrics.

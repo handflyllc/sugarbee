@@ -18,6 +18,7 @@ typedef struct {
 struct sb_graphics {
     SDL_Window *window;
     SDL_Renderer *renderer;
+    SDL_Texture *game_frame;
     int width;
     int height;
     texture_slot_t *slots;
@@ -48,6 +49,37 @@ sb_graphics_t *sb_graphics_create(const char *title, int width, int height) {
     if (SDL_RenderSetLogicalSize(graphics->renderer, width, height) < 0) goto error;
     graphics->width = width;
     graphics->height = height;
+
+    if (!SDL_RenderTargetSupported(graphics->renderer)) {
+        SDL_Log("SugarBee: renderer does not support render targets");
+        goto error;
+    }
+
+    graphics->game_frame = SDL_CreateTexture(
+        graphics->renderer,
+        SDL_PIXELFORMAT_RGBA8888,
+        SDL_TEXTUREACCESS_TARGET,
+        width, height);
+
+    if (!graphics->game_frame) {
+        SDL_Log("SugarBee: could not create game frame: %s",
+        SDL_GetError());
+        goto error;
+    }
+
+    if (SDL_SetTextureBlendMode(graphics->game_frame, SDL_BLENDMODE_NONE) != 0 ||
+        SDL_SetTextureScaleMode(graphics->game_frame, SDL_ScaleModeNearest) != 0) {
+            SDL_Log("SugarBee: could not configure game frame: %s", SDL_GetError());
+          goto error;
+        }
+
+        /* Start with a defined image, even if paused before the first draw. */
+        if (!sb_graphics_begin_game_frame(graphics) ||
+            SDL_SetRenderTarget(graphics->renderer, NULL) != 0) {
+                SDL_Log("SugarBee: could not initialize game frame: %s", SDL_GetError());
+                goto error;
+            }
+
     return graphics;
 
 error:
@@ -62,6 +94,7 @@ void sb_graphics_destroy(sb_graphics_t *graphics) {
             SDL_DestroyTexture(graphics->slots[i].texture);
     }
     free(graphics->slots);
+    if (graphics->game_frame) SDL_DestroyTexture(graphics->game_frame);
     if (graphics->renderer) SDL_DestroyRenderer(graphics->renderer);
     if (graphics->window) SDL_DestroyWindow(graphics->window);
     free(graphics);
@@ -119,6 +152,35 @@ void sb_graphics_text(sb_graphics_t *graphics, const char *text, int x, int y,
             x += 8 * scale;
         }
     }
+}
+
+bool sb_graphics_begin_game_frame(sb_graphics_t *graphics) {
+    if (!graphics || !graphics->game_frame) return false;
+
+    if (SDL_SetRenderTarget(graphics->renderer, graphics->game_frame) != 0) {
+        return false;
+    }
+
+    if (SDL_SetRenderDrawColor(graphics->renderer, 0, 0, 0, 255) != 0) {
+        return false;
+    }
+
+    return SDL_RenderClear(graphics->renderer) == 0;
+}
+
+bool sb_graphics_show_game_frame(sb_graphics_t *graphics) {
+    if (!graphics || !graphics->game_frame) return false;
+
+    if (SDL_SetRenderTarget(graphics->renderer, NULL) != 0) {
+        return false;
+    }
+
+    if (SDL_SetRenderDrawColor(graphics->renderer, 0, 0, 0, 255) != 0 ||
+        SDL_RenderClear(graphics->renderer) != 0) {
+            return false;
+        }
+
+        return SDL_RenderCopy(graphics->renderer, graphics->game_frame, NULL, NULL) == 0;
 }
 
 void sb_graphics_present(sb_graphics_t *graphics) {

@@ -71,6 +71,12 @@ bool sb_graphics_sprite_region(sb_graphics_t *graphics, sb_texture_t texture,
 /* Release a texture. Returns false for unknown/stale handles. */
 bool sb_graphics_texture_destroy(sb_graphics_t *graphics, sb_texture_t texture);
 
+/* Select and clear the retained game frame for fresh cartridge drawing. */
+bool sb_graphics_begin_game_frame(sb_graphics_t *graphics);
+
+/* Select the window and copy the retained frame; host overlays follow. */
+bool sb_graphics_show_game_frame(sb_graphics_t *graphics);
+
 /* Called once after drawing the current frame. */
 void sb_graphics_present(sb_graphics_t *graphics);
 

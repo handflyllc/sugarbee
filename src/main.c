@@ -24,11 +24,19 @@
 #include "sb_input.h"
 #include "sb_timing.h"
 
+typedef enum {
+    PAUSE_MENU_RESUME,
+    PAUSE_MENU_EXIT
+} pause_menu_selection_t;
+
 typedef struct {
     sb_graphics_t* graphics;
     sb_input_t* input;
     lua_State* L;
     bool is_running;
+    bool paused;
+    pause_menu_selection_t pause_selection;
+    bool blocked_buttons[SB_MAX_PLAYERS][SB_BUTTON_COUNT];
     bool guru_active;
     
     // Diagnostic state
@@ -253,10 +261,25 @@ static sb_button_t button_from_name(const char *name) {
     return SB_BUTTON_INVALID;
 }
 
+/* Whether this button may currently be exposed to the cartridge. */
+static bool cartridge_button_allowed(int player, sb_button_t button) {
+    if (player < 0 || player >= SB_MAX_PLAYERS ||
+        button < 0 || button >= SB_BUTTON_COUNT) {
+            return false;
+        }
+
+    return !g_engine.paused &&
+        button != SB_BUTTON_START &&
+        !g_engine.blocked_buttons[player][button];
+}
+
 static int l_sugarbee_btn(lua_State* L) {
     const char *name = luaL_checkstring(L, 1);
     int player = (int)luaL_optinteger(L, 2, 0);
-    lua_pushboolean(L, sb_input_down(g_engine.input, player, button_from_name(name)));
+    sb_button_t button = button_from_name(name);
+
+    lua_pushboolean(L, cartridge_button_allowed(player, button) &&
+        sb_input_down(g_engine.input, player, button));
     return 1;
 }
 
@@ -264,7 +287,10 @@ static int l_sugarbee_btn(lua_State* L) {
 static int l_sugarbee_btnp(lua_State* L) {
     const char *name = luaL_checkstring(L, 1);
     int player = (int)luaL_optinteger(L, 2, 0);
-    lua_pushboolean(L, sb_input_pressed(g_engine.input, player, button_from_name(name)));
+    sb_button_t button = button_from_name(name);
+
+    lua_pushboolean(L, cartridge_button_allowed(player, button) &&
+        sb_input_pressed(g_engine.input, player, button));
     return 1;
 }
 
@@ -451,18 +477,123 @@ void main_loop(void) {
             for (unsigned i = 0; i < updates; ++i) {
                 /* Only the first update after a press sees btnp == true. */
                 sb_input_begin_update(g_engine.input);
-                call_lua_global_function("update", true, sb_timing_step_seconds());
+
+                bool start_pressed = false;
+                bool back_pressed = false;
+                bool up_pressed = false;
+                bool down_pressed = false;
+                bool confirm_pressed = false;
+
+                /*  Player Loop
+                    Start, B, Up, Down, A
+                */
+                for (int player = 0; player < SB_MAX_PLAYERS; ++player) {
+                    if (sb_input_pressed(g_engine.input, player, SB_BUTTON_START)) {
+                        start_pressed = true;
+                    }
+                    if (sb_input_pressed(g_engine.input, player, SB_BUTTON_B)) {
+                        back_pressed = true;
+                    }
+                    if (sb_input_pressed(g_engine.input, player, SB_BUTTON_UP)) {
+                        up_pressed = true;
+                    }
+                    if (sb_input_pressed(g_engine.input, player, SB_BUTTON_DOWN)) {
+                        down_pressed = true;
+                    }
+                    if (sb_input_pressed(g_engine.input, player, SB_BUTTON_A)) {
+                        confirm_pressed = true;
+                    }
+                }
+
+                bool pause_changed = false;
+
+                /* Pause toggle block */
+                if (start_pressed) {
+                    g_engine.paused = !g_engine.paused;
+                    pause_changed = true;
+
+                    if (g_engine.paused) {
+                        g_engine.pause_selection = PAUSE_MENU_RESUME;
+                    }
+                } else if (g_engine.paused && back_pressed) {
+                    g_engine.paused = false;
+                    pause_changed = true;
+                }
+
+                /* Handle menu actions only when already paused */
+                if (g_engine.paused && !pause_changed) {
+                    if (confirm_pressed) {
+                        if (g_engine.pause_selection == PAUSE_MENU_RESUME) {
+                            g_engine.paused = false;
+                            pause_changed = true;
+                        } else if (g_engine.pause_selection == PAUSE_MENU_EXIT) {
+                            g_engine.is_running = false;
+                        }
+                    } else if (up_pressed && !down_pressed) {
+                        g_engine.pause_selection = PAUSE_MENU_RESUME;
+                    } else if (down_pressed && !up_pressed) {
+                        g_engine.pause_selection = PAUSE_MENU_EXIT;
+                    }
+                }
+
+                /* Keep menu inputs hidden until released. */
+                for (int player = 0; player < SB_MAX_PLAYERS; ++player) {
+                    for (int button = 0; button < SB_BUTTON_COUNT; ++button) {
+                        bool down = sb_input_down(g_engine.input, player, (sb_button_t)button);
+                        bool pressed = sb_input_pressed(g_engine.input, player, (sb_button_t)button);
+
+                        if (g_engine.paused || pause_changed) {
+                            g_engine.blocked_buttons[player][button] = down || pressed;
+                        } else if (!down && !pressed) {
+                            g_engine.blocked_buttons[player][button] = false;
+                        }
+                    }
+                }
+
+                if (!g_engine.paused && !pause_changed) {
+                    call_lua_global_function(
+                        "update", true, sb_timing_step_seconds());
+                }
+
                 sb_input_end_update(g_engine.input);
-                if (g_engine.guru_active) break;
+
+                if (!g_engine.is_running || g_engine.guru_active) break;
             }
         }
+
+        if (!g_engine.is_running) break;
 
         if (g_engine.guru_active) {
             render_guru_meditation();
         } else {
-            sb_graphics_clear(g_engine.graphics, 0, 0, 0);
-            call_lua_global_function("draw", false, 0.0);
-            if (g_engine.guru_active) render_guru_meditation();
+            if (!g_engine.paused) {
+                if (!sb_graphics_begin_game_frame(g_engine.graphics)) {
+                    SDL_Log("SugarBee: could not begin game frame: %s", SDL_GetError());
+                    g_engine.is_running = false;
+                    break;
+                }
+
+                call_lua_global_function("draw", false, 0.0);
+            }
+
+            if (!sb_graphics_show_game_frame(g_engine.graphics)) {
+                SDL_Log("SugarBee: could not display game frame: %s", SDL_GetError());
+                g_engine.is_running = false;
+                break;
+            }
+
+            if (g_engine.guru_active) {
+                render_guru_meditation();
+            } else if (g_engine.paused) {
+                sb_graphics_rect(g_engine.graphics, 400, 260, 480, 220, 20, 20, 20, true);
+                sb_graphics_text(g_engine.graphics, "PAUSED", 544, 285, 255, 255, 255, 2);
+                sb_graphics_text(g_engine.graphics, "Resume", 520, 345, 255, 255, 255, 2);
+                sb_graphics_text(g_engine.graphics, "Exit Game", 520, 390, 255, 255, 255, 2);
+
+                int marker_y = g_engine.pause_selection == PAUSE_MENU_RESUME ? 345 : 390;
+
+                sb_graphics_text(g_engine.graphics, ">", 480, marker_y, 255, 220, 80, 2);
+            }
         }
 
         sb_graphics_present(g_engine.graphics);
@@ -493,7 +624,6 @@ static void call_lua_shutdown(void) {
         lua_pop(g_engine.L, 1);
     }
 }
-
 
 void shutdown_engine(void) {
     call_lua_shutdown();
