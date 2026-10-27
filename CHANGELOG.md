@@ -19,8 +19,11 @@
   manual regression checklist. X/U rescans the directory without launching
   a cartridge and resets selection to the first entry. The launcher displays
   its 64-cartridge capacity, omitted and rejected counts, and directory-error
-  summaries. Single-cartridge autolaunch and deterministic sorting remain
-  pending.
+  summaries. Stored entries are sorted by case-sensitive title and filename;
+  the first 64 discovered are retained when capacity is exceeded. A startup
+  scan automatically launches a sole eligible cartridge when no entries are
+  omitted and no scan errors occurred. Exit, rescan, and Guru recovery stay
+  in the launcher without automatically relaunching.
 
 - Separated cartridge cleanup from host shutdown. The cartridge-ending
   operation invokes the eligible Lua shutdown callback, closes Lua, releases

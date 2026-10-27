@@ -23,13 +23,29 @@ Empty `main.lua` files can pass; eligibility does not guarantee a working
 game. Other assets are not individually decoded or CRC-checked during
 discovery. See [asset limits](../api/assets.md).
 
-At most 64 eligible cartridges are stored, in filesystem discovery order.
-Additional eligible files are reported but omitted from the list. Full paths
+The first 64 eligible cartridges encountered are retained, then sorted by
+case-sensitive title with filename as the tie-breaker. Sorting uses the original
+strings, before display sanitization; uppercase ASCII letters precede lowercase.
+Additional eligible files are reported but omitted from the list. When capacity
+is exceeded, the retained subset still depends on filesystem discovery order;
+it is not necessarily the alphabetically first 64 cartridges. Full paths
 must fit in 4096 bytes including the terminating byte. Inspection and path
 errors have separate console diagnostics; eligible/rejected totals describe
 regular candidates that reached validation, not every directory entry.
 Directory-open and read failures are reported to the console. A partial list
 may remain after a read failure. There is no persistent log file.
+
+## Startup launch policy
+
+A startup scan automatically launches the sole eligible cartridge only when
+there are no omitted eligible entries and no directory-scan errors. Rejected
+files do not prevent that launch. Zero or multiple eligible cartridges leave
+the launcher visible; scan errors also prevent automatic launch.
+
+Automatic launch happens only at startup. Exit Game, Guru recovery, and X/U
+rescan return to or remain in the launcher, even with exactly one entry. A/J
+can launch that entry manually. A sole cartridge that fails during execution
+uses the normal Guru recovery path, without an automatic retry loop.
 
 ## Display and controls
 
@@ -55,12 +71,11 @@ X/U rescans the directory, refreshes counts, and selects the first entry without
 
 The launcher displays its 64-cartridge capacity, additional eligible cartridges omitted from the list, and rejected-file count. Directory errors receive a separate message; detailed diagnostics remain in the console.
 
-## Pending behavior
+## Future discussion
 
-- Deterministic sorting.
-- Automatic launch when exactly one cartridge is eligible.
 - Configuration-file/menu directory settings, optional icons, and persistent
   logging are future discussion items, not implemented features.
 
-See the [manual checklist](../../tests/launcher/README.md). The existing ten
-CTest cases do not automate the complete launcher interaction flow.
+See the [manual checklist](../../tests/launcher/README.md). The automated suite
+includes ten native tests and, when Lua 5.4 is available, eight cartridge smoke
+tests using a stand-in API. It does not automate the launcher interaction flow.

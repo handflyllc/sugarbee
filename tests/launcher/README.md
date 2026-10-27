@@ -21,11 +21,28 @@ packed, even if the Lua source is later changed.
 - A direct Pong path: play, pause, exit to host, A/J relaunch, B/K host exit.
 - Missing `--cartridges` argument or unknown option: usage message, no window.
 - Use the printed `scan` command: expect 3 eligible, 2 rejected, 3 stored.
-  Pong, Invaders, and Shutdown Test appear; the empty invalid header and package
+  Invaders, Pong Lab, and Shutdown Test appear in that order; the invalid header and package
   without `main.lua` are rejected with reasons in the console. The nested copy
   and text file are ignored.
 - Use a nonexistent directory: console error, empty list message, B/K exit.
 - Use the printed `empty` command: zero entries; directions and A/J are harmless.
+
+## Single-cartridge startup
+
+Using the directory printed by the fixture script, create a separate `single`
+subdirectory and copy `scan/pong.vcart` into it. Launch with `--cartridges`
+pointing at `single`.
+
+- Pong launches automatically. Exit Game returns to the launcher and stays there.
+- X/U rescans without launching; A/J still launches manually.
+- Add an empty `invalid.vcart` beside Pong and restart the host: Pong still
+  launches, with the rejected file reported in the console.
+- Multiple eligible cartridges open the launcher. Empty and nonexistent
+  directories retain their existing messages and safe controls.
+- In another directory, package only the shutdown test's `init_error` case.
+  Startup shows Guru; B/K returns to the launcher without automatically retrying.
+  Restore the shutdown source to `normal` after testing.
+- A scan with errors must not automatically launch a partial one-entry list.
 
 ## Rescan and summaries
 
@@ -44,9 +61,12 @@ packed, even if the Lua source is later changed.
 ## Selection and sessions
 
 - Use the printed `scroll` command: ten entries with distinct filenames and
-  duplicate titles. All ten are reachable through the eight-row display.
+  duplicate titles. Filenames sort from `pong-01.vcart` to `pong-10.vcart`;
+  all ten are reachable through the eight-row display.
 - Check first/last bounds, both controllers, keyboard arrows and W/S. Holding
-  directions does not auto-repeat. Discovery order is not guaranteed.
+  directions does not auto-repeat. Titles sort case-sensitively, then filenames.
+  Above capacity, only the retained subset is sorted; the subset itself depends
+  on filesystem discovery order.
 - A/J launches the selected entry. A simultaneous confirmation and direction
   activates the existing selection rather than moving it first.
 - From the `scan` list, launch Pong, exit, launch Invaders, and exit again.
@@ -74,6 +94,7 @@ when a normal test package is needed.
 
 ## Coverage boundaries
 
-The ten existing CTest cases cover graphics, textures, assets, input, timing,
-headers, and packaging; these launcher interaction checks remain manual.
-Single-cartridge autolaunch and deterministic sorting remain pending.
+Ten native CTest cases cover graphics, textures, assets, input, timing,
+headers, and packaging. With Lua 5.4 installed, eight additional cartridge
+smoke tests run against a stand-in API. These do not exercise the real host
+launcher; the launcher interaction checks above remain manual.

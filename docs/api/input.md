@@ -82,8 +82,10 @@ skips the cartridge shutdown callback. Holding B/K does not also close the
 host; release and press again to close it. Full diagnostics remain in the
 console. See [launcher usage and limits](../development/launcher.md).
 
-Automatic launch of a single eligible cartridge, and operating
-system power-off are not implemented.
+In directory mode, a startup scan automatically launches a sole eligible
+cartridge if there are no scan errors or omitted eligible entries. Exiting,
+recovering from Guru, or rescanning never triggers automatic launch.
+Operating system power-off is not implemented.
 
 ## Button mapping
 

@@ -968,6 +968,18 @@ static bool inspect_cartridge(const char *path, vcart_header_t *header) {
     return true;
 }
 
+static int compare_cartridges(const void *left, const void *right) {
+    const launcher_cartridge_t *a = left;
+    const launcher_cartridge_t *b = right;
+
+    int title_order = strcmp(a->title, b->title);
+    if (title_order != 0) {
+        return title_order;
+    }
+
+    return strcmp(a->path, b->path);
+}
+
 static void scan_cartridge_directory(const char *directory) {
     g_engine.cartridge_count = 0;
     g_engine.cartridge_selection = 0;
@@ -1056,6 +1068,10 @@ static void scan_cartridge_directory(const char *directory) {
     g_engine.cartridge_rejected = rejected;
     g_engine.cartridge_omitted = eligible - g_engine.cartridge_count;
     g_engine.cartridge_scan_errors = scan_failed;
+    qsort(g_engine.cartridges,
+          g_engine.cartridge_count,
+          sizeof(g_engine.cartridges[0]),
+          compare_cartridges);
 
     printf("[SugarBee] %zu eligible, %zu rejected%s.\n",
            eligible, rejected,
@@ -1108,6 +1124,11 @@ int main(int argc, char* argv[]) {
         printf("[SugarBee] Cartridge directory: %s\n",
                g_engine.cartridge_directory);
         scan_cartridge_directory(g_engine.cartridge_directory);
+        if (g_engine.cartridge_count == 1 &&
+            g_engine.cartridge_omitted == 0 &&
+            !g_engine.cartridge_scan_errors) {
+            start_cartridge(g_engine.cartridges[0].path);
+        }
     }
 
     main_loop();
