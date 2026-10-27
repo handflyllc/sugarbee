@@ -76,9 +76,36 @@ the argv-owned startup path separately from the active session path.
 `start_cartridge()` creates a fresh Lua state and initializes the cartridge.
 Launch input is consumed and held buttons are suppressed until released.
 
-Cartridge discovery and selection are not implemented. Starting without a
-cartridge argument still uses the no-cartridge Guru screen, and failed launches
-still display Guru Meditation.
+Starting without arguments opens the idle host. `--cartridges DIRECTORY`
+scans top-level regular files with a case-sensitive `.vcart` suffix, skipping
+symbolic links and subdirectories. `inspect_cartridge()` uses a local header
+and the bounded asset reader to verify that `main.lua` is readable without
+compiling or executing it. Launch still validates and loads the selected file;
+a discovery result is not a guarantee of successful execution.
+
+The engine stores up to 64 eligible title/path pairs in a fixed array. Paths
+occupy 4096-byte buffers including termination. The first 64 eligible entries
+are retained, then sorted by case-sensitive title and filename. Additional
+eligible files are reported but not stored, so the retained subset above
+capacity still depends on discovery order. The active session
+borrows its path from argv or this stable array. The list is not rescanned while
+a cartridge is running. The host renders eight rows with a selection marker,
+filenames to distinguish duplicate titles, and bounded printable-ASCII labels.
+A/J requests launch after the current input step; Exit Game preserves the list
+and selection. Direct-path launch and relaunch remain supported.
+
+Failed launches and runtime Lua errors display Guru Meditation. B/K consumes
+the recovery input, ends the failed session while Guru remains active (skipping
+Lua shutdown), clears the Guru flag, and resets timing before returning to the
+host. This does not provide recovery from a Lua callback that never returns.
+
+X/U requests a rescan while the launcher is idle. The host performs it after
+the input step, resets selection to the first sorted entry, and resets timing.
+The screen reports capacity, omitted/rejected counts, and directory errors.
+Only the startup scan can automatically launch a sole eligible cartridge, and
+only with no omitted entries or scan errors. Exit, rescan, and Guru recovery
+leave the launcher available without an automatic relaunch loop.
+See [launcher usage](../development/launcher.md).
 
 
 

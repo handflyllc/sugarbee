@@ -140,4 +140,20 @@ if(BUILD_TESTING)
                 "-DTEST_ROOT=${PROJECT_BINARY_DIR}/packager-smoke"
                 "-P" "${PROJECT_SOURCE_DIR}/tests/packager_smoke.cmake")
     endif()
+
+    # Run each example cartridge headlessly against a stand-in sugarbee API
+    # (tests/cartridge_smoke.lua). Needs only the Lua 5.4 interpreter, not
+    # SDL or the host; the test is skipped when no interpreter is installed.
+    find_program(LUA54_INTERPRETER NAMES lua5.4 lua)
+    if(LUA54_INTERPRETER)
+        foreach(cartridge IN ITEMS graphics-demo moving-box sprite-demo
+                asset-demo sprite-sheet-demo pong-lab invaders-lab pacman-demo)
+            add_test(NAME cartridge_smoke_${cartridge}
+                COMMAND "${LUA54_INTERPRETER}"
+                    "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua"
+                    "${PROJECT_SOURCE_DIR}/examples/${cartridge}" 3000)
+        endforeach()
+    else()
+        message(STATUS "lua5.4 interpreter not found; cartridge_smoke tests disabled")
+    endif()
 endif()

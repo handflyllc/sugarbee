@@ -60,13 +60,32 @@ Exit Game ends the cartridge session, invokes the optional Lua `shutdown()`
 callback when eligible, and returns to an idle host screen. The window and
 controllers remain available.
 
-On the idle screen, A on any controller or keyboard J relaunches the cartridge
-supplied at startup. B or keyboard K closes SugarBee. Start and directions
-have no effect there. Buttons held during relaunch remain hidden from the
-cartridge until released.
+## Launcher and error recovery
 
-Cartridge discovery, selecting a different cartridge, and powering off the
-operating system are not implemented.
+With a direct cartridge path, A on any controller or keyboard J relaunches
+that cartridge from the idle screen. With `--cartridges DIRECTORY`, Up/Down
+(or arrows/W/S) selects a listed cartridge and A/J launches it. Selection
+moves once per press, stops at either end, and scrolls through eight visible
+rows. Exit Game returns to the list with the selection preserved.
+
+B/K closes the idle host or launcher. Start has no effect there. An empty
+list ignores navigation and confirmation. Without startup arguments, the
+idle screen displays launch instructions. Buttons held during launch remain
+hidden from the cartridge until released. B takes priority over rescan; rescan
+takes priority over confirmation; confirmation takes priority over navigation
+when received together. X on a controller, or U on the keyboard, rescans the
+directory and selects the first entry without launching it.
+
+Guru Meditation keeps the diagnostic visible until B/K returns to the list
+or idle host. Recovery consumes the press, cleans up the failed session, and
+skips the cartridge shutdown callback. Holding B/K does not also close the
+host; release and press again to close it. Full diagnostics remain in the
+console. See [launcher usage and limits](../development/launcher.md).
+
+In directory mode, a startup scan automatically launches a sole eligible
+cartridge if there are no scan errors or omitted eligible entries. Exiting,
+recovering from Guru, or rescanning never triggers automatic launch.
+Operating system power-off is not implemented.
 
 ## Button mapping
 
@@ -103,6 +122,8 @@ to launch a cartridge. The keyboard fallback only applies to player 0.
   steps continue handling menu input, but do not invoke Lua `update(dt)`.
 - `sb_input_down()` returns the most recently polled held state;
   `sb_input_pressed()` reports an edge during the active simulation update.
+- During Guru Meditation, a separate host input pass consumes presses for
+  recovery without invoking cartridge callbacks.
 - `sb_input_destroy()` closes opened controllers before SDL shutdown.
 
 **Important:** The current input backend owns the SDL event queue, which is
@@ -125,7 +146,8 @@ and optional virtual-controller hotplug on SDL builds that support it.
 
 Also test manually with a real controller: connect before startup, move the
 sample box, disconnect/reconnect the controller, and try keyboard movement.
-The earlier gold-rectangle and no-cartridge Guru tests should still pass.
+The gold-rectangle, no-argument idle-host, and Guru recovery checks should
+still pass. See the [launcher checklist](../../tests/launcher/README.md).
 Initial physical-controller reference: **Logitech Gamepad F310**, used by the
 project developer in **Flight Mode**. Other controllers may work through SDL;
 we are not undertaking a compatibility certification effort at this stage.

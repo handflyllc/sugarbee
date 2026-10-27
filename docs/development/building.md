@@ -39,6 +39,29 @@ cmake --build build-tools --parallel
 ctest --test-dir build-tools --output-on-failure
 ```
 
+## Cartridge smoke tests (no SDL required)
+
+`ctest` runs every example under `examples/` through
+[`tests/cartridge_smoke.lua`](../../tests/cartridge_smoke.lua) when a `lua5.4`
+interpreter is installed (`sudo apt install lua5.4`). The script replaces the
+`sugarbee` table with a stand-in that performs the same argument validation as
+the real bindings — integer coordinates, RGBA buffer length, sprite regions
+inside their texture, valid handles, host-reserved `start` — then calls
+`init()`, 3000 fixed-step `update(dt)`/`draw()` pairs with seeded random
+input, and `shutdown()`. Any Lua error that would have produced Guru
+Meditation on the console fails the test with a traceback.
+
+Run one cartridge by hand, optionally with a frame count and seed:
+
+```sh
+lua5.4 tests/cartridge_smoke.lua examples/pacman-demo 3000 1
+```
+
+This is a crash test only. It draws nothing and cannot judge gameplay,
+colours, or layout; the manual checks below remain necessary. `texture_load()`
+reads the PNG header from the game directory for size checks, so run it on the
+unpacked source folder, not a `.vcart`.
+
 ## Package and launch the graphics regression cartridge
 
 The original gold-rectangle demonstration is checked in as
@@ -60,8 +83,9 @@ project metadata** and supply it with `--uuid <the-uuid>` for future builds,
 so save files remain associated with the same game. A project manifest will
 manage this automatically in a later milestone.
 
-The host uses SDL2's desktop window through the C graphics backend. Exit with
-the window close control. Fixed simulation timing, controller discovery,
+The host uses SDL2's window through the C graphics backend. Start/Enter opens
+its pause menu; Exit Game returns to the host, where B/K closes SugarBee.
+The window close control also exits. Fixed simulation timing, controller discovery,
 hotplug, and a keyboard development fallback are implemented; analog input
 is not yet implemented.
 
@@ -71,6 +95,28 @@ services. It skips that callback while Guru Meditation is active. Errors in
 `shutdown()` are reported to the console and native cleanup continues. The
 callback has no execution time limit. See the [lifecycle reference](../api/timing.md)
 and [manual shutdown regression procedure](../../tests/shutdown/README.md).
+
+### Launcher
+
+```sh
+./build/sugarbee
+./build/sugarbee --cartridges /path/to/vcarts
+```
+
+No arguments opens an idle screen with launch instructions. Directory mode
+scans once and displays eligible entries; Up/Down selects, A/J launches, and
+B/K closes the launcher. Exit Game returns to the list. Guru errors can be
+dismissed with B/K. Direct `.vcart` launching remains available.
+
+See [launcher behavior and limits](launcher.md) and the
+[manual launcher checks](../../tests/launcher/README.md). Fixtures can be
+regenerated after a reboot with:
+
+```sh
+bash tests/launcher/prepare-fixtures.sh
+```
+
+The script prints commands using its newly created temporary directory.
 
 ### Cartridge resource limits
 
@@ -93,8 +139,7 @@ The CTest suite includes a `graphics_smoke` test when host dependencies are
 installed. It uses the SDL dummy video driver and checks the graphics backend
 without opening a visible window. This is not a replacement for the manual
 cartridge test above: verify that the dark blue background, gold rectangle,
-and `SUGARBEE` text still render correctly. Verify the no-cartridge
-Guru screen as well. See [graphics API](../api/graphics.md).
+and `SUGARBEE` text still render correctly. Verify no-argument idle startup and Guru error recovery as well. See [graphics API](../api/graphics.md).
 
 The built-in font now covers printable ASCII, including real lowercase and
 punctuation, using a pinned font8x8 source with an upstream public-domain
@@ -199,7 +244,7 @@ Expected: a movable transparent bee, loaded by
 `sugarbee.texture_load("assets/bee.png")`, rather than assembled as RGBA bytes
 in Lua. The packager includes nested assets automatically. Test keyboard and
 controller movement, the older procedural sprite, the gold rectangle, and the
-Guru Meditation no-cartridge path. The new CTest cases `asset_smoke` and
+idle startup and Guru recovery paths. The new CTest cases `asset_smoke` and
 `png_smoke` validate the archive resource loader and PNG decoding.
 
 The built-in image loader supports PNG only in this milestone; it is limited
@@ -225,4 +270,4 @@ The new `sprite_region()` API validates source bounds and sizes; the expanded
 `texture_smoke` checks pixel-level crop, nearest-neighbor scale, and both flips
 using the SDL dummy driver. `sprite_sheet_png_smoke` also validates the
 192×32 atlas. Follow with the old gold-rectangle, Moving Box,
-asset-demo and no-cartridge Guru regressions.
+asset-demo, idle-startup, and Guru recovery regressions.

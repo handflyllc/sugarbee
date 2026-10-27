@@ -23,6 +23,7 @@ sudo apt install --no-install-recommends \
 | `libpng-dev` | PNG image decoding from cartridge memory (`sb_png.c`); no SDL_image required |
 | `zlib1g-dev` | Compression support |
 | `zip` | External CLI currently used by `sbee-pack` |
+| `lua5.4` (optional) | Standalone interpreter for the headless `cartridge_smoke` tests; CMake skips them when it is absent |
 
 No KDE, X11 development stack, desktop environment, Node.js, or npm dependency
 is required by SugarBee's current C build. SDL2 may have desktop-oriented
