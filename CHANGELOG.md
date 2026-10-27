@@ -9,8 +9,11 @@
   are reported in the console. No-argument startup now opens an idle host.
   B/K recovers from Guru Meditation to the host without calling the failed
   cartridge's shutdown callback. Added reproducible launcher fixtures and a
-  manual regression checklist. Rescanning, single-cartridge autolaunch, and
-  detailed on-screen scan summaries remain pending.
+  manual regression checklist. X/U rescans the directory without launching
+  a cartridge and resets selection to the first entry. The launcher displays
+  its 64-cartridge capacity, omitted and rejected counts, and directory-error
+  summaries. Single-cartridge autolaunch and deterministic sorting remain
+  pending.
 
 - Separated cartridge cleanup from host shutdown. The cartridge-ending
   operation invokes the eligible Lua shutdown callback, closes Lua, releases

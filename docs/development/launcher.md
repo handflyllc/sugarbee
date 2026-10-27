@@ -14,13 +14,14 @@ No default cartridge directory or configuration file is implemented.
 
 ## Discovery
 
-Directory mode scans once at startup, without recursion. Only regular files
-ending in lowercase `.vcart` are candidates; symbolic links are skipped.
-Each candidate must pass the existing cartridge-header parser and a bounded,
-CRC-checked read of `main.lua` through the asset reader. Discovery neither
-compiles nor executes Lua. Empty `main.lua` files can pass; eligibility does
-not guarantee a working game. Other assets are not individually decoded or
-CRC-checked during discovery. See [asset limits](../api/assets.md).
+Directory mode scans at startup and when requested with X/U, without
+recursion. Only regular files ending in lowercase `.vcart` are candidates;
+symbolic links are skipped. Each candidate must pass the existing
+cartridge-header parser and a bounded, CRC-checked read of `main.lua`
+through the asset reader. Discovery neither compiles nor executes Lua.
+Empty `main.lua` files can pass; eligibility does not guarantee a working
+game. Other assets are not individually decoded or CRC-checked during
+discovery. See [asset limits](../api/assets.md).
 
 At most 64 eligible cartridges are stored, in filesystem discovery order.
 Additional eligible files are reported but omitted from the list. Full paths
@@ -50,12 +51,14 @@ Holding the recovery button does not close the host; release and press again to
 close it. The original diagnostic remains in the console. Recovery cannot
 interrupt a Lua callback that never returns.
 
+X/U rescans the directory, refreshes counts, and selects the first entry without launching it. Rescan works with empty lists and after directory errors. Holding the button does not repeat the scan.
+
+The launcher displays its 64-cartridge capacity, additional eligible cartridges omitted from the list, and rejected-file count. Directory errors receive a separate message; detailed diagnostics remain in the console.
+
 ## Pending behavior
 
-- Rescan controls and deterministic sorting.
+- Deterministic sorting.
 - Automatic launch when exactly one cartridge is eligible.
-- On-screen rejection counts, capacity warnings, and distinct directory-error
-  summaries. Currently an empty list says to consult the console.
 - Configuration-file/menu directory settings, optional icons, and persistent
   logging are future discussion items, not implemented features.
 

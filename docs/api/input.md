@@ -71,8 +71,10 @@ rows. Exit Game returns to the list with the selection preserved.
 B/K closes the idle host or launcher. Start has no effect there. An empty
 list ignores navigation and confirmation. Without startup arguments, the
 idle screen displays launch instructions. Buttons held during launch remain
-hidden from the cartridge until released. B takes priority over confirmation;
-confirmation takes priority over navigation when received together.
+hidden from the cartridge until released. B takes priority over rescan; rescan
+takes priority over confirmation; confirmation takes priority over navigation
+when received together. X on a controller, or U on the keyboard, rescans the
+directory and selects the first entry without launching it.
 
 Guru Meditation keeps the diagnostic visible until B/K returns to the list
 or idle host. Recovery consumes the press, cleans up the failed session, and
@@ -80,7 +82,7 @@ skips the cartridge shutdown callback. Holding B/K does not also close the
 host; release and press again to close it. Full diagnostics remain in the
 console. See [launcher usage and limits](../development/launcher.md).
 
-Rescanning, automatic launch of a single eligible cartridge, and operating
+Automatic launch of a single eligible cartridge, and operating
 system power-off are not implemented.
 
 ## Button mapping

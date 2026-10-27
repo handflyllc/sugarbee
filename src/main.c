@@ -69,7 +69,11 @@ typedef struct {
     launcher_cartridge_t cartridges[SB_LAUNCHER_MAX_CARTRIDGES];
     size_t cartridge_count;
     size_t cartridge_selection;
+    size_t cartridge_rejected;
+    size_t cartridge_omitted;
+    bool cartridge_scan_errors;
     bool cartridge_launch_requested;
+    bool cartridge_rescan_requested;
 } sugarbee_engine_t;
 
 static sugarbee_engine_t g_engine = {0};
@@ -77,6 +81,7 @@ static sugarbee_engine_t g_engine = {0};
 void trigger_guru_meditation(uint32_t code, const char* title, const char* message, const char* trace);
 void render_guru_meditation(void);
 static void end_cartridge(void);
+static void scan_cartridge_directory(const char *directory);
 
 // --- CARTRIDGE LOADER ROUTINE ---
 
@@ -528,9 +533,12 @@ static void draw_cartridge_list(void) {
                      200, 200, 200, 2);
 
     if (visible == 0) {
-        sb_graphics_text(g_engine.graphics,
-                         "No eligible cartridges listed. See console for details.",
-                         80, 160, 255, 255, 255, 2);
+        const char *message = g_engine.cartridge_scan_errors
+            ? "No cartridges listed: directory scan had errors."
+            : "No eligible cartridges found.";
+
+        sb_graphics_text(g_engine.graphics, message, 80, 160,
+                         255, 255, 255, 2);
     }
 
     for (size_t i = 0; i < visible; ++i) {
@@ -571,9 +579,29 @@ static void draw_cartridge_list(void) {
         sb_graphics_text(g_engine.graphics, label, 80, y + 25,
                          170, 170, 170, 1);
     }
+    char scan_summary[128];
+    snprintf(scan_summary, sizeof(scan_summary),
+             "Launcher capacity: %d cartridges. "
+             "Additional not listed: %zu. Rejected: %zu.",
+             SB_LAUNCHER_MAX_CARTRIDGES,
+             g_engine.cartridge_omitted,
+             g_engine.cartridge_rejected);
 
+    sb_graphics_text(g_engine.graphics, scan_summary, 80, 610,
+                     200, 200, 200, 1);
+
+    if (g_engine.cartridge_scan_errors) {
+        sb_graphics_text(g_engine.graphics,
+                         "Directory scan had errors. See console for details.",
+                         80, 628, 255, 220, 80, 1);
+    } else if (g_engine.cartridge_rejected > 0 ||
+               g_engine.cartridge_omitted > 0) {
+        sb_graphics_text(g_engine.graphics,
+                         "Some files are not listed. See console for details.",
+                         80, 628, 255, 220, 80, 1);
+    }
     sb_graphics_text(g_engine.graphics,
-                    "UP/DOWN: Select    A/J: Launch    B/K: Close",  80, 650,
+                    "UP/DOWN: Select  A/J: Launch  X/U: Rescan  B/K: Close",  80, 650,
                      255, 255, 255, 2);
 }
 
@@ -644,6 +672,7 @@ void main_loop(void) {
                 bool up_pressed = false;
                 bool down_pressed = false;
                 bool confirm_pressed = false;
+                bool rescan_pressed = false;
 
                 /*  Player Loop
                     Start, B, Up, Down, A
@@ -664,6 +693,9 @@ void main_loop(void) {
                     if (sb_input_pressed(g_engine.input, player, SB_BUTTON_A)) {
                         confirm_pressed = true;
                     }
+                    if (sb_input_pressed(g_engine.input, player, SB_BUTTON_X)) {
+                        rescan_pressed = true;
+                    }
                 }
 
                 bool pause_changed = false;
@@ -673,7 +705,9 @@ void main_loop(void) {
                     if (back_pressed) {
                         g_engine.is_running = false;
                     } else if (g_engine.cartridge_directory) {
-                        if (g_engine.cartridge_count > 0) {
+                        if (rescan_pressed) {
+                            g_engine.cartridge_rescan_requested = true;
+                        } else if (g_engine.cartridge_count > 0) {
                             if (confirm_pressed) {
                                 g_engine.cartridge_launch_requested = true;
                             } else if (up_pressed && !down_pressed &&
@@ -727,7 +761,8 @@ void main_loop(void) {
                         bool pressed = sb_input_pressed(g_engine.input, player, (sb_button_t)button);
 
                         if (g_engine.paused || pause_changed ||
-                            g_engine.cartridge_launch_requested) {
+                            g_engine.cartridge_launch_requested ||
+                            g_engine.cartridge_rescan_requested) {
                             g_engine.blocked_buttons[player][button] = down || pressed;
                         } else if (!down && !pressed) {
                             g_engine.blocked_buttons[player][button] = false;
@@ -743,7 +778,8 @@ void main_loop(void) {
 
                 if (!g_engine.is_running || g_engine.guru_active ||
                     g_engine.cartridge_exit_requested ||
-                    g_engine.cartridge_launch_requested) {
+                    g_engine.cartridge_launch_requested ||
+                    g_engine.cartridge_rescan_requested) {
                     break;
                 }
             }
@@ -753,6 +789,15 @@ void main_loop(void) {
 
         if (g_engine.cartridge_exit_requested) {
             end_cartridge();
+            sb_timing_reset(&timing);
+            last_counter = SDL_GetPerformanceCounter();
+        } else if (g_engine.cartridge_rescan_requested) {
+            g_engine.cartridge_rescan_requested = false;
+
+            if (!g_engine.cart_loaded && g_engine.cartridge_directory) {
+                scan_cartridge_directory(g_engine.cartridge_directory);
+            }
+
             sb_timing_reset(&timing);
             last_counter = SDL_GetPerformanceCounter();
         } else if (g_engine.cartridge_launch_requested) {
@@ -926,10 +971,14 @@ static bool inspect_cartridge(const char *path, vcart_header_t *header) {
 static void scan_cartridge_directory(const char *directory) {
     g_engine.cartridge_count = 0;
     g_engine.cartridge_selection = 0;
+    g_engine.cartridge_rejected = 0;
+    g_engine.cartridge_omitted = 0;
+    g_engine.cartridge_scan_errors = false;
     DIR *dir = opendir(directory);
     if (!dir) {
         fprintf(stderr, "[SugarBee] Cannot open directory '%s': %s\n",
                 directory, strerror(errno));
+                g_engine.cartridge_scan_errors = true;
         return;
     }
 
@@ -963,6 +1012,7 @@ static void scan_cartridge_directory(const char *directory) {
         if (written < 0 || (size_t)written >= sizeof(path)) {
             fprintf(stderr, "[SugarBee] Skipping '%s': path too long\n",
                     entry->d_name);
+                    scan_failed = true;
             continue;
         }
 
@@ -970,6 +1020,7 @@ static void scan_cartridge_directory(const char *directory) {
         if (lstat(path, &info) != 0) {
             fprintf(stderr, "[SugarBee] Cannot inspect '%s': %s\n",
                     path, strerror(errno));
+                    scan_failed = true;
             continue;
         }
 
@@ -999,11 +1050,16 @@ static void scan_cartridge_directory(const char *directory) {
     if (closedir(dir) != 0) {
         fprintf(stderr, "[SugarBee] Cannot close directory '%s': %s\n",
                 directory, strerror(errno));
+                scan_failed = true;
     }
+
+    g_engine.cartridge_rejected = rejected;
+    g_engine.cartridge_omitted = eligible - g_engine.cartridge_count;
+    g_engine.cartridge_scan_errors = scan_failed;
 
     printf("[SugarBee] %zu eligible, %zu rejected%s.\n",
            eligible, rejected,
-           scan_failed ? " before scan failed" : "");
+           scan_failed ? " (scan errors; see console)" : "");
 
     printf("[SugarBee] Stored %zu cartridge(s) for the launcher.\n",
            g_engine.cartridge_count);

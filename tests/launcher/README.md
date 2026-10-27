@@ -27,6 +27,20 @@ packed, even if the Lua source is later changed.
 - Use a nonexistent directory: console error, empty list message, B/K exit.
 - Use the printed `empty` command: zero entries; directions and A/J are harmless.
 
+## Rescan and summaries
+
+- X/U refreshes the list and selects its first entry without launching.
+  Holding the button performs only one scan.
+- Add or remove a cartridge while the launcher is open, then rescan.
+  The list and scan counts reflect the changes.
+- Rescan an empty directory: navigation and confirmation remain harmless.
+- The mixed scan fixture reports two rejected files.
+- With 65 eligible cartridges, 64 are listed and one is reported as
+  additional and not listed. All 64 listed entries remain reachable.
+- Directory errors display a distinct message with details in the console.
+- After rescanning, Pong still launches, pauses, resumes, and exits.
+  B/K still closes the launcher.
+
 ## Selection and sessions
 
 - Use the printed `scroll` command: ten entries with distinct filenames and
@@ -46,7 +60,7 @@ packed, even if the Lua source is later changed.
 ## Error recovery
 
 Temporarily select `init_error` in `tests/shutdown/main.lua`, package it into the
-scan directory, then restart directory mode so the new package is discovered.
+scan directory, then press X/U in the launcher so the new package is discovered.
 Repeat with `update_error`. Restore the source to `normal` afterward and repack
 when a normal test package is needed.
 
@@ -62,5 +76,4 @@ when a normal test package is needed.
 
 The ten existing CTest cases cover graphics, textures, assets, input, timing,
 headers, and packaging; these launcher interaction checks remain manual.
-Rescanning, single-cartridge autolaunch, and detailed on-screen scan summaries
-are pending and should not be expected in this checkpoint.
+Single-cartridge autolaunch and deterministic sorting remain pending.
