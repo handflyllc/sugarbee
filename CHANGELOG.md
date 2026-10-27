@@ -2,6 +2,13 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added `tests/cartridge_smoke.lua`, a headless Lua 5.4 harness that runs a
+  cartridge against a stand-in `sugarbee` API with the bindings' argument
+  validation, and registered a `cartridge_smoke_<example>` ctest for every
+  example when a `lua5.4` interpreter is present. Replaced the non-functional
+  Pac-Man draft with `examples/pacman-demo`, a single-level demonstrator
+  using generated `texture_rgba` sprites and classic ghost targeting.
+
 - Added `--cartridges DIRECTORY` discovery and an eight-row scrolling launcher
   with title/filename display, A/J launch, and return to the selected entry on
   cartridge exit. Discovery validates headers and bounded `main.lua` reads

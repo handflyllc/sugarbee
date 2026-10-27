@@ -39,6 +39,29 @@ cmake --build build-tools --parallel
 ctest --test-dir build-tools --output-on-failure
 ```
 
+## Cartridge smoke tests (no SDL required)
+
+`ctest` runs every example under `examples/` through
+[`tests/cartridge_smoke.lua`](../../tests/cartridge_smoke.lua) when a `lua5.4`
+interpreter is installed (`sudo apt install lua5.4`). The script replaces the
+`sugarbee` table with a stand-in that performs the same argument validation as
+the real bindings — integer coordinates, RGBA buffer length, sprite regions
+inside their texture, valid handles, host-reserved `start` — then calls
+`init()`, 3000 fixed-step `update(dt)`/`draw()` pairs with seeded random
+input, and `shutdown()`. Any Lua error that would have produced Guru
+Meditation on the console fails the test with a traceback.
+
+Run one cartridge by hand, optionally with a frame count and seed:
+
+```sh
+lua5.4 tests/cartridge_smoke.lua examples/pacman-demo 3000 1
+```
+
+This is a crash test only. It draws nothing and cannot judge gameplay,
+colours, or layout; the manual checks below remain necessary. `texture_load()`
+reads the PNG header from the game directory for size checks, so run it on the
+unpacked source folder, not a `.vcart`.
+
 ## Package and launch the graphics regression cartridge
 
 The original gold-rectangle demonstration is checked in as
