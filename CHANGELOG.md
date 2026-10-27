@@ -2,6 +2,16 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added `--cartridges DIRECTORY` discovery and an eight-row scrolling launcher
+  with title/filename display, A/J launch, and return to the selected entry on
+  cartridge exit. Discovery validates headers and bounded `main.lua` reads
+  without executing Lua, storing up to 64 entries. Rejections and scan failures
+  are reported in the console. No-argument startup now opens an idle host.
+  B/K recovers from Guru Meditation to the host without calling the failed
+  cartridge's shutdown callback. Added reproducible launcher fixtures and a
+  manual regression checklist. Rescanning, single-cartridge autolaunch, and
+  detailed on-screen scan summaries remain pending.
+
 - Separated cartridge cleanup from host shutdown. The cartridge-ending
   operation invokes the eligible Lua shutdown callback, closes Lua, releases
   cartridge textures, and clears session flags. Texture cleanup preserves
@@ -10,7 +20,7 @@
   Exit Game now returns to an idle host screen; B or keyboard K closes the
   host. A or keyboard J relaunches the startup cartridge with a fresh Lua
   state. Launch input is consumed and held buttons are suppressed until
-  released. Cartridge discovery and selection remain pending.
+  released. Directory-mode discovery and selection are described above.
 
 - Added a host-controlled pause menu with Resume and Exit Game, operated by
   any controller or the keyboard. Start is now host-reserved and unavailable

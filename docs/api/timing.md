@@ -27,13 +27,20 @@ The host closes Lua and releases cartridge textures while retaining its
 window, renderer, and input services. Closing the idle host does not call the
 cartridge shutdown callback again.
 
-The idle host can relaunch the cartridge supplied at startup. Each launch
+The idle host can relaunch the startup cartridge, or launch the selected
+entry in directory mode. Each launch
 creates a fresh Lua state, registers the SugarBee API, loads the script, and
 calls `init()`. Lua globals from the previous session do not carry over.
 The scheduler is reset after launch so loading time does not become catch-up
 gameplay. A failed launch displays Guru Meditation.
 
-Selecting a different cartridge from the idle host is not implemented.
+B/K dismisses Guru Meditation and returns to the list or idle host. Failed
+sessions are cleaned up while Guru is still active, so their shutdown callback
+is skipped. Recovery input is consumed and timing is reset. A healthy cartridge
+can then be launched in a fresh Lua state. Discovery reads the header and
+`main.lua` but neither compiles nor executes Lua; eligibility is not a guarantee
+that initialization or gameplay succeeds.
+
 Callback execution has no time limit, so a callback that never returns can
 prevent the host from processing menu input or completing cartridge cleanup.
 

@@ -1,7 +1,9 @@
 # Host pause menu manual checks
 
 Build the engine and package the Pong Lab cartridge using its README.
-Run these checks with two controllers and the keyboard.
+Run these checks with two controllers and the keyboard. Launch Pong by its
+direct cartridge path for the idle-screen and relaunch checks below. Directory
+mode is covered by the [launcher checklist](../launcher/README.md).
 
 ## Menu and gameplay
 
@@ -33,6 +35,8 @@ Run these checks with two controllers and the keyboard.
   menu. The callback's entered/completed messages should each appear once.
   Closing the idle host afterward must not print them again.
 - Run an existing Guru test case and confirm its error screen still displays.
+  B/K should recover to the idle host without closing SugarBee or invoking the
+  failed cartridge's shutdown callback. Release and press B/K again to close.
 
 ## Relaunch
 
