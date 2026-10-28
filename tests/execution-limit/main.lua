@@ -1,7 +1,9 @@
 -- Cases: runaway, normal, caught_error, main_runaway, init_runaway,
--- main_caught_error, init_caught_error, startup_normal
+-- main_caught_error, init_caught_error, startup_normal,
+-- draw_runaway, draw_caught_error, draw_normal
 local test_case = "runaway"
 local frames = 0
+local draws = 0
 local total = 0
 
 local function runaway()
@@ -46,12 +48,26 @@ function update(dt)
         for i = 1, 50000 do total = total + i end
         frames = frames + 1
         if frames == 120 then print("Execution limit test: 120 updates completed") end
+    elseif test_case == "draw_runaway" or test_case == "draw_caught_error" or
+           test_case == "draw_normal" then
+        -- Leave update healthy so the draw case can run.
     else
         error("Unknown execution limit test case: " .. test_case)
     end
 end
 
 function draw()
+    if test_case == "draw_runaway" then
+        runaway()
+    elseif test_case == "draw_caught_error" then
+        pcall(runaway)
+    elseif test_case == "draw_normal" then
+        -- Each draw fits; repeated draws exceed a single-call allowance.
+        for i = 1, 50000 do total = total + i end
+        draws = draws + 1
+        if draws == 120 then print("Execution limit test: 120 draws completed") end
+    end
+
     sugarbee.cls(8, 12, 32)
     sugarbee.print("EXECUTION LIMIT TEST", 40, 40)
     sugarbee.print("NORMAL CASE: START TO OPEN EXIT MENU", 40, 80)

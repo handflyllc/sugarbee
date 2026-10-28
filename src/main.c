@@ -34,6 +34,7 @@
 /* Provisional per-call Lua instruction allowances, not wall-clock limits. */
 #define SB_LUA_STARTUP_INSTRUCTION_LIMIT 10000000
 #define SB_LUA_UPDATE_INSTRUCTION_LIMIT 1000000
+#define SB_LUA_DRAW_INSTRUCTION_LIMIT 1000000
 
 typedef struct {
     char title[32];
@@ -493,6 +494,9 @@ void call_lua_global_function(const char* func_name, bool with_dt, double dt) {
         if (strcmp(func_name, "update") == 0) {
             status = call_lua_with_limit(with_dt ? 1 : 0, "update()",
                                          SB_LUA_UPDATE_INSTRUCTION_LIMIT);
+        } else if (strcmp(func_name, "draw") == 0) {
+            status = call_lua_with_limit(with_dt ? 1 : 0, "draw()",
+                                         SB_LUA_DRAW_INSTRUCTION_LIMIT);
         } else if (strcmp(func_name, "init") == 0) {
             status = call_lua_with_limit(with_dt ? 1 : 0, "init()",
                                          SB_LUA_STARTUP_INSTRUCTION_LIMIT);
