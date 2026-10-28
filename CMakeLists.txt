@@ -143,9 +143,32 @@ if(BUILD_TESTING)
 
     # Run each example cartridge headlessly against a stand-in sugarbee API
     # (tests/cartridge_smoke.lua). Needs only the Lua 5.4 interpreter, not
-    # SDL or the host; the test is skipped when no interpreter is installed.
+    # SDL or the host; skip these tests unless the interpreter reports Lua 5.4.
     find_program(LUA54_INTERPRETER NAMES lua5.4 lua)
+    set(LUA54_INTERPRETER_COMPATIBLE FALSE)
     if(LUA54_INTERPRETER)
+        execute_process(
+            COMMAND "${LUA54_INTERPRETER}" -e "io.write(_VERSION)"
+            RESULT_VARIABLE LUA54_VERSION_RESULT
+            OUTPUT_VARIABLE LUA54_VERSION_OUTPUT
+            ERROR_VARIABLE LUA54_VERSION_ERROR
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            TIMEOUT 5)
+        if("${LUA54_VERSION_RESULT}" STREQUAL "0")
+            if("${LUA54_VERSION_OUTPUT}" STREQUAL "Lua 5.4")
+                set(LUA54_INTERPRETER_COMPATIBLE TRUE)
+                message(STATUS "Lua 5.4 interpreter: ${LUA54_INTERPRETER}; cartridge_smoke tests enabled")
+            else()
+                message(STATUS "Interpreter '${LUA54_INTERPRETER}' reports '${LUA54_VERSION_OUTPUT}'; Lua 5.4 required; cartridge_smoke tests disabled")
+            endif()
+        else()
+            message(STATUS "Cannot query Lua interpreter '${LUA54_INTERPRETER}' (${LUA54_VERSION_RESULT}): ${LUA54_VERSION_ERROR}; cartridge_smoke tests disabled")
+        endif()
+    else()
+        message(STATUS "Lua interpreter not found; Lua 5.4 required; cartridge_smoke tests disabled")
+    endif()
+
+    if(LUA54_INTERPRETER_COMPATIBLE)
         foreach(cartridge IN ITEMS graphics-demo moving-box sprite-demo
                 asset-demo sprite-sheet-demo pong-lab invaders-lab pacman-demo)
             add_test(NAME cartridge_smoke_${cartridge}
@@ -153,7 +176,5 @@ if(BUILD_TESTING)
                     "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua"
                     "${PROJECT_SOURCE_DIR}/examples/${cartridge}" 3000)
         endforeach()
-    else()
-        message(STATUS "lua5.4 interpreter not found; cartridge_smoke tests disabled")
     endif()
 endif()
