@@ -4,7 +4,9 @@
 
 - Added a provisional per-update Lua instruction budget for accidental runaway
   loops, execution-limit diagnostics, and a manual regression cartridge.
-  Other lifecycle stages and deliberate bypasses remain outside this checkpoint.
+  Extended coverage to top-level main.lua execution and init, each with a
+  separate larger startup budget and stage-specific diagnostics. Draw, shutdown,
+  compilation, native calls, and deliberate bypasses remain outside this checkpoint.
   Added Pacman Demo to the launcher fixtures (four eligible, two rejected).
 
 - Check the standalone Lua interpreter version during CMake configuration.

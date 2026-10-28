@@ -31,7 +31,8 @@
 #define SB_LAUNCHER_MAX_CARTRIDGES 64
 #define SB_LAUNCHER_PATH_SIZE 4096
 
-/* Provisional per-update Lua instruction allowance, not a wall-clock limit. */
+/* Provisional per-call Lua instruction allowances, not wall-clock limits. */
+#define SB_LUA_STARTUP_INSTRUCTION_LIMIT 10000000
 #define SB_LUA_UPDATE_INSTRUCTION_LIMIT 1000000
 
 typedef struct {
@@ -53,7 +54,8 @@ typedef struct {
     pause_menu_selection_t pause_selection;
     bool blocked_buttons[SB_MAX_PLAYERS][SB_BUTTON_COUNT];
     bool guru_active;
-    bool update_limit_exceeded;
+    bool execution_limit_exceeded;
+    const char *execution_stage; /* Borrowed label, valid during the protected call. */
     
     // Diagnostic state
     uint32_t error_code;
@@ -86,6 +88,33 @@ void trigger_guru_meditation(uint32_t code, const char* title, const char* messa
 void render_guru_meditation(void);
 static void end_cartridge(void);
 static void scan_cartridge_directory(const char *directory);
+
+/* Count hooks run during Lua bytecode execution, not inside native calls. */
+static void lua_instruction_limit(lua_State *L, lua_Debug *ar) {
+    (void)ar;
+    g_engine.execution_limit_exceeded = true;
+    luaL_error(L, "Lua execution limit exceeded in %s", g_engine.execution_stage);
+}
+
+/* Stack: consumes function/arguments; leaves one error on failure, none on success.
+   A caught limit error can return LUA_OK, but still activates Guru below. */
+static int call_lua_with_limit(int nargs, const char *stage, int budget) {
+    g_engine.execution_limit_exceeded = false;
+    g_engine.execution_stage = stage;
+    lua_sethook(g_engine.L, lua_instruction_limit, LUA_MASKCOUNT, budget);
+
+    int status = lua_pcall(g_engine.L, nargs, 0, 0);
+    lua_sethook(g_engine.L, NULL, 0, 0);
+    g_engine.execution_stage = NULL;
+
+    if (g_engine.execution_limit_exceeded) {
+        char message[128];
+        snprintf(message, sizeof(message),
+                 "Lua execution limit exceeded in %s", stage);
+        trigger_guru_meditation(0x00000004, "LUA EXECUTION LIMIT", message, NULL);
+    }
+    return status;
+}
 
 // --- CARTRIDGE LOADER ROUTINE ---
 
@@ -127,11 +156,18 @@ bool load_virtual_cartridge(const char* filepath) {
     int lua_status = luaL_loadbuffer(g_engine.L, (const char *)main_lua_source,
                                      script_size, "@main.lua");
     free(main_lua_source);
-    if (lua_status == LUA_OK) lua_status = lua_pcall(g_engine.L, 0, 0, 0);
-    if (lua_status != LUA_OK) {
-        const char* lua_err = lua_tostring(g_engine.L, -1);
-        trigger_guru_meditation(0x00000004, "LUA CARTRIDGE ERROR", lua_err, NULL);
-        lua_pop(g_engine.L, 1);
+    if (lua_status == LUA_OK) {
+        lua_status = call_lua_with_limit(0, "main.lua",
+                                        SB_LUA_STARTUP_INSTRUCTION_LIMIT);
+    }
+    if (lua_status != LUA_OK || g_engine.guru_active) {
+        if (lua_status != LUA_OK) {
+            if (!g_engine.guru_active) {
+                const char* lua_err = lua_tostring(g_engine.L, -1);
+                trigger_guru_meditation(0x00000004, "LUA CARTRIDGE ERROR", lua_err, NULL);
+            }
+            lua_pop(g_engine.L, 1);
+        }
         return false;
     }
     g_engine.cart_loaded = true;
@@ -446,13 +482,6 @@ void render_guru_meditation(void) {
         60, 640, 150, 150, 150, 2);
 }
 
-/* Count hooks run during Lua bytecode execution, not inside native calls. */
-static void update_instruction_limit(lua_State *L, lua_Debug *ar) {
-    (void)ar;
-    g_engine.update_limit_exceeded = true;
-    luaL_error(L, "Lua execution limit exceeded in update()");
-}
-
 /* A Lua callback may optionally receive the fixed simulation delta. */
 void call_lua_global_function(const char* func_name, bool with_dt, double dt) {
     if (!g_engine.L || g_engine.guru_active) return;
@@ -460,25 +489,18 @@ void call_lua_global_function(const char* func_name, bool with_dt, double dt) {
     lua_getglobal(g_engine.L, func_name);
     if (lua_isfunction(g_engine.L, -1)) {
         if (with_dt) lua_pushnumber(g_engine.L, dt);
-        bool limited_update = strcmp(func_name, "update") == 0;
-        if (limited_update) {
-            g_engine.update_limit_exceeded = false;
-            lua_sethook(g_engine.L, update_instruction_limit, LUA_MASKCOUNT,
-                        SB_LUA_UPDATE_INSTRUCTION_LIMIT);
+        int status;
+        if (strcmp(func_name, "update") == 0) {
+            status = call_lua_with_limit(with_dt ? 1 : 0, "update()",
+                                         SB_LUA_UPDATE_INSTRUCTION_LIMIT);
+        } else if (strcmp(func_name, "init") == 0) {
+            status = call_lua_with_limit(with_dt ? 1 : 0, "init()",
+                                         SB_LUA_STARTUP_INSTRUCTION_LIMIT);
+        } else {
+            status = lua_pcall(g_engine.L, with_dt ? 1 : 0, 0, 0);
         }
 
-        /* pcall consumes the function/arguments; failure leaves one error. */
-        int status = lua_pcall(g_engine.L, with_dt ? 1 : 0, 0, 0);
-        if (limited_update) {
-            lua_sethook(g_engine.L, NULL, 0, 0);
-        }
-
-        if (limited_update && g_engine.update_limit_exceeded) {
-            /* Also fail if Lua caught the hook error and returned normally. */
-            trigger_guru_meditation(0x00000004, "LUA EXECUTION LIMIT",
-                                   "Lua execution limit exceeded in update()",
-                                   NULL);
-        } else if (status != LUA_OK) {
+        if (status != LUA_OK && !g_engine.guru_active) {
             const char* err = lua_tostring(g_engine.L, -1);
             trigger_guru_meditation(0x00000004, "LUA RUNTIME EXCEPTION", err, NULL);
         }

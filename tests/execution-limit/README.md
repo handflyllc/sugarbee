@@ -1,9 +1,10 @@
-# Lua update execution-limit checks
+# Lua execution-limit checks
 
-This checkpoint limits only main-thread `update()` execution to a provisional
-1,000,000 Lua instructions per call. This is not a time limit or a sandbox.
-Loading, init, draw, shutdown, native calls, coroutine handling, and deliberate
-hook/error-catching bypasses are outside this first checkpoint.
+This checkpoint limits main-thread top-level `main.lua` execution and `init()`
+to 10,000,000 Lua instructions each, and `update()` to 1,000,000 per call.
+These provisional budgets are independent, not wall-clock limits or a sandbox.
+File reading, compilation, draw, shutdown, native calls, coroutine handling,
+and deliberate hook/error-catching bypasses remain outside this checkpoint.
 
 From the repository root:
 
@@ -23,11 +24,20 @@ Set `test_case` in main.lua and repack for each case:
 - `caught_error`: update catches the hook error and returns. The host must
   still show the execution-limit Guru rather than continue the session.
   This does not test repeated catching, coroutine, or debug-hook bypasses.
+- `main_runaway` and `init_runaway`: expect the execution-limit Guru naming
+  `main.lua` or `init()` respectively. B/K recovers; shutdown must not run.
+- `main_caught_error` and `init_caught_error`: catching the hook error and
+  returning still fails startup. In the main case, init must not run afterward.
+- `startup_normal`: the top-level script and init each perform work larger
+  than an update allowance. Both completion messages and then `120 updates
+  completed` should appear without Guru. Normal exit calls shutdown once.
 
 For recovery testing, place the runaway cartridge beside Pong in a launcher
 directory. Trigger the limit, recover with B/K, then launch and play Pong.
-Repeat the failed launch and recovery. Verify Pac-Man and Invaders still play
-without execution-limit errors. Repeat on the Pi before settling the budget.
+Repeat the failed launch and recovery for update and both startup stages.
+Also test a single-cartridge directory: automatic launch fails once, then B/K
+returns to the launcher without automatically retrying. Verify Pac-Man and
+Invaders still play without execution-limit errors. Repeat on the Pi before settling the budget.
 Restore `test_case` to `runaway` after testing.
 
 The stand-in cartridge smoke harness does not exercise this native host hook.
