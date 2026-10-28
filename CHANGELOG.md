@@ -2,6 +2,10 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Check the standalone Lua interpreter version during CMake configuration.
+  Cartridge smoke tests require Lua 5.4; missing, incompatible, or unusable
+  interpreters produce a diagnostic and disable only those optional tests.
+
 - Added `tests/cartridge_smoke.lua`, a headless Lua 5.4 harness that runs a
   cartridge against a stand-in `sugarbee` API with the bindings' argument
   validation, and registered a `cartridge_smoke_<example>` ctest for every

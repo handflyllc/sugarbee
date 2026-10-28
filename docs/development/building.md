@@ -51,6 +51,17 @@ inside their texture, valid handles, host-reserved `start` — then calls
 input, and `shutdown()`. Any Lua error that would have produced Guru
 Meditation on the console fails the test with a traceback.
 
+CMake checks the selected executable's `_VERSION` at configuration time. Only
+`Lua 5.4` enables these optional tests. Missing, incompatible, or unusable
+interpreters produce a configuration message and leave the native tests enabled.
+The standalone interpreter check is separate from the engine's linked Lua library.
+
+CMake caches the interpreter path. After installing Lua 5.4, rediscover it with:
+
+```sh
+cmake -S . -B build -U LUA54_INTERPRETER
+```
+
 Run one cartridge by hand, optionally with a frame count and seed:
 
 ```sh
