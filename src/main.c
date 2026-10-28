@@ -35,6 +35,7 @@
 #define SB_LUA_STARTUP_INSTRUCTION_LIMIT 10000000
 #define SB_LUA_UPDATE_INSTRUCTION_LIMIT 1000000
 #define SB_LUA_DRAW_INSTRUCTION_LIMIT 1000000
+#define SB_LUA_SHUTDOWN_INSTRUCTION_LIMIT 1000000
 
 typedef struct {
     char title[32];
@@ -98,8 +99,10 @@ static void lua_instruction_limit(lua_State *L, lua_Debug *ar) {
 }
 
 /* Stack: consumes function/arguments; leaves one error on failure, none on success.
-   A caught limit error can return LUA_OK, but still activates Guru below. */
-static int call_lua_with_limit(int nargs, const char *stage, int budget) {
+   A caught limit error can return LUA_OK; execution_limit_exceeded still records it.
+   Shutdown reports to the console itself rather than activating Guru. */
+static int call_lua_with_limit(int nargs, const char *stage, int budget,
+                               bool guru_on_limit) {
     g_engine.execution_limit_exceeded = false;
     g_engine.execution_stage = stage;
     lua_sethook(g_engine.L, lua_instruction_limit, LUA_MASKCOUNT, budget);
@@ -108,7 +111,7 @@ static int call_lua_with_limit(int nargs, const char *stage, int budget) {
     lua_sethook(g_engine.L, NULL, 0, 0);
     g_engine.execution_stage = NULL;
 
-    if (g_engine.execution_limit_exceeded) {
+    if (g_engine.execution_limit_exceeded && guru_on_limit) {
         char message[128];
         snprintf(message, sizeof(message),
                  "Lua execution limit exceeded in %s", stage);
@@ -159,7 +162,7 @@ bool load_virtual_cartridge(const char* filepath) {
     free(main_lua_source);
     if (lua_status == LUA_OK) {
         lua_status = call_lua_with_limit(0, "main.lua",
-                                        SB_LUA_STARTUP_INSTRUCTION_LIMIT);
+                                        SB_LUA_STARTUP_INSTRUCTION_LIMIT, true);
     }
     if (lua_status != LUA_OK || g_engine.guru_active) {
         if (lua_status != LUA_OK) {
@@ -493,13 +496,13 @@ void call_lua_global_function(const char* func_name, bool with_dt, double dt) {
         int status;
         if (strcmp(func_name, "update") == 0) {
             status = call_lua_with_limit(with_dt ? 1 : 0, "update()",
-                                         SB_LUA_UPDATE_INSTRUCTION_LIMIT);
+                                         SB_LUA_UPDATE_INSTRUCTION_LIMIT, true);
         } else if (strcmp(func_name, "draw") == 0) {
             status = call_lua_with_limit(with_dt ? 1 : 0, "draw()",
-                                         SB_LUA_DRAW_INSTRUCTION_LIMIT);
+                                         SB_LUA_DRAW_INSTRUCTION_LIMIT, true);
         } else if (strcmp(func_name, "init") == 0) {
             status = call_lua_with_limit(with_dt ? 1 : 0, "init()",
-                                         SB_LUA_STARTUP_INSTRUCTION_LIMIT);
+                                         SB_LUA_STARTUP_INSTRUCTION_LIMIT, true);
         } else {
             status = lua_pcall(g_engine.L, with_dt ? 1 : 0, 0, 0);
         }
@@ -957,10 +960,17 @@ static void call_lua_shutdown(void) {
         return;
     }
 
-    if (lua_pcall(g_engine.L, 0, 0, 0) != LUA_OK) {
+    int status = call_lua_with_limit(0, "shutdown()",
+                                     SB_LUA_SHUTDOWN_INSTRUCTION_LIMIT, false);
+    if (g_engine.execution_limit_exceeded) {
+        fprintf(stderr,
+                "Lua shutdown error: Lua execution limit exceeded in shutdown()\n");
+    } else if (status != LUA_OK) {
         const char *err = lua_tostring(g_engine.L, -1);
         fprintf(stderr, "Lua shutdown error: %s\n",
-        err ? err : "(non-string error)");
+                err ? err : "(non-string error)");
+    }
+    if (status != LUA_OK) {
         lua_pop(g_engine.L, 1);
     }
 }

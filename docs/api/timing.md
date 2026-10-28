@@ -19,7 +19,10 @@ and its return values are ignored.
 The callback is skipped if cartridge initialization failed or Guru
 Meditation is active. An absent or non-function `shutdown` value is
 ignored. Errors raised by the callback are reported to the console;
-native cleanup still continues.
+native cleanup still continues. Shutdown has its own fresh provisional allowance
+of 1,000,000 Lua instructions. Exceeding it reports a console error without
+activating Guru, even if the callback catches the limit error and returns.
+The callback is not retried; native cleanup follows the existing exit path.
 
 Closing the window ends the cartridge session and closes SugarBee. Selecting
 Exit Game instead ends the cartridge session and returns to an idle host.
@@ -52,7 +55,7 @@ and the failed session skips shutdown. The hook is cleared after each protected 
 A caught limit error that returns to the host still fails the session.
 
 These limits catch accidental Lua loops, not deliberate bypasses.
-They do not yet cover `shutdown()` or coroutine execution, prevent
+They do not cover finalizers during Lua state closure or coroutine execution, prevent
 Lua code from replacing hooks, or guarantee escape from repeatedly caught
 errors. Native calls cannot be interrupted by this hook. There is no wall-clock
 limit; uncovered execution can still prevent menu input or cleanup.

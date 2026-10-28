@@ -1,6 +1,7 @@
 -- Cases: runaway, normal, caught_error, main_runaway, init_runaway,
 -- main_caught_error, init_caught_error, startup_normal,
--- draw_runaway, draw_caught_error, draw_normal
+-- draw_runaway, draw_caught_error, draw_normal, shutdown_runaway,
+-- shutdown_caught_error, shutdown_normal, shutdown_error, shutdown_absent
 local test_case = "runaway"
 local frames = 0
 local draws = 0
@@ -49,8 +50,10 @@ function update(dt)
         frames = frames + 1
         if frames == 120 then print("Execution limit test: 120 updates completed") end
     elseif test_case == "draw_runaway" or test_case == "draw_caught_error" or
-           test_case == "draw_normal" then
-        -- Leave update healthy so the draw case can run.
+           test_case == "draw_normal" or test_case == "shutdown_runaway" or
+           test_case == "shutdown_caught_error" or test_case == "shutdown_normal" or
+           test_case == "shutdown_error" or test_case == "shutdown_absent" then
+        -- Leave update healthy so drawing and normal exit can run.
     else
         error("Unknown execution limit test case: " .. test_case)
     end
@@ -75,4 +78,18 @@ end
 
 function shutdown()
     print("Execution limit test: shutdown entered")
+    if test_case == "shutdown_runaway" then
+        runaway()
+    elseif test_case == "shutdown_caught_error" then
+        pcall(runaway)
+    elseif test_case == "shutdown_normal" then
+        for i = 1, 50000 do total = total + i end
+    elseif test_case == "shutdown_error" then
+        error("Intentional shutdown failure")
+    end
+    print("Execution limit test: shutdown completed")
+end
+
+if test_case == "shutdown_absent" then
+    shutdown = nil
 end

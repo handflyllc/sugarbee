@@ -1,9 +1,9 @@
 # Lua execution-limit checks
 
 This checkpoint limits main-thread top-level `main.lua` execution and `init()`
-to 10,000,000 Lua instructions each, and each `update()` and `draw()` to 1,000,000 per call.
+to 10,000,000 Lua instructions each, and each `update()`, `draw()`, and `shutdown()` to 1,000,000 per call.
 These provisional budgets are independent, not wall-clock limits or a sandbox.
-File reading, compilation, shutdown, native calls, coroutine handling,
+File reading, compilation, finalizers during state closure, native calls, coroutine handling,
 and deliberate hook/error-catching bypasses remain outside this checkpoint.
 
 From the repository root:
@@ -38,6 +38,24 @@ Set `test_case` in main.lua and repack for each case:
 - `draw_normal`: wait for `120 draws completed`, with no Guru. Pause/resume
   and normal exit work; shutdown prints once. Drawing rate is not fixed, so
   this marker may take longer than the corresponding update marker.
+
+## Shutdown cases
+
+For each shutdown case, test both Exit Game from the pause menu and closing
+SugarBee's window while the cartridge is running.
+
+- `shutdown_runaway`: one entered message, one console error naming
+  `shutdown()`, and no completed message. No Guru appears; Exit Game returns
+  to the host, while window close terminates SugarBee.
+- `shutdown_caught_error`: the callback catches the limit error and prints
+  completed, but the host still reports the limit once and finishes cleanup.
+- `shutdown_normal`: entered and completed each appear once, without an error.
+- `shutdown_error`: one ordinary shutdown error; cleanup continues without Guru.
+- `shutdown_absent`: no shutdown messages or errors; cleanup still completes.
+
+After Exit Game, launch a healthy game from the same directory-mode host.
+Repeat the shutdown-failure session; closing the idle host must not invoke
+shutdown again. Existing update/draw/startup failures still skip shutdown.
 
 For recovery testing, place the runaway cartridge beside Pong in a launcher
 directory. Trigger the limit, recover with B/K, then launch and play Pong.

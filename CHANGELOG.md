@@ -7,7 +7,9 @@
   Extended coverage to top-level main.lua execution and init, each with a
   separate larger startup budget and stage-specific diagnostics. Each draw now
   also receives a fresh instruction budget, with runaway and normal-draw checks.
-  Shutdown, compilation, native calls, and deliberate bypasses remain outside
+  Shutdown also has a bounded allowance; limit failures report to the console
+  and continue native cleanup without Guru or retry. Compilation, finalizers
+  during state closure, native calls, and deliberate bypasses remain outside
   this checkpoint.
   Added Pacman Demo to the launcher fixtures (four eligible, two rejected).
 
