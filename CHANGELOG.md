@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added a provisional per-update Lua instruction budget for accidental runaway
+  loops, execution-limit diagnostics, and a manual regression cartridge.
+  Other lifecycle stages and deliberate bypasses remain outside this checkpoint.
+  Added Pacman Demo to the launcher fixtures (four eligible, two rejected).
+
 - Check the standalone Lua interpreter version during CMake configuration.
   Cartridge smoke tests require Lua 5.4; missing, incompatible, or unusable
   interpreters produce a diagnostic and disable only those optional tests.

@@ -16,7 +16,7 @@ mkdir -p "$fixtures/scroll"
 mkdir -p "$fixtures/empty"
 mkdir -p "$fixtures/no-entry"
 
-# Three eligible cartridges.
+# Four eligible cartridges.
 "$packer" -i "$repo_root/examples/pong-lab" \
     -o "$fixtures/scan/pong.vcart" -t "Pong Lab"
 
@@ -25,6 +25,9 @@ mkdir -p "$fixtures/no-entry"
 
 "$packer" -i "$repo_root/tests/shutdown" \
     -o "$fixtures/scan/shutdown.vcart" -t "Shutdown Test"
+
+"$packer" -i "$repo_root/examples/pacman-demo" \
+    -o "$fixtures/scan/pacman.vcart" -t "Pacman Demo"
 
 # Invalid header: an empty file.
 touch "$fixtures/scan/invalid.vcart"
@@ -45,7 +48,7 @@ for number in {1..10}; do
 done
 
 printf '\nFixtures ready: %s\n' "$fixtures"
-printf '  scan:   3 eligible, 2 rejected, 3 stored\n'
+printf '  scan:   4 eligible, 2 rejected, 4 stored\n'
 printf '  scroll: 10 eligible, 0 rejected, 10 stored\n'
 printf '  empty:  0 eligible, 0 rejected, 0 stored\n'
 printf '\nRun from the repository root:\n'

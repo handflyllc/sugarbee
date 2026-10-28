@@ -41,8 +41,18 @@ can then be launched in a fresh Lua state. Discovery reads the header and
 `main.lua` but neither compiles nor executes Lua; eligibility is not a guarantee
 that initialization or gameplay succeeds.
 
-Callback execution has no time limit, so a callback that never returns can
-prevent the host from processing menu input or completing cartridge cleanup.
+Each main-thread `update()` call has a provisional allowance of 1,000,000 Lua
+instructions. Nested Lua functions share it, and each update receives a fresh
+allowance. Exceeding it shows an execution-limit Guru; B/K returns to the host
+and the failed session skips shutdown. The hook is cleared after update returns.
+A caught limit error that returns to the host still fails the session.
+
+This first checkpoint catches accidental Lua loops, not deliberate bypasses.
+It does not yet cover other lifecycle stages or coroutine execution, prevent
+Lua code from replacing hooks, or guarantee escape from repeatedly caught
+errors. Native calls cannot be interrupted by this hook. There is no wall-clock
+limit; uncovered execution can still prevent menu input or cleanup.
+See [execution-limit checks](../../tests/execution-limit/README.md).
 
 ```lua
 local x = 100

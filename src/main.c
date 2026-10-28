@@ -31,6 +31,9 @@
 #define SB_LAUNCHER_MAX_CARTRIDGES 64
 #define SB_LAUNCHER_PATH_SIZE 4096
 
+/* Provisional per-update Lua instruction allowance, not a wall-clock limit. */
+#define SB_LUA_UPDATE_INSTRUCTION_LIMIT 1000000
+
 typedef struct {
     char title[32];
     char path[SB_LAUNCHER_PATH_SIZE];
@@ -50,6 +53,7 @@ typedef struct {
     pause_menu_selection_t pause_selection;
     bool blocked_buttons[SB_MAX_PLAYERS][SB_BUTTON_COUNT];
     bool guru_active;
+    bool update_limit_exceeded;
     
     // Diagnostic state
     uint32_t error_code;
@@ -442,6 +446,13 @@ void render_guru_meditation(void) {
         60, 640, 150, 150, 150, 2);
 }
 
+/* Count hooks run during Lua bytecode execution, not inside native calls. */
+static void update_instruction_limit(lua_State *L, lua_Debug *ar) {
+    (void)ar;
+    g_engine.update_limit_exceeded = true;
+    luaL_error(L, "Lua execution limit exceeded in update()");
+}
+
 /* A Lua callback may optionally receive the fixed simulation delta. */
 void call_lua_global_function(const char* func_name, bool with_dt, double dt) {
     if (!g_engine.L || g_engine.guru_active) return;
@@ -449,9 +460,29 @@ void call_lua_global_function(const char* func_name, bool with_dt, double dt) {
     lua_getglobal(g_engine.L, func_name);
     if (lua_isfunction(g_engine.L, -1)) {
         if (with_dt) lua_pushnumber(g_engine.L, dt);
-        if (lua_pcall(g_engine.L, with_dt ? 1 : 0, 0, 0) != LUA_OK) {
+        bool limited_update = strcmp(func_name, "update") == 0;
+        if (limited_update) {
+            g_engine.update_limit_exceeded = false;
+            lua_sethook(g_engine.L, update_instruction_limit, LUA_MASKCOUNT,
+                        SB_LUA_UPDATE_INSTRUCTION_LIMIT);
+        }
+
+        /* pcall consumes the function/arguments; failure leaves one error. */
+        int status = lua_pcall(g_engine.L, with_dt ? 1 : 0, 0, 0);
+        if (limited_update) {
+            lua_sethook(g_engine.L, NULL, 0, 0);
+        }
+
+        if (limited_update && g_engine.update_limit_exceeded) {
+            /* Also fail if Lua caught the hook error and returned normally. */
+            trigger_guru_meditation(0x00000004, "LUA EXECUTION LIMIT",
+                                   "Lua execution limit exceeded in update()",
+                                   NULL);
+        } else if (status != LUA_OK) {
             const char* err = lua_tostring(g_engine.L, -1);
             trigger_guru_meditation(0x00000004, "LUA RUNTIME EXCEPTION", err, NULL);
+        }
+        if (status != LUA_OK) {
             lua_pop(g_engine.L, 1);
         }
     } else {

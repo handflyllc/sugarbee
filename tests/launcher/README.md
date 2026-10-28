@@ -20,8 +20,9 @@ packed, even if the Lua source is later changed.
   B/K closes the host.
 - A direct Pong path: play, pause, exit to host, A/J relaunch, B/K host exit.
 - Missing `--cartridges` argument or unknown option: usage message, no window.
-- Use the printed `scan` command: expect 3 eligible, 2 rejected, 3 stored.
-  Invaders, Pong Lab, and Shutdown Test appear in that order; the invalid header and package
+- Use the printed `scan` command: expect 4 eligible, 2 rejected, 4 stored.
+  Invaders, Pacman Demo, Pong Lab, and Shutdown Test appear in that order; the
+  invalid header and package
   without `main.lua` are rejected with reasons in the console. The nested copy
   and text file are ignored.
 - Use a nonexistent directory: console error, empty list message, B/K exit.
