@@ -66,3 +66,12 @@ Invaders still play without execution-limit errors. Repeat on the Pi before sett
 Restore `test_case` to `runaway` after testing.
 
 The stand-in cartridge smoke harness does not exercise this native host hook.
+
+## Validation checkpoint — 2026-10-28
+
+Desktop build and all 18 existing CTests passed, along with separate real-host
+checks of the execution-limit cases. The user confirmed all manual Pi cases
+on commit `873a8b6`, and Pong and Pac-Man play after recovery. Earlier Pi results
+from an older main checkout are superseded by those feature-branch checks.
+The selector was restored to `runaway`. Budgets remain provisional; repeat
+relevant checks after changes to limits or lifecycle handling.
