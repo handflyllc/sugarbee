@@ -373,3 +373,19 @@ or distortion, and normal exit. On Pi commit `d6c0dd9`, the user confirmed all
 42 tests, clean tone output, gameplay and unavailable-audio checks, and Exit to
 system status 0. The Pi initially selected unconnected A/V Audio Out; selecting
 HDMI resolved silence. See the [troubleshooting notes](../../tests/audio-tone.md#pi-troubleshooting-no-audible-tone).
+
+## Single native triangle prototype
+
+One native triangle voice now supports start, phase-preserving pitch change,
+and stop, at fixed quiet volume with ten-ms linear fades. This deliberately
+bounded prototype accepts 220–660 Hz only; it is not the full synthesis API or
+an alias-free oscillator. The direct waveform's aliasing and the agreed full
+frequency range remain implementation work. Active start is declined, rather
+than defining the future envelope-retrigger behavior prematurely.
+
+The separate `sbee-triangle-test` requests 220, 440, and 660 Hz, then stops.
+Requests synchronize through the SDL device lock. The sine diagnostic and
+triangle are mutually exclusive; no mixer or Lua controls are added. Native
+sample and dummy-output checks pass as part of all 44 automated tests. The user
+confirmed clean desktop triangle tones, no obvious clicks at pitch changes, and
+normal exit. Pi validation remains pending. See [prototype tests and listening instructions](../../tests/audio-triangle.md).
