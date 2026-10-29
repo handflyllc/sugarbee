@@ -95,7 +95,30 @@ when a normal test package is needed.
 
 ## Coverage boundaries
 
-Ten native CTest cases cover graphics, textures, assets, input, timing,
+Eleven native CTest cases cover graphics, textures, assets, input, timing,
 headers, and packaging. With Lua 5.4 installed, eight additional cartridge
 smoke tests run against a stand-in API. These do not exercise the real host
 launcher; the launcher interaction checks above remain manual.
+
+## Console-only shutdown confirmation (test action)
+
+Run `./build/sugarbee --console` and repeat with the fixture directory using
+`./build/sugarbee --console --cartridges DIRECTORY`.
+
+- Idle B/K does not close SugarBee; Start/Enter opens the TEST ONLY panel.
+- Cancel starts selected every time. A/J cancels immediately on that selection.
+- Up/Down selects within the panel without moving the cartridge selection.
+- B/K and Start/Enter each cancel, including after selecting Shut down (test).
+- Holding Start, directions, or A does not repeatedly act. Opening with Start
+  and A together does not confirm; cancellation with B and A together cancels.
+- A/J on Shut down (test) prints exactly one test request, displays the
+  no-power-off notice, and returns to the idle screen. The OS and host keep running.
+- X/U cannot rescan while confirmation is open; A/J cannot launch a cartridge.
+- Both controllers and keyboard controls work. Cancel preserves list selection.
+- Empty lists, directory errors, and direct-path idle hosts can open the panel.
+- In-game Start still pauses. Resume and Exit Game work; Guru B/K still recovers.
+- Without --console, idle Start remains inert and B/K still closes the host.
+- Window close still works, even with the panel open. Nothing powers off the OS.
+
+`console_host_controls` checks argument parsing and idle state transitions.
+Physical input, rendering, pause integration, and Guru recovery remain manual.

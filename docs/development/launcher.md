@@ -6,11 +6,37 @@ Run from the repository root after building:
 ./build/sugarbee
 ./build/sugarbee /path/to/game.vcart
 ./build/sugarbee --cartridges /path/to/vcarts
+./build/sugarbee --console --cartridges /path/to/vcarts
 ```
 
 Quote paths containing spaces. Invalid command forms print usage and exit
 before opening a window. No arguments opens an idle host, not a Guru error.
 No default cartridge directory or configuration file is implemented.
+
+## Console mode: shutdown confirmation test
+
+`--console` must be the first option. It can be used alone, before a direct
+cartridge path, or before `--cartridges DIRECTORY`. Hardware and display mode
+never enable it automatically. This checkpoint does not power off the OS.
+
+At an idle console-mode host or launcher, Start/Enter opens a confirmation
+panel labelled TEST ONLY, with Cancel selected every time. Up/Down selects
+Cancel or Shut down (test); A/J activates the selected action. B/K or Start/Enter
+cancels. Opening consumes simultaneous confirmation/navigation input. While
+open, the panel blocks cartridge navigation, launch, and rescan. Inputs act on
+press edges rather than repeating while held.
+
+Confirming Shut down (test) prints one console message, closes the panel, and
+shows a no-power-off confirmation on the idle screen. SugarBee stays running;
+no OS shutdown command or cartridge cleanup is invoked by this test action.
+Opening the panel again clears that notice and selects Cancel.
+
+B/K on the idle console-mode screen does nothing. Without `--console`, existing
+B/K-to-close behavior remains and Start does nothing while idle. Start during
+a game still opens the existing pause menu: exit the game before requesting
+shutdown. Guru recovery remains B/K. Window-close/OS quit events still close
+SugarBee normally, including during this test panel. Actual OS shutdown and
+its deployment permissions are deferred to a separate checkpoint.
 
 ## Discovery
 
@@ -51,7 +77,7 @@ uses the normal Guru recovery path, without an automatic retry loop.
 
 Eight entries are visible at a time. Up/Down on any controller, or arrows/W/S,
 moves one entry per press and stops at the list ends. A/J launches the selected
-entry; B/K closes SugarBee. Empty lists ignore navigation and confirmation.
+entry; B/K closes SugarBee in desktop mode. Empty lists ignore navigation and confirmation.
 Titles and filenames identify entries, including duplicate titles. Long
 filenames are shortened for display, and unsupported/control characters become
 `?`; the stored launch paths are unchanged.
@@ -79,5 +105,5 @@ The launcher displays its 64-cartridge capacity, additional eligible cartridges 
   logging are future discussion items, not implemented features.
 
 See the [manual checklist](../../tests/launcher/README.md). The automated suite
-includes ten native tests and, when Lua 5.4 is available, eight cartridge smoke
+includes eleven native tests and, when Lua 5.4 is available, eight cartridge smoke
 tests using a stand-in API. It does not automate the launcher interaction flow.

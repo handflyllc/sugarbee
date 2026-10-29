@@ -52,6 +52,10 @@ typedef struct {
     sb_input_t* input;
     lua_State* L;
     bool is_running;
+    bool console_mode;
+    bool shutdown_confirmation;
+    bool shutdown_selected;
+    bool shutdown_test_reported;
     bool paused;
     pause_menu_selection_t pause_selection;
     bool blocked_buttons[SB_MAX_PLAYERS][SB_BUTTON_COUNT];
@@ -661,8 +665,77 @@ static void draw_cartridge_list(void) {
                          80, 628, 255, 220, 80, 1);
     }
     sb_graphics_text(g_engine.graphics,
-                    "UP/DOWN: Select  A/J: Launch  X/U: Rescan  B/K: Close",  80, 650,
+                     g_engine.console_mode
+                         ? "UP/DOWN: Select  A/J: Launch  X/U: Rescan  START: Shutdown test"
+                         : "UP/DOWN: Select  A/J: Launch  X/U: Rescan  B/K: Close",
+                     80, 650,
                      255, 255, 255, 2);
+}
+
+/* Called with press edges, never held-state input. Returns true on dialog transitions. */
+static bool handle_idle_host_input(bool start, bool back, bool up, bool down,
+                                   bool confirm, bool rescan) {
+    if (g_engine.cart_loaded || g_engine.guru_active) return false;
+
+    if (g_engine.console_mode && g_engine.shutdown_confirmation) {
+        if (back || start) {
+            g_engine.shutdown_confirmation = false;
+            return true;
+        }
+        if (confirm) {
+            if (g_engine.shutdown_selected) {
+                /* Test action only: no OS command, cleanup, or host exit. */
+                printf("[SugarBee] Shutdown test requested; no power-off performed.\n");
+                fflush(stdout);
+                g_engine.shutdown_test_reported = true;
+            }
+            g_engine.shutdown_confirmation = false;
+            return true;
+        }
+        if (up && !down) g_engine.shutdown_selected = false;
+        else if (down && !up) g_engine.shutdown_selected = true;
+        return false;
+    }
+
+    if (g_engine.console_mode && start) {
+        g_engine.shutdown_confirmation = true;
+        g_engine.shutdown_selected = false;
+        g_engine.shutdown_test_reported = false;
+        return true; /* The opening press cannot confirm or move selection. */
+    }
+    if (back) {
+        if (!g_engine.console_mode) g_engine.is_running = false;
+    } else if (g_engine.cartridge_directory) {
+        if (rescan) {
+            g_engine.cartridge_rescan_requested = true;
+        } else if (g_engine.cartridge_count > 0) {
+            if (confirm) g_engine.cartridge_launch_requested = true;
+            else if (up && !down && g_engine.cartridge_selection > 0)
+                --g_engine.cartridge_selection;
+            else if (down && !up &&
+                     g_engine.cartridge_selection + 1 < g_engine.cartridge_count)
+                ++g_engine.cartridge_selection;
+        }
+    } else if (confirm && g_engine.startup_cartridge_path) {
+        g_engine.cartridge_launch_requested = true;
+    }
+    return false;
+}
+
+static void draw_shutdown_confirmation(void) {
+    sb_graphics_rect(g_engine.graphics, 320, 190, 640, 320, 20, 20, 20, true);
+    sb_graphics_text(g_engine.graphics, "Shut down console?", 380, 220,
+                     255, 220, 80, 2);
+    sb_graphics_text(g_engine.graphics, "TEST ONLY - no power-off", 380, 260,
+                     255, 220, 80, 2);
+    sb_graphics_text(g_engine.graphics, "Cancel", 420, 325, 255, 255, 255, 2);
+    sb_graphics_text(g_engine.graphics, "Shut down (test)", 420, 370,
+                     255, 255, 255, 2);
+    sb_graphics_text(g_engine.graphics, ">", 380,
+                     g_engine.shutdown_selected ? 370 : 325, 255, 220, 80, 2);
+    sb_graphics_text(g_engine.graphics,
+                     "UP/DOWN: Select  A/J: Confirm  B/K or START: Cancel",
+                     360, 455, 200, 200, 200, 1);
 }
 
 void main_loop(void) {
@@ -760,30 +833,9 @@ void main_loop(void) {
 
                 bool pause_changed = false;
 
-                /* Idle-host controls depend on the launch mode. */
-                if (!g_engine.cart_loaded) {
-                    if (back_pressed) {
-                        g_engine.is_running = false;
-                    } else if (g_engine.cartridge_directory) {
-                        if (rescan_pressed) {
-                            g_engine.cartridge_rescan_requested = true;
-                        } else if (g_engine.cartridge_count > 0) {
-                            if (confirm_pressed) {
-                                g_engine.cartridge_launch_requested = true;
-                            } else if (up_pressed && !down_pressed &&
-                                       g_engine.cartridge_selection > 0) {
-                                --g_engine.cartridge_selection;
-                            } else if (down_pressed && !up_pressed &&
-                                       g_engine.cartridge_selection + 1 <
-                                       g_engine.cartridge_count) {
-                                ++g_engine.cartridge_selection;
-                            }
-                        }
-                    } else if (confirm_pressed &&
-                               g_engine.startup_cartridge_path) {
-                        g_engine.cartridge_launch_requested = true;
-                    }
-                }
+                bool shutdown_dialog_changed = handle_idle_host_input(
+                    start_pressed, back_pressed, up_pressed, down_pressed,
+                    confirm_pressed, rescan_pressed);
 
                 /* Pause toggle block */
                 if (g_engine.cart_loaded && start_pressed) {
@@ -821,6 +873,7 @@ void main_loop(void) {
                         bool pressed = sb_input_pressed(g_engine.input, player, (sb_button_t)button);
 
                         if (g_engine.paused || pause_changed ||
+                            g_engine.shutdown_confirmation || shutdown_dialog_changed ||
                             g_engine.cartridge_launch_requested ||
                             g_engine.cartridge_rescan_requested) {
                             g_engine.blocked_buttons[player][button] = down || pressed;
@@ -906,7 +959,10 @@ void main_loop(void) {
             }
 
             sb_graphics_text(g_engine.graphics,
-                             "B / K: Close SugarBee", 480, 430,
+                             g_engine.console_mode
+                                 ? "START / ENTER: Shutdown test"
+                                 : "B / K: Close SugarBee",
+                             g_engine.console_mode ? 400 : 480, 430,
                              255, 255, 255, 2);
         } else {
             if (!g_engine.paused) {
@@ -936,6 +992,16 @@ void main_loop(void) {
                 int marker_y = g_engine.pause_selection == PAUSE_MENU_RESUME ? 345 : 390;
 
                 sb_graphics_text(g_engine.graphics, ">", 480, marker_y, 255, 220, 80, 2);
+            }
+        }
+
+        if (g_engine.console_mode && !g_engine.cart_loaded && !g_engine.guru_active) {
+            if (g_engine.shutdown_confirmation) {
+                draw_shutdown_confirmation();
+            } else if (g_engine.shutdown_test_reported) {
+                sb_graphics_text(g_engine.graphics,
+                                 "Shutdown test complete - no power-off", 80, 690,
+                                 255, 220, 80, 2);
             }
         }
 
@@ -1162,20 +1228,32 @@ static void scan_cartridge_directory(const char *directory) {
     }
 }
 
+/* --console is an explicit leading option; neither hardware nor display implies it. */
+static bool parse_host_arguments(int argc, char *argv[]) {
+    int first = 1;
+    if (argc > first && strcmp(argv[first], "--console") == 0) {
+        g_engine.console_mode = true;
+        ++first;
+    }
+    int remaining = argc - first;
+    if (remaining == 0) return true;
+    if (remaining == 1 && argv[first][0] != '\0' && argv[first][0] != '-') {
+        g_engine.startup_cartridge_path = argv[first];
+        return true;
+    }
+    if (remaining == 2 && strcmp(argv[first], "--cartridges") == 0 &&
+        argv[first + 1][0] != '\0' && argv[first + 1][0] != '-') {
+        g_engine.cartridge_directory = argv[first + 1];
+        return true;
+    }
+    return false;
+}
+
 int main(int argc, char* argv[]) {
-    if (argc == 1) {
-        /* No cartridge requested: start the idle host. */
-    } else if (argc == 2 && argv[1][0] != '\0' &&
-               argv[1][0] != '-') {
-        g_engine.startup_cartridge_path = argv[1];
-    } else if (argc == 3 &&
-               strcmp(argv[1], "--cartridges") == 0 &&
-               argv[2][0] != '\0') {
-        g_engine.cartridge_directory = argv[2];
-    } else {
+    if (!parse_host_arguments(argc, argv)) {
         fprintf(stderr,
-                "Usage: %s [cartridge.vcart]\n"
-                "       %s --cartridges DIRECTORY\n",
+                "Usage: %s [--console] [cartridge.vcart]\n"
+                "       %s [--console] --cartridges DIRECTORY\n",
                 argv[0], argv[0]);
         return 1;
     }
