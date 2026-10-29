@@ -2,6 +2,20 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Retained Lua `__close` support and added six isolated host regression cases
+  covering normal/error exits, runaway cleanup, and multiple closing methods.
+  Each CTest case has a five-second external timeout and verifies state cleanup
+  followed by execution in a fresh Lua session.
+
+- Reject cartridge metatables containing a non-nil `__gc` field while preserving
+  ordinary `setmetatable` behavior. Added shared/mutated metatable, collection,
+  and state-closure regression checks; automatic memory collection remains enabled.
+
+- Restricted cartridge Lua libraries to base, table, string, math, and UTF-8.
+  Removed filesystem loading helpers and excluded coroutine, debug, io, os,
+  and package access. Added a host-library policy regression test. This is
+  a supported API restriction, not a complete sandbox.
+
 - Added an explicit leading `--console` flag and idle-host Exit to system
   confirmation. Cancel is the default; confirming exit runs normal cleanup
   and returns to the launching terminal without powering off the OS. Replaces

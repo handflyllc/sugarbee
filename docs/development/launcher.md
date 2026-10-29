@@ -105,5 +105,5 @@ The launcher displays its 64-cartridge capacity, additional eligible cartridges 
   logging are future discussion items, not implemented features.
 
 See the [manual checklist](../../tests/launcher/README.md). The automated suite
-includes eleven native tests and, when Lua 5.4 is available, eight cartridge smoke
+includes eighteen native tests and, when Lua 5.4 is available, eight cartridge smoke
 tests using a stand-in API. It does not automate the launcher interaction flow.

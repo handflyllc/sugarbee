@@ -55,9 +55,9 @@ and the failed session skips shutdown. The hook is cleared after each protected 
 A caught limit error that returns to the host still fails the session.
 
 These limits catch accidental Lua loops, not deliberate bypasses.
-They do not cover finalizers during Lua state closure or coroutine execution, prevent
-Lua code from replacing hooks, or guarantee escape from repeatedly caught
-errors. Native calls cannot be interrupted by this hook. There is no wall-clock
+They do not guarantee escape from repeatedly caught errors. Cartridge-defined
+`__gc` finalizers are excluded by the metatable policy below. Coroutine and debug libraries are not exposed to
+cartridges. Native calls cannot be interrupted by this hook. There is no wall-clock
 limit; uncovered execution can still prevent menu input or cleanup.
 See [execution-limit checks](../../tests/execution-limit/README.md).
 
@@ -73,6 +73,65 @@ function draw()
     sugarbee.rect(x, 100, 32, 32, 240, 180, 50, true)
 end
 ```
+
+## Supported Lua libraries
+
+Cartridges receive the base, table, string, math, and UTF-8 libraries, plus
+SugarBee's API. The coroutine, debug, io, os, and package libraries are not
+opened. `require`, `dofile`, and `loadfile` are unavailable. This intentionally
+excludes direct filesystem access, OS commands, native-module loading, and
+cartridge control of debug hooks. Attempts to use missing globals produce
+ordinary Lua errors through the existing lifecycle error handling.
+
+Base functions such as `print`, `pcall`, and `load` remain available. `load`
+compiles supplied Lua code; it does not load a filesystem path. Compilation
+and native operations remain outside the instruction budget. Memory exhaustion,
+and repeatedly caught errors still require separate
+consideration: this policy is not a hostile-code sandbox.
+
+`setmetatable` preserves ordinary Lua behavior, but rejects any proposed
+metatable with a raw, non-nil `__gc` field, including `false`. The error is
+`Cartridge __gc finalizers are not supported`. Shared metatables, ordinary
+metamethods, protected metatables, and removing a metatable remain supported.
+Adding `__gc` to an already attached metatable does not register its existing
+objects for finalization; attaching it again (to the same or another table)
+is rejected. Removing that field allows attachment again. An inherited `__gc`
+through the metatable's own `__index` is not a finalizer registration.
+
+Automatic memory collection remains enabled. Use the eligible `shutdown()`
+callback for cartridge-level cleanup; the host owns native resource cleanup.
+This restriction prevents cartridge table finalizer registration through the
+supported API. Future native APIs exposing userdata must review their own
+finalizers and metatables.
+
+Lua's distinct `__close` mechanism remains supported. Six headless host
+regression cases cover normal scope exit, an ordinary error, a runaway closing
+method, an update instruction-limit error followed by a runaway closing method,
+and multiple pending closing methods with either an error or a runaway loop.
+Each checks cleanup and execution in a fresh Lua state afterward. CTest runs
+cases as separate processes with a five-second external timeout, so a regression
+cannot indefinitely block the suite. This timeout is a test safeguard, not a
+runtime wall-clock limit. These checks exercise `update()` dispatch and native
+cleanup, not controller-driven Guru recovery or every possible closing pattern.
+Desktop regression checks passed. On commit `4e60bf2`, the user also confirmed
+all seven focused library/closing tests and the complete 26-test suite passed
+on the Pi. Real-host game exit/relaunch, execution-limit Guru recovery followed
+by healthy play, and exit to the terminal passed; terminal exit status was 0
+and the shutdown callback was not repeated.
+
+Run just these cases from the repository root with:
+
+```sh
+ctest --test-dir build -R '^lua_close_' --output-on-failure
+```
+
+Run them through CTest to retain the external timeout; invoking the test binary
+directly does not provide that safeguard.
+
+This is a compatibility restriction for cartridges using previously exposed
+standard libraries. Existing bundled games do not depend on the removed APIs.
+The standalone cartridge smoke runner uses the system Lua interpreter and is
+not itself restricted; `lua_supported_libraries` tests the real host setup.
 
 ## Scheduler behavior
 

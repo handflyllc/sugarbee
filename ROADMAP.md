@@ -35,7 +35,7 @@ sandbox. Retest the relevant cases when budgets or execution paths change.
 See [lifecycle documentation](docs/api/timing.md) and
 [execution-limit checks](tests/execution-limit/README.md).
 
-### 2. Establish a bounded console reliability baseline — in progress
+### 2. Establish a bounded console reliability baseline — completed
 
 - Confirmed Exit to system is implemented behind the explicit `--console`
   flag. It performs normal engine cleanup and returns to the launching terminal;
@@ -44,21 +44,28 @@ See [lifecycle documentation](docs/api/timing.md) and
   all 19 automated tests passed, confirmation and launcher interactions passed,
   Exit to system returned status 0, and the cartridge shutdown callback did not
   run a second time when leaving the idle host.
-- Next, review remaining Lua restrictions and execution gaps, including
-  coroutines, state-closure finalizers, and native calls. Agree on any small
-  restrictions before implementation; document unsupported protection.
-- Finish with combined startup, launch, pause/resume, error recovery, relaunch,
-  game-exit, and exit-to-terminal regression checks on desktop and Pi.
+- Cartridges now use an explicit supported-library set. Coroutine, debug,
+  direct OS/file/module access, and cartridge `__gc` registration are excluded.
+  Ordinary metatables and `__close` remain supported, with six isolated closing
+  regression cases protected by external CTest timeouts.
+- On `4e60bf2`, the user confirmed all seven focused library/closing tests and
+  all 26 automated tests passed on the Pi. Real-host checks passed for Pong
+  and Pac-Man play, pause/resume, game exit and relaunch, execution-limit Guru
+  recovery followed by healthy play, and single-invocation shutdown cleanup.
+  Exit to system returned status 0. Desktop automated and gameplay checks
+  also passed during these checkpoints.
 
-Done when: those checks pass and the execution-gap review is resolved with
-remaining limitations documented. Actual OS shutdown is deferred to deployment
-work. Persistent logging remains deferred unless validation exposes a concrete
-need for it.
+The bounded baseline is validated. Native calls, compilation, memory exhaustion,
+and repeatedly caught errors remain outside a general recovery guarantee;
+there is no runtime wall-clock timeout or hostile-cartridge sandbox. See the
+[lifecycle limits and library policy](docs/api/timing.md).
+Actual OS shutdown is deferred to deployment work. Persistent logging remains
+deferred unless validation exposes a concrete need for it.
 
 Keep this phase finite. Safely executing deliberately hostile cartridges would
 require a separate scope decision, not an assumed extension of loop protection.
 
-### 3. Implement minimal save support
+### 3. Implement minimal save support — next to scope
 
 - Define a small Lua save API, ownership by persistent cartridge UUID, and
   reasonable storage limits.
