@@ -113,7 +113,11 @@ cases as separate processes with a five-second external timeout, so a regression
 cannot indefinitely block the suite. This timeout is a test safeguard, not a
 runtime wall-clock limit. These checks exercise `update()` dispatch and native
 cleanup, not controller-driven Guru recovery or every possible closing pattern.
-Pi validation remains pending for this checkpoint.
+Desktop regression checks passed. On commit `4e60bf2`, the user also confirmed
+all seven focused library/closing tests and the complete 26-test suite passed
+on the Pi. Real-host game exit/relaunch, execution-limit Guru recovery followed
+by healthy play, and exit to the terminal passed; terminal exit status was 0
+and the shutdown callback was not repeated.
 
 Run just these cases from the repository root with:
 
