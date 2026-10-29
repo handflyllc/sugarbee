@@ -85,6 +85,7 @@ and durability expectations. Desktop regression tests cover API results,
 lifecycle access, and injected failures. The [Save Lab](../../examples/save-lab/README.md)
 provides interactive checks; the user confirmed all six desktop checks passed.
 Controlled [process-interruption tests](../../tests/save-interruption.md) also
-pass on desktop. Pi and actual power-loss validation remain pending; successful
-synchronization is not a
+pass on desktop and Pi. On `525e215`, the user confirmed all 37 Pi tests, all
+eight interactive checks, and Exit to system status 0. Actual power-loss testing
+remains deferred; successful synchronization is not a
 blanket guarantee against hardware failure.

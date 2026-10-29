@@ -65,7 +65,7 @@ deferred unless validation exposes a concrete need for it.
 Keep this phase finite. Safely executing deliberately hostile cartridges would
 require a separate scope decision, not an assumed extension of loop protection.
 
-### 3. Implement minimal save support — implementation started
+### 3. Implement minimal save support — bounded milestone complete
 
 - Follow the [agreed minimal save design](docs/architecture/save-design.md):
   one opaque string up to 64 KiB per UUID, explicit load/save calls, and a
@@ -75,7 +75,7 @@ require a separate scope decision, not an assumed extension of loop protection.
   replacement; do not promise preservation after replacement already occurred.
 - Implement bounded storage and failure tests, then Lua bindings and a small lab.
 - Validate normal saves, failed and interrupted writes, recovery, and lifecycle
-  behavior on desktop and Pi before claiming durability guarantees.
+  behavior on desktop and Pi; do not infer power-loss guarantees from these checks.
 
 Done when: the agreed API and failure contract are implemented, documented, and
 validated on desktop and Pi. Internal bounded reading and replacement writing
@@ -89,8 +89,12 @@ their automated tests/API documentation are implemented; no automatic saving.
 The counter-based interactive save lab and its behavior tests are implemented.
 The user confirmed all six desktop interactive checks passed, including explicit
 save/reload, zero, pause/resume, and persistence after relaunch. Three controlled
-process-interruption/recovery tests also pass on desktop. Pi checks and actual
-power-loss/durability validation remain pending.
+process-interruption/recovery tests also pass on desktop. On Pi commit `525e215`,
+the user confirmed all 37 tests and all eight interactive Save Lab checks passed,
+including repack persistence and Exit to system returning status 0.
+
+This completes the agreed bounded save milestone. Actual power-loss testing
+remains deferred; these checks do not establish hardware durability guarantees.
 
 ### 4. Begin audio implementation
 

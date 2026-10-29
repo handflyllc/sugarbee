@@ -35,11 +35,12 @@ normal directory preparation, injected errors/retries, and Lua bindings.
 The existing temporary-name collision tests cover bounded collision retries;
 these tests do not establish unlimited tolerance for accumulated leftovers.
 
-All three cases passed on the development machine. They prove process-
+All three cases passed on the development machine and, as part of all 37 tests,
+on the Pi at `525e215` (user-confirmed). They prove process-
 interruption behavior while Linux and its filesystem caches remain running.
 In particular, seeing the new value after rename does **not** establish that
 it survives a power loss before directory synchronization. No save-success
 result is returned by the killed child at any of the three points.
 
-Pi validation and actual power-loss testing remain deferred. Automated removal
+Actual power-loss testing remains deferred. Automated removal
 of abandoned files is not introduced by this checkpoint.

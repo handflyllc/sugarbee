@@ -2,6 +2,10 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Completed bounded minimal-save validation on desktop and Pi. The user
+  confirmed all 37 tests and eight interactive Save Lab checks at `525e215`,
+  with Exit to system status 0. Actual power-loss testing remains deferred.
+
 - Added three externally timed process-interruption save tests covering partial
   writes, synchronized temporary files, and replacement before directory sync.
   Fresh processes verify complete data and recovery; abandoned temporary files
@@ -13,7 +17,7 @@
 - Added `sugarbee.save(string)` and `sugarbee.load_save()` with exact two-value
   results, strict argument validation, and binary-safe 64 KiB storage. Added
   Lua API/lifecycle/failure tests, including allocation-error recovery, and an
-  API reference. Interactive save lab and Pi validation remain pending.
+  API reference. The Save Lab and Pi validation are now complete as noted above.
 
 - Connected internal host load/save calls to the selected directory and active
   cartridge UUID. Access includes init, gameplay, and eligible shutdown; idle

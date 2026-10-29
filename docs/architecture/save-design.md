@@ -7,7 +7,9 @@ See the [Lua save API](../api/saves.md) for the available interface. Automatic
 saving is not implemented. The [counter Save Lab](../../examples/save-lab/README.md)
 and behavior tests are implemented. The user confirmed all six desktop
 interactive checks passed. Controlled process-interruption/recovery tests pass
-on desktop; Pi and actual power-loss/durability validation remain pending.
+on desktop and Pi. The user confirmed all 37 tests and eight interactive checks
+on Pi commit `525e215`, with Exit to system returning status 0. The bounded
+milestone is complete; actual power-loss testing remains deferred.
 
 ## Scope and ownership
 
@@ -177,7 +179,7 @@ protects against accidental blocking. No real user save directory is used.
 Run with `ctest --test-dir build -R '^save_reader$' --output-on-failure`.
 Directory defaults and `--save-dir` selection are described in the fifth
 checkpoint below. Storage integration and Lua bindings remain unimplemented.
-Pi validation of the storage checkpoints is pending.
+Pi validation of the storage checkpoints passed at `525e215`; see the validation record below.
 
 ## Second storage checkpoint: existing-directory writer
 
@@ -234,7 +236,7 @@ ctest --test-dir build -R '^save_(reader|writer)$' --output-on-failure
 The writer case has a 15-second external test timeout; storage I/O itself has
 no runtime wall-clock bound. Nested preparation and its separate coordinator
 are described below. Host operations and Lua bindings are described in the
-seventh and eighth checkpoints. Pi validation remains pending.
+seventh and eighth checkpoints. Pi validation passed at `525e215`; actual power-loss testing remains deferred.
 
 ## Third storage checkpoint: one-level directory preparation
 
@@ -280,7 +282,7 @@ ctest --test-dir build -R '^save_(reader|writer|directory)$' --output-on-failure
 
 These are desktop regression checks, not power-loss validation. The next
 checkpoint below composes this operation for nested paths; later checkpoints
-connect host operations and Lua bindings. Pi validation remains pending.
+connect host operations and Lua bindings. Pi validation passed at `525e215`; actual power-loss testing remains deferred.
 
 ## Fourth storage checkpoint: nested preparation and C coordinator
 
@@ -403,8 +405,7 @@ non-directory prefixes, and resolved-path bounds. It checks that resolution
 performs no mkdir or synchronization and creates no suffix directories. An
 injected parent-sync failure during preparation leaves a directory visible;
 resolving and retrying then retains the same full path and synchronizes the
-ancestor again. The test has a 15-second external timeout. These are desktop
-regression checks, not Pi or power-loss validation.
+ancestor again. The test has a 15-second external timeout. These regression checks passed on desktop and Pi; they are not power-loss validation.
 
 Run the storage checks and host selection tests with:
 
@@ -449,11 +450,11 @@ isolation and return to prior identity, unavailable selection, invalid paths,
 oversize rejection, and idle/failed-session denial. Injected preparation and
 write errors preserve old data; a post-replacement directory-sync failure
 reaches the host as uncertain durability with the new data visible. The subsequent binding checkpoint extends this same test with real Lua calls. CTest enforces a
-15-second timeout. These are desktop headless checks, not Pi or power-loss tests.
+15-second timeout. These headless checks passed on desktop and Pi; they are not power-loss tests.
 
 Run with `ctest --test-dir build -R '^host_save_storage$' --output-on-failure`.
 The counter Save Lab is now available with user-confirmed desktop checks;
-Pi validation remains pending. `shutdown()` remains an optional extra save opportunity,
+Pi validation passed at `525e215`; actual power-loss testing remains deferred. `shutdown()` remains an optional extra save opportunity,
 not a reliable substitute for deliberate gameplay checkpoints.
 
 ## Eighth checkpoint: Lua save/load bindings
@@ -489,5 +490,19 @@ The desktop checks pass. Pre-replacement interruptions leave the previous save
 intact and an ignored temporary file; recovery succeeds without deleting that
 leftover. Post-replacement interruption exposes the complete new save to a fresh
 process on the still-running system. This proves neither persistence after power
-loss nor durability of first-time directory creation. Pi and actual power-loss
-validation remain separate future work; no automatic cleanup is added.
+loss nor durability of first-time directory creation. These cases also passed
+on Pi at `525e215`; actual power-loss validation remains deferred, and no
+automatic cleanup is added.
+
+## Pi validation and milestone completion
+
+The user validated commit `525e215` on the Pi: all 37 automated tests passed,
+including the three externally timed interruption cases, and all eight Save Lab
+interactive checks passed. These covered fresh startup, explicit save/reload,
+pause/resume, unsaved-change discard on relaunch, persistence after repacking
+with the fixed UUID, saving zero, and confirmed Exit to system with status 0.
+
+Together with desktop results, this completes the agreed bounded minimal-save
+milestone. Actual power-loss testing remains deferred. Filesystem/hardware
+persistence guarantees, concurrent writers, and automatic abandoned-file cleanup
+are not established or added by this validation.

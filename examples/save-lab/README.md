@@ -50,3 +50,11 @@ invalid-data message, not Guru. Press J to replace it with valid counter data.
 errors and invalid data. `host_save_storage` separately tests real bindings and
 storage. The manual checks above establish interactive end-to-end behavior on
 the desktop and Pi; automated tests do not replace those checks.
+
+## Validation record
+
+The user confirmed all six desktop checks passed. On the Pi at `525e215`, all
+37 automated tests and eight interactive checks passed: fresh startup, explicit
+save, reload, pause/resume, relaunch without saving, repack persistence, saved
+zero, and confirmed Exit to system returning status 0. These results do not
+include actual power-loss testing.
