@@ -40,4 +40,17 @@ sb_save_result_t sb_save_read(const char *directory, const uint8_t uuid[16],
 sb_save_result_t sb_save_write(const char *directory, const uint8_t uuid[16],
                                const uint8_t *data, size_t length);
 
+/* Prepare exactly one child beneath an existing host-selected parent.
+ * child must be a single nonempty name, not ".", "..", or contain '/'.
+ * Creates with mode 0700 subject to umask; existing permissions are unchanged.
+ * The child must be a real directory, not a symlink. The parent path may
+ * resolve through symlinks and its own placement must already be durable.
+ * Both new and existing children are synchronized, then their parent is
+ * synchronized. All descriptors are closed before success is reported.
+ * IO_ERROR may leave a created directory in place; retry preparation before
+ * relying on it. Save contents are never touched. Concurrent directory changes
+ * are unsupported. No full-path creation or save-writer integration yet.
+ */
+sb_save_result_t sb_save_prepare_directory(const char *parent, const char *child);
+
 #endif

@@ -3,8 +3,9 @@
 Status: initial API, storage policy, and durability contract agreed on 2026-10-29.
 The Lua API is not implemented. Internal bounded C reading and synchronized
 replacement in an existing directory are implemented; neither is connected to
-the host or Lua. Directory creation remains pending. This document records the accepted design, not an available
-Lua API reference.
+the host or Lua. A separate one-level directory preparation helper is also
+implemented; full-path creation and writer integration remain pending. This
+document records the accepted design, not an available Lua API reference.
 
 ## Scope and ownership
 
@@ -179,7 +180,7 @@ Pi validation of the storage checkpoints is pending.
 `sb_save_write` takes the selected directory, UUID, bytes, and length. The root
 must already exist; a missing or inaccessible directory returns `SB_SAVE_IO_ERROR`
 without creating it. The caller is responsible for provisioning the directory;
-durable directory creation is a later checkpoint. NULL data is accepted only
+directory preparation is separate from the writer. NULL data is accepted only
 for a zero-length save. Oversized input is rejected before filesystem changes.
 
 The writer exclusively creates a temporary file in the opened directory with
@@ -226,5 +227,50 @@ ctest --test-dir build -R '^save_(reader|writer)$' --output-on-failure
 ```
 
 The writer case has a 15-second external test timeout; storage I/O itself has
-no runtime wall-clock bound. Directory creation, host/Lua integration, and Pi
-validation remain pending.
+no runtime wall-clock bound. Full-path preparation, writer integration with
+directory preparation, host/Lua integration, and Pi validation remain pending.
+
+## Third storage checkpoint: one-level directory preparation
+
+`sb_save_prepare_directory(parent, child)` prepares exactly one child beneath
+an existing host-selected parent. The parent directory's own placement must
+already be durable. This helper does not establish durability for its ancestors.
+The child must be nonempty and cannot be `.`, `..`, an absolute path, or contain
+`/`. Other ordinary Linux filename characters are allowed. Invalid arguments
+return `SB_SAVE_INVALID_ARGUMENT` before filesystem operations.
+
+Creation requests mode 0700 subject to the process umask. Existing permissions
+are never changed. An existing child must be a real directory: file, FIFO, and
+symlink entries are rejected, including symlinks pointing at directories. The
+host-selected parent path may resolve through symlinks. Concurrent changes to
+the directory tree remain outside the supported contract.
+
+After creating or opening the child, the helper synchronizes the child, then
+the parent, and closes both descriptors. It repeats synchronization for existing
+directories too, because a previous attempt may have left creation incomplete
+from a durability perspective. Interrupted synchronization is retried; close
+errors are reported without retrying the descriptor close.
+
+`SB_SAVE_OK` means preparation and required synchronization/closure completed.
+`SB_SAVE_IO_ERROR` means preparation failed, but a created directory may remain.
+The helper never rolls back by removing a directory, never edits save contents,
+and never reports `SB_SAVE_DURABILITY_UNCERTAIN`: it performs no save replacement.
+Callers must retry successfully before relying on preparation. The existing
+writer still requires a prepared directory and does not invoke this helper.
+
+The isolated `save_directory` test covers first creation, repeated calls,
+permissions, invalid names, non-directory entries, parent aliases, and existing
+save preservation. Test-only linker wrappers inject creation, child-open,
+child/parent-sync, and child/parent-close failures. Each partial-creation case
+is followed by a retry that must synchronize both directories. Interrupted
+synchronization and operation ordering are also checked. The CTest case has a
+15-second external timeout.
+
+Run all storage checks with:
+
+```sh
+ctest --test-dir build -R '^save_(reader|writer|directory)$' --output-on-failure
+```
+
+These are desktop regression checks, not power-loss validation. Full-path
+handling, writer integration, host/Lua integration, and Pi validation are pending.

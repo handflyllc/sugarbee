@@ -79,7 +79,8 @@ require a separate scope decision, not an assumed extension of loop protection.
 
 Done when: the agreed API and failure contract are implemented, documented, and
 validated on desktop and Pi. Internal bounded reading and replacement writing
-for existing directories are implemented with failure tests. Directory creation,
+for existing directories and a separate one-level directory preparation helper
+are implemented with failure tests. Full-path preparation, writer integration,
 interruption/durability validation, host integration, and the Lua API remain pending.
 
 ### 4. Begin audio implementation

@@ -148,3 +148,33 @@ cleanup:
         result = SB_SAVE_DURABILITY_UNCERTAIN;
     return result;
 }
+
+sb_save_result_t sb_save_prepare_directory(const char *parent, const char *child) {
+    if (!parent || !*parent || !child || !*child || strchr(child, '/') ||
+        strcmp(child, ".") == 0 || strcmp(child, "..") == 0)
+        return SB_SAVE_INVALID_ARGUMENT;
+
+    int parentfd = open(parent, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    if (parentfd < 0) return SB_SAVE_IO_ERROR;
+
+    sb_save_result_t result = SB_SAVE_IO_ERROR;
+    int childfd = -1;
+    if (mkdirat(parentfd, child, 0700) != 0 && errno != EEXIST) goto cleanup;
+
+    /* EEXIST alone does not establish that this is a directory. Do not follow
+       a child symlink, even one that points at a directory. */
+    childfd = openat(parentfd, child, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+    if (childfd < 0) goto cleanup;
+
+    /* Repeat both syncs for existing children: a previous attempt may have
+       created the directory but failed before its parent entry was durable. */
+    if (sync_save_fd(childfd) != 0 || sync_save_fd(parentfd) != 0) goto cleanup;
+    result = SB_SAVE_OK;
+
+cleanup:
+    if (childfd >= 0 && close(childfd) != 0) result = SB_SAVE_IO_ERROR;
+    if (close(parentfd) != 0) result = SB_SAVE_IO_ERROR;
+    /* Never remove the child on failure; callers may retry and it may contain
+       existing data. No save replacement has occurred in this operation. */
+    return result;
+}

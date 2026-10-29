@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added separate one-level save-directory preparation: create or verify a child,
+  synchronize child then parent, and preserve existing permissions and data.
+  Added isolated failure/retry tests. Full-path handling and writer integration
+  remain pending.
+
 - Added an internal C save writer for existing directories with synchronized
   temporary-file replacement. Early failures preserve the old save; failures
   after replacement report uncertain durability. Added isolated read-back and

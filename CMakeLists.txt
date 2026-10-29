@@ -166,6 +166,15 @@ if(BUILD_TESTING)
     add_test(NAME save_writer COMMAND test_save_write)
     set_tests_properties(save_writer PROPERTIES TIMEOUT 15)
 
+    add_executable(test_save_directory tests/test_save_directory.c)
+    target_link_libraries(test_save_directory PRIVATE sugarbee_save)
+    target_link_options(test_save_directory PRIVATE
+        "-Wl,--wrap=mkdirat" "-Wl,--wrap=openat" "-Wl,--wrap=fsync" "-Wl,--wrap=close")
+    sugarbee_warnings(test_save_directory)
+    add_test(NAME save_directory COMMAND test_save_directory)
+    set_tests_properties(save_directory PROPERTIES TIMEOUT 15)
+
+
 
     add_executable(test_timing tests/test_timing.c)
     target_link_libraries(test_timing PRIVATE sugarbee_timing)
