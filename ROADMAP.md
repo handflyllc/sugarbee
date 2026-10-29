@@ -65,7 +65,7 @@ deferred unless validation exposes a concrete need for it.
 Keep this phase finite. Safely executing deliberately hostile cartridges would
 require a separate scope decision, not an assumed extension of loop protection.
 
-### 3. Implement minimal save support — design settled, implementation pending
+### 3. Implement minimal save support — implementation started
 
 - Follow the [agreed minimal save design](docs/architecture/save-design.md):
   one opaque string up to 64 KiB per UUID, explicit load/save calls, and a
@@ -78,7 +78,8 @@ require a separate scope decision, not an assumed extension of loop protection.
   behavior on desktop and Pi before claiming durability guarantees.
 
 Done when: the agreed API and failure contract are implemented, documented, and
-validated on desktop and Pi. No save functionality is implemented yet.
+validated on desktop and Pi. The internal bounded C reader is implemented;
+writing, host integration, and the Lua API remain pending.
 
 ### 4. Begin audio implementation
 

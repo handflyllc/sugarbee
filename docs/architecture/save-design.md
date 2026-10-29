@@ -1,8 +1,10 @@
 # SugarBee saves — settled initial design
 
 Status: initial API, storage policy, and durability contract agreed on 2026-10-29.
-Save support and the API below are not implemented. This document records the
-accepted design before implementation; it is not an available API reference.
+The Lua API and save writing below are not implemented. An internal bounded C
+reader is implemented as the first storage checkpoint; it is not connected to
+the host or Lua. This document records the accepted design, not an available
+Lua API reference.
 
 ## Scope and ownership
 
@@ -145,3 +147,29 @@ deployment work; a completed save is not permission to remove console power.
   atomic destination replacement on the same filesystem.
 - [Linux fsync](https://man7.org/linux/man-pages/man2/fsync.2.html) distinguishes
   synchronizing file contents from synchronizing the containing directory.
+
+## First storage checkpoint: bounded reader
+
+`sb_save_read` in `include/sb_save.h` accepts a host-selected directory and a
+16-byte UUID. It reads the canonical UUID filename without creating files or
+directories. Success returns caller-owned bytes and an explicit length, including
+an allocated buffer for an empty save. Failures clear the outputs. The reader
+returns distinct missing, oversized, I/O, and invalid-C-argument results.
+Missing save directories are treated as no save; other directory errors are
+storage failures. Save-file symlinks and non-regular files are rejected. The
+host-selected root may itself resolve through a symlink.
+
+The Linux/POSIX reader bounds allocation and reads to 65,537 bytes, using the
+extra byte to detect oversize even if a file grows after its initial size check.
+Concurrent modification is not a supported snapshot guarantee. Read operations
+may update filesystem access metadata, but never write save contents.
+
+The isolated `save_reader` CTest case covers empty and binary data, the exact
+limit, oversize rejection, UUID selection, missing files/directories, invalid
+arguments, read-only files, permission denial when run without root privileges,
+and rejection of directory/FIFO/symlink save entries. A five-second CTest timeout
+protects against accidental blocking. No real user save directory is used.
+
+Run with `ctest --test-dir build -R '^save_reader$' --output-on-failure`.
+Directory defaults, `--save-dir`, Lua bindings, writes, and durability handling
+remain unimplemented. Pi validation of this checkpoint is pending.

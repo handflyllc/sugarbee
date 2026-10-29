@@ -26,6 +26,12 @@ add_library(sugarbee_vcart STATIC src/vcart.c)
 target_include_directories(sugarbee_vcart PUBLIC "${PROJECT_SOURCE_DIR}/include")
 sugarbee_warnings(sugarbee_vcart)
 
+# Bounded save storage is independent of SDL and Lua (Linux/POSIX backend).
+add_library(sugarbee_save STATIC src/sb_save.c)
+target_include_directories(sugarbee_save PUBLIC "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(sugarbee_save PRIVATE sugarbee_vcart)
+sugarbee_warnings(sugarbee_save)
+
 if(SUGARBEE_BUILD_PACKER)
     add_executable(sbee-pack tools/sbee-pack.c)
     target_link_libraries(sbee-pack PRIVATE sugarbee_vcart)
@@ -144,6 +150,12 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
 endif()
 
 if(BUILD_TESTING)
+    add_executable(test_save tests/test_save.c)
+    target_link_libraries(test_save PRIVATE sugarbee_save)
+    sugarbee_warnings(test_save)
+    add_test(NAME save_reader COMMAND test_save)
+    set_tests_properties(save_reader PROPERTIES TIMEOUT 5)
+
     add_executable(test_timing tests/test_timing.c)
     target_link_libraries(test_timing PRIVATE sugarbee_timing)
     sugarbee_warnings(test_timing)

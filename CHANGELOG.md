@@ -2,6 +2,10 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added an internal bounded C save reader and isolated storage tests. Reads
+  canonical UUID files up to 64 KiB without truncation; distinguishes missing,
+  oversized, and I/O failures. No save writing or Lua/host integration yet.
+
 - Retained Lua `__close` support and added six isolated host regression cases
   covering normal/error exits, runaway cleanup, and multiple closing methods.
   Each CTest case has a five-second external timeout and verifies state cleanup
