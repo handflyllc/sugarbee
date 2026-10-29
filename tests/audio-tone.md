@@ -45,5 +45,22 @@ ctest --test-dir build -R '^audio_' --output-on-failure
 
 All 42 automated tests pass on desktop. The user confirmed the tone sounds
 clean through the intended output, with no clicks or distortion and normal exit.
-Pi validation remains pending. Lua controls, general synthesis, WAV
+On Pi commit `d6c0dd9`, the user confirmed all 42 tests passed, clean tone output,
+normal gameplay and unavailable-audio behavior, and Exit to system status 0.
+Lua controls, general synthesis, WAV
 playback, and repeated-note scheduling remain deferred.
+
+## Pi troubleshooting: no audible tone
+
+During the Pi validation, the system selected A/V Audio Out rather than HDMI.
+Nothing was connected to the A/V output. Selecting HDMI as the system audio
+output made the tone audible and all listening checks passed. This records the
+observed configuration, not a universal Raspberry Pi default.
+
+If the tool completes but you hear nothing, check the system's selected audio
+output, mute state, and volume. Select the output connected to your speakers or
+monitor (HDMI in this validation), then rerun `./build/sbee-audio-test`. Output
+selection controls vary by Raspberry Pi OS/audio setup. SugarBee currently opens
+the default SDL output; it has no device-selection menu. Passing dummy-driver
+tests or returning status 0 does not by itself confirm the intended output is
+connected and audible.

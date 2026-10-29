@@ -347,7 +347,7 @@ The [foundation checks](../../tests/audio-foundation.md) exercise silence,
 unavailable initialization, injected open failure, session lifetime, and clean
 teardown using SDL's dummy drivers. All 40 automated tests passed. The user
 confirmed the interactive Pong/Save Lab checks and one-message unavailable-audio
-fallback without gameplay disruption. Pi validation remains pending. Desktop audible-output validation is recorded
+fallback without gameplay disruption. Pi validation passed at `d6c0dd9`. Audible-output validation is recorded
 in the diagnostic-tone checkpoint below.
 No test tone, synthesizer, WAV loading, Lua audio API, live failure detection,
 or cartridge fade/mixing behavior is implemented in this checkpoint.
@@ -369,4 +369,7 @@ returns false. No Lua interface or normal-host automatic tone is introduced.
 See [test instructions and limits](../../tests/audio-tone.md) for sample checks,
 listening instructions, and bounded tool wait behavior. All 42 automated tests
 passed. The user confirmed clean desktop output on the intended device, no clicks
-or distortion, and normal exit. Pi validation remains pending.
+or distortion, and normal exit. On Pi commit `d6c0dd9`, the user confirmed all
+42 tests, clean tone output, gameplay and unavailable-audio checks, and Exit to
+system status 0. The Pi initially selected unconnected A/V Audio Out; selecting
+HDMI resolved silence. See the [troubleshooting notes](../../tests/audio-tone.md#pi-troubleshooting-no-audible-tone).

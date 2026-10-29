@@ -42,5 +42,7 @@ Test console mode with the existing `--console` flag if desired.
 
 All 40 automated tests passed. The user confirmed the interactive Pong and Save
 Lab checks passed, and unavailable audio produced one message without disrupting
-gameplay. Pi validation remains pending. The separate [test-tone executable](audio-tone.md) is now available for listening
-checks to establish that actual sound reaches the intended output.
+gameplay. On Pi commit `d6c0dd9`, the user confirmed all 42 tests passed, clean
+tone output, normal gameplay and fallback behavior, and Exit to system status 0.
+The Pi required selecting HDMI instead of its selected A/V output; see the
+[test-tone troubleshooting notes](audio-tone.md#pi-troubleshooting-no-audible-tone).

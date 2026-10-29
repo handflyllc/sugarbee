@@ -112,12 +112,15 @@ minimal-save phases. A custom console OS image is not a prerequisite.
 The SDL2 silent-output foundation now opens a host-owned device, permits silent
 fallback on initialization/open failure, and closes after cartridge shutdown.
 All 40 automated tests pass. The user confirmed normal Pong/Save Lab behavior
-and one-message unavailable-audio fallback without gameplay disruption. Pi
-validation and Lua audio controls remain pending.
+and one-message unavailable-audio fallback without gameplay disruption. Lua
+audio controls remain pending.
 A separate one-second diagnostic-tone executable and automated sample tests are
 implemented; all 42 tests pass. The user confirmed clean desktop tone output,
 correct device selection, no clicks/distortion, and normal exit. Normal host
-startup remains silent.
+startup remains silent. On Pi commit `d6c0dd9`, the user confirmed all 42 tests,
+clean tone output after selecting HDMI, gameplay/fallback checks, and Exit to
+system status 0. The foundation and diagnostic-tone slices are validated on
+desktop and Pi; synthesis and WAV playback remain future checkpoints.
 
 Done when: each selected audio slice meets its agreed behavior and resource
 constraints with automated checks where appropriate and listening tests.
