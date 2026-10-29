@@ -1,9 +1,9 @@
 # SugarBee saves — settled initial design
 
 Status: initial API, storage policy, and durability contract agreed on 2026-10-29.
-The Lua API and save writing below are not implemented. An internal bounded C
-reader is implemented as the first storage checkpoint; it is not connected to
-the host or Lua. This document records the accepted design, not an available
+The Lua API is not implemented. Internal bounded C reading and synchronized
+replacement in an existing directory are implemented; neither is connected to
+the host or Lua. Directory creation remains pending. This document records the accepted design, not an available
 Lua API reference.
 
 ## Scope and ownership
@@ -171,5 +171,60 @@ and rejection of directory/FIFO/symlink save entries. A five-second CTest timeou
 protects against accidental blocking. No real user save directory is used.
 
 Run with `ctest --test-dir build -R '^save_reader$' --output-on-failure`.
-Directory defaults, `--save-dir`, Lua bindings, writes, and durability handling
-remain unimplemented. Pi validation of this checkpoint is pending.
+Directory defaults, `--save-dir`, and Lua bindings remain unimplemented.
+Pi validation of the storage checkpoints is pending.
+
+## Second storage checkpoint: existing-directory writer
+
+`sb_save_write` takes the selected directory, UUID, bytes, and length. The root
+must already exist; a missing or inaccessible directory returns `SB_SAVE_IO_ERROR`
+without creating it. The caller is responsible for provisioning the directory;
+durable directory creation is a later checkpoint. NULL data is accepted only
+for a zero-length save. Oversized input is rejected before filesystem changes.
+
+The writer exclusively creates a temporary file in the opened directory with
+owner read/write permissions (0600, further restricted by the process umask).
+It handles short and interrupted writes, synchronizes and closes the completed
+file, renames it over the UUID destination, then synchronizes the directory.
+Interrupted synchronization is retried. Zero-progress writes fail instead of
+spinning. Closing a descriptor is not retried after an error on Linux.
+
+Existing non-regular save entries, including symlinks, are rejected. Replacement
+produces a new file with the temporary file's permissions; it does not preserve
+arbitrary metadata from a previous save. Concurrent directory changes and
+writers are outside the supported scope.
+
+Before replacement, storage failures return `SB_SAVE_IO_ERROR` and leave the
+previous save untouched. After replacement, a directory-sync failure returns
+`SB_SAVE_DURABILITY_UNCERTAIN`. A final directory-close failure also returns
+that conservative result, even if synchronization already succeeded. The writer
+never tries to roll back a replacement. Only successful file and directory
+synchronization and descriptor closure return `SB_SAVE_OK`.
+
+On early failure the writer attempts to remove only its own temporary file.
+A failed removal is reported to stderr; the primary save outcome is unchanged.
+Temporary names cannot be selected by the reader as UUID saves. Exclusive
+creation tries up to 128 distinct candidate names; existing temporary entries
+are never overwritten or automatically deleted. Exhaustion returns an I/O
+error. Crash-leftover cleanup and interruption/power-loss testing remain later
+work; these error-injection tests do not establish power-loss guarantees.
+
+`save_writer` uses isolated temporary directories and the real reader to verify
+first saves, replacement, empty/binary/exact-limit data, oversize rejection, and
+UUID independence. Linker wrappers confined to the test executable inject
+write, file-sync, file-close, rename, directory-sync, directory-close, and
+cleanup failures. Tests verify unchanged old data before replacement, visible
+new data with uncertain durability afterward, temporary cleanup (including a
+failed cleanup), short/interrupted operations, collision handling, and rejected
+non-regular destinations. Tests also check synchronization/close/rename ordering.
+The production library has no fault-injection controls.
+
+Run both storage cases through CTest:
+
+```sh
+ctest --test-dir build -R '^save_(reader|writer)$' --output-on-failure
+```
+
+The writer case has a 15-second external test timeout; storage I/O itself has
+no runtime wall-clock bound. Directory creation, host/Lua integration, and Pi
+validation remain pending.

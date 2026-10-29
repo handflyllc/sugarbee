@@ -4,7 +4,9 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -64,5 +66,85 @@ cleanup:
     } else {
         free(buffer);
     }
+    return result;
+}
+
+/* Synchronization may be interrupted without completing. Retry that case only. */
+static int sync_save_fd(int fd) {
+    int result;
+    do {
+        result = fsync(fd);
+    } while (result < 0 && errno == EINTR);
+    return result;
+}
+
+sb_save_result_t sb_save_write(const char *directory, const uint8_t uuid[16],
+                               const uint8_t *data, size_t length) {
+    if (!directory || !*directory || !uuid || (!data && length != 0))
+        return SB_SAVE_INVALID_ARGUMENT;
+    if (length > SB_SAVE_MAX_BYTES) return SB_SAVE_TOO_LARGE;
+
+    int dirfd = open(directory, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    if (dirfd < 0) return SB_SAVE_IO_ERROR;
+
+    sb_save_result_t result = SB_SAVE_IO_ERROR;
+    char filename[41], temporary[96];
+    vcart_uuid_to_string(uuid, filename);
+    memcpy(filename + 36, ".sav", 5);
+    int fd = -1;
+    bool temporary_exists = false;
+    struct stat info;
+    if (fstatat(dirfd, filename, &info, AT_SYMLINK_NOFOLLOW) == 0) {
+        if (!S_ISREG(info.st_mode)) goto cleanup;
+    } else if (errno != ENOENT) {
+        goto cleanup;
+    }
+
+    /* Exclusive creation never overwrites an existing temporary file. Names
+       are private implementation details, not candidate save filenames.
+       Bounded retries tolerate leftovers without an unbounded collision loop. */
+    for (unsigned attempt = 0; attempt < 128; ++attempt) {
+        snprintf(temporary, sizeof(temporary), ".%s.tmp.%ld.%u",
+                 filename, (long)getpid(), attempt);
+        fd = openat(dirfd, temporary,
+                    O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC | O_NOFOLLOW, 0600);
+        if (fd >= 0) {
+            temporary_exists = true;
+            break;
+        }
+        if (errno != EEXIST) goto cleanup;
+    }
+    if (fd < 0) goto cleanup;
+
+    size_t written = 0;
+    while (written < length) {
+        ssize_t n = write(fd, data + written, length - written);
+        if (n < 0) {
+            if (errno == EINTR) continue;
+            goto cleanup;
+        }
+        if (n == 0) goto cleanup; /* Do not spin on a write making no progress. */
+        written += (size_t)n;
+    }
+    if (sync_save_fd(fd) != 0) goto cleanup;
+    /* On Linux a failed close can already have released the descriptor.
+       Never retry close: it could act on a reused descriptor. */
+    int close_result = close(fd);
+    fd = -1;
+    if (close_result != 0) goto cleanup;
+
+    if (renameat(dirfd, temporary, dirfd, filename) != 0) goto cleanup;
+    temporary_exists = false;
+    /* Past this point IO_ERROR would falsely imply the old save is intact. */
+    result = sync_save_fd(dirfd) == 0 ? SB_SAVE_OK : SB_SAVE_DURABILITY_UNCERTAIN;
+
+cleanup:
+    if (fd >= 0) close(fd);
+    if (temporary_exists && unlinkat(dirfd, temporary, 0) != 0) {
+        fprintf(stderr, "[SugarBee] Could not remove temporary save '%s': %s\n",
+                temporary, strerror(errno));
+    }
+    if (close(dirfd) != 0 && result == SB_SAVE_OK)
+        result = SB_SAVE_DURABILITY_UNCERTAIN;
     return result;
 }

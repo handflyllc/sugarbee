@@ -156,6 +156,17 @@ if(BUILD_TESTING)
     add_test(NAME save_reader COMMAND test_save)
     set_tests_properties(save_reader PROPERTIES TIMEOUT 5)
 
+    add_executable(test_save_write tests/test_save_write.c)
+    target_link_libraries(test_save_write PRIVATE sugarbee_save)
+    # Linux linker fault injection stays confined to this test executable.
+    target_link_options(test_save_write PRIVATE
+        "-Wl,--wrap=write" "-Wl,--wrap=fsync" "-Wl,--wrap=close"
+        "-Wl,--wrap=renameat" "-Wl,--wrap=unlinkat")
+    sugarbee_warnings(test_save_write)
+    add_test(NAME save_writer COMMAND test_save_write)
+    set_tests_properties(save_writer PROPERTIES TIMEOUT 15)
+
+
     add_executable(test_timing tests/test_timing.c)
     target_link_libraries(test_timing PRIVATE sugarbee_timing)
     sugarbee_warnings(test_timing)

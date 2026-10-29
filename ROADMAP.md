@@ -78,8 +78,9 @@ require a separate scope decision, not an assumed extension of loop protection.
   behavior on desktop and Pi before claiming durability guarantees.
 
 Done when: the agreed API and failure contract are implemented, documented, and
-validated on desktop and Pi. The internal bounded C reader is implemented;
-writing, host integration, and the Lua API remain pending.
+validated on desktop and Pi. Internal bounded reading and replacement writing
+for existing directories are implemented with failure tests. Directory creation,
+interruption/durability validation, host integration, and the Lua API remain pending.
 
 ### 4. Begin audio implementation
 

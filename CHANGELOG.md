@@ -2,9 +2,14 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added an internal C save writer for existing directories with synchronized
+  temporary-file replacement. Early failures preserve the old save; failures
+  after replacement report uncertain durability. Added isolated read-back and
+  injected-failure tests. Directory creation and host/Lua integration remain pending.
+
 - Added an internal bounded C save reader and isolated storage tests. Reads
   canonical UUID files up to 64 KiB without truncation; distinguishes missing,
-  oversized, and I/O failures. No save writing or Lua/host integration yet.
+  oversized, and I/O failures. No Lua/host integration yet.
 
 - Retained Lua `__close` support and added six isolated host regression cases
   covering normal/error exits, runaway cleanup, and multiple closing methods.
