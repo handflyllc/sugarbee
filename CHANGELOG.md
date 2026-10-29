@@ -2,6 +2,18 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Validated the audio foundation and diagnostic tone on Pi commit `d6c0dd9`:
+  all 42 tests, listening, gameplay/fallback, and clean system exit passed.
+  Documented selecting HDMI when the Pi routes audio to an unconnected A/V output.
+
+- Added opt-in `sbee-audio-test`: a quiet one-second 440 Hz stereo sine tone
+  with ten-ms fades, synchronized native controls, and automated sample/output
+  checks. Normal host output stays silent; Lua controls and synthesis are deferred.
+
+- Added host-owned SDL2 silent audio output (48 kHz stereo float), nonfatal
+  unavailable-device fallback, and teardown after cartridge shutdown. Added
+  dummy-driver lifecycle/failure tests. Test tone and Lua audio APIs are deferred.
+
 - Completed bounded minimal-save validation on desktop and Pi. The user
   confirmed all 37 tests and eight interactive Save Lab checks at `525e215`,
   with Exit to system status 0. Actual power-loss testing remains deferred.
