@@ -55,4 +55,6 @@ NULL arguments, and finite bounded monotonic output at ten-second limits.
 Desktop automated checks also cover retrigger from attack, decay, sustain, and
 release, and invalid retrigger without mutation. Triangle integration supplies
 a separate audible stop fade. The user confirmed clean desktop ADSR playback, smooth transitions, and normal
-exit. Pi validation for ADSR remains pending. No Lua API or complete synthesizer is exposed.
+exit. On Pi commit `710b738`, the user confirmed all 45 tests passed, clean
+ADSR/retrigger and sine output, normal gameplay checks, and Exit to system status
+0. No Lua API or complete synthesizer is exposed.

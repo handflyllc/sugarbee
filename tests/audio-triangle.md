@@ -19,8 +19,9 @@ Expect gentle level changes, a smooth rise on retrigger rather than an abrupt
 volume reset, and a quick final stop followed by normal exit. Pitch changes are
 steps, not glides. See [Pi output troubleshooting](audio-tone.md#pi-troubleshooting-no-audible-tone)
 if the intended output is silent. The user confirmed this updated sequence sounds clean on desktop, with smooth
-transitions and normal exit. All 45 automated tests pass. Pi validation for the
-ADSR integration remains pending.
+transitions and normal exit. On Pi commit `710b738`, the user confirmed all 45
+tests passed, clean ADSR/retrigger and sine output, normal gameplay checks, and
+Exit to system status 0.
 
 ## Native contract
 

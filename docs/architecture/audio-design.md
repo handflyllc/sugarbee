@@ -408,7 +408,7 @@ now captures new settings and attacks from the current level. Triangle
 integration is described below. Reset remains initialization/cleanup, not an
 audible stop fade. See the [timing contract and edge-case tests](../../tests/audio-envelope.md)
 for exact boundary semantics. All 45 desktop tests pass, and the user confirmed clean ADSR playback, smooth
-transitions, and normal exit. Pi ADSR validation remains pending.
+transitions, and normal exit. Pi ADSR validation passed at `710b738` as recorded below.
 
 ## Native triangle ADSR integration
 
@@ -427,4 +427,8 @@ click-free. The renderer samples the current level before advancing one frame.
 The updated [native listening sequence](../../tests/audio-triangle.md) and tests
 cover ADSR, pitch-only changes, retrigger during release, and short stop overriding
 a long release. All 45 automated tests pass. The user confirmed clean desktop
-ADSR playback, smooth transitions, and normal exit. Pi checks remain pending. Pitch remains limited to 220–660 Hz, volume/pan fixed, and Lua deferred.
+ADSR playback, smooth transitions, and normal exit. On Pi commit `710b738`, the
+user confirmed all 45 tests, clean ADSR/retrigger and sine output, gameplay
+checks, and Exit to system status 0. This validates the bounded native ADSR
+integration on desktop and Pi. Pitch remains limited to 220–660 Hz, volume/pan
+fixed, and Lua deferred.
