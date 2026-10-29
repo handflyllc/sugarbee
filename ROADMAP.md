@@ -122,8 +122,10 @@ clean tone output after selecting HDMI, gameplay/fallback checks, and Exit to
 system status 0. The foundation and diagnostic-tone slices are validated on
 desktop and Pi. A single native triangle prototype now supports start, pitch
 change, and stop; all 44 tests pass. The user confirmed clean desktop tones,
-no obvious clicks at pitch changes, and normal exit. Pi validation is pending;
-the full synth, Lua controls, and WAV playback remain future checkpoints.
+no obvious clicks at pitch changes, and normal exit. On Pi commit `1664043`,
+the user confirmed all 44 tests, both listening tests, gameplay checks, and Exit
+to system status 0. This bounded native prototype is validated on desktop and
+Pi; the full synth, Lua controls, and WAV playback remain future checkpoints.
 
 Done when: each selected audio slice meets its agreed behavior and resource
 constraints with automated checks where appropriate and listening tests.

@@ -13,8 +13,9 @@ output, steady tones, no obvious clicks at pitch changes, and clean exit. A
 triangle sounds different from the diagnostic sine; the pitch changes are
 instant steps, not glides. See [Pi output troubleshooting](audio-tone.md#pi-troubleshooting-no-audible-tone)
 if no sound is heard. The user confirmed clean desktop triangle tones, no obvious clicks at pitch
-changes, and normal exit. All 44 automated tests pass. Pi validation remains
-pending.
+changes, and normal exit. All 44 automated tests pass. On Pi commit `1664043`,
+the user confirmed all 44 tests passed, clean triangle and original sine tones,
+normal Pong/Save Lab gameplay checks, and Exit to system status 0.
 
 This is a native-only prototype, not the nine-voice synth API. It has fixed
 peak amplitude 0.05, identical stereo channels, and linear ten-ms start/stop

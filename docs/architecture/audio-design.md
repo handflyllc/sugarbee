@@ -388,4 +388,8 @@ Requests synchronize through the SDL device lock. The sine diagnostic and
 triangle are mutually exclusive; no mixer or Lua controls are added. Native
 sample and dummy-output checks pass as part of all 44 automated tests. The user
 confirmed clean desktop triangle tones, no obvious clicks at pitch changes, and
-normal exit. Pi validation remains pending. See [prototype tests and listening instructions](../../tests/audio-triangle.md).
+normal exit. On Pi commit `1664043`, the user confirmed all 44 tests passed,
+clean triangle and original sine tones, normal gameplay checks, and Exit to
+system status 0. This validates the bounded native prototype on desktop and Pi,
+not full-range or nine-voice synthesis. See
+[prototype tests and listening instructions](../../tests/audio-triangle.md).
