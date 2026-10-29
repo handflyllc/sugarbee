@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added a read-only save-path adapter that resolves existing symlinked locations
+  and rejects ambiguous missing-component paths. Results retain the full path
+  beneath `/` for preparation retries. Added resolution, bound, and partial-
+  preparation retry tests; host storage calls and Lua integration remain pending.
+
 - Added selection-only `--save-dir` and XDG/HOME defaults. Relative overrides
   are anchored at launch; unavailable storage selection does not block startup.
   Added parser/selection tests. No save directories or files are created, and

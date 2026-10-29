@@ -4,8 +4,9 @@ Status: initial API, storage policy, and durability contract agreed on 2026-10-2
 The Lua API is not implemented. Internal bounded C reading, synchronized
 replacement, one-level and bounded nested directory preparation, and a C
 prepare-and-write coordinator are implemented. Host directory selection is
-implemented separately without storage access; selection-to-storage integration
-and Lua integration remain pending. This document records the accepted design,
+implemented separately without storage access. A read-only C path adapter is
+also implemented; invoking storage from the host and Lua integration remain
+pending. This document records the accepted design,
 not an available Lua API reference.
 
 ## Scope and ownership
@@ -348,9 +349,9 @@ an unavailable-storage diagnostic and continues startup in either case. A missin
 usable default never activates Guru. Path buffers are bounded at 4096 bytes
 including the terminating zero; overflow leaves no truncated destination and
 never silently selects a different location. This host selection limit is
-separate from the relative-path limits of the C preparation API. Connecting the
-two, selecting a durable base, and handling paths acceptable to selection but
-not preparation remain later work.
+separate from the relative-path limits of the C preparation API. The sixth
+checkpoint below adapts paths between these contracts without connecting the
+host to storage operations.
 
 The `host_save_selection` regression test verifies precedence, environment
 fallback, parser errors, relative-path capture, spaces, boundary lengths, and
@@ -359,3 +360,51 @@ startup and clean exit with a relative override and with no default available.
 Physical launcher/gameplay and Pi validation remain separate checks. The console
 labels successful selection `(selection only)` to avoid implying writable or
 durably prepared storage.
+
+## Sixth checkpoint: read-only path adapter
+
+`sb_save_resolve_location(selected, &location)` accepts a selected absolute path
+of at most 4095 bytes. It resolves each existing component with filesystem
+semantics, including existing symlinked home/data directories and `.`/`..`.
+For example, `link/../saves` refers to the parent of the link's target, not the
+lexical parent of the link. Every existing component must resolve to a directory.
+Dangling or looping symlinks, non-directories, and inaccessible prefixes return
+`SB_SAVE_IO_ERROR`; they are not mistaken for directories that should be created.
+
+After the first truly missing component, only ordinary directory names are
+accepted. `missing/../saves` and `missing/./saves` are rejected as ambiguous rather
+than simplified. Repeated and trailing slashes are collapsed as ordinary Linux
+directory syntax. The adapter does not create, synchronize, or write anything.
+It never falls back to another location.
+
+The result is `location.relative`, a canonical existing prefix plus validated
+missing suffix, relative to the fixed preparation anchor `/`. The full result,
+including all existing ancestors, must fit the preparation limits: 1024 bytes,
+32 components, and 255 bytes per component. Invalid input, ambiguous paths,
+root-only destinations, and unrepresentable results return
+`SB_SAVE_INVALID_ARGUMENT`. The output is empty on failure. Future host bindings
+must translate resolution failures into an appropriate storage result rather
+than silently treating them as missing saves.
+
+A consumer can pass `/` and `location.relative` to the preparation or C save
+coordinator. It must not substitute the nearest existing ancestor as the base:
+that ancestor may be visible from an earlier creation whose synchronization
+failed. Retrying the entire root-anchored path synchronizes existing ancestors
+again. Resolution alone is neither preparation nor proof of durability. The
+returned spelling is not an open directory handle, and concurrent path changes
+remain unsupported. Actual host load/save wiring and Lua integration are pending.
+
+The isolated `save_location` CTest case covers existing symlinks, symlink-plus-
+parent semantics, missing suffixes, ambiguous dot components, unavailable or
+non-directory prefixes, and resolved-path bounds. It checks that resolution
+performs no mkdir or synchronization and creates no suffix directories. An
+injected parent-sync failure during preparation leaves a directory visible;
+resolving and retrying then retains the same full path and synchronizes the
+ancestor again. The test has a 15-second external timeout. These are desktop
+regression checks, not Pi or power-loss validation.
+
+Run the storage checks and host selection tests with:
+
+```sh
+ctest --test-dir build -R '^(save_(reader|writer|directory|path|location)|host_save_selection)$' --output-on-failure
+```

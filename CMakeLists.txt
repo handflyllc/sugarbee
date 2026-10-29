@@ -190,6 +190,14 @@ if(BUILD_TESTING)
     add_test(NAME save_path COMMAND test_save_path)
     set_tests_properties(save_path PROPERTIES TIMEOUT 15)
 
+    add_executable(test_save_location tests/test_save_location.c)
+    target_link_libraries(test_save_location PRIVATE sugarbee_save)
+    target_link_options(test_save_location PRIVATE "-Wl,--wrap=mkdirat" "-Wl,--wrap=fsync")
+    sugarbee_warnings(test_save_location)
+    add_test(NAME save_location COMMAND test_save_location)
+    set_tests_properties(save_location PROPERTIES TIMEOUT 15)
+
+
 
     add_executable(test_timing tests/test_timing.c)
     target_link_libraries(test_timing PRIVATE sugarbee_timing)

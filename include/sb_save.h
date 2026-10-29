@@ -10,6 +10,12 @@
 #define SB_SAVE_MAX_PATH_BYTES 1024u
 #define SB_SAVE_MAX_COMPONENTS 32u
 #define SB_SAVE_MAX_COMPONENT_BYTES 255u
+#define SB_SAVE_MAX_SELECTED_PATH_BYTES 4095u
+
+/* Resolved directory spelling relative to the fixed preparation anchor "/". */
+typedef struct {
+    char relative[SB_SAVE_MAX_PATH_BYTES + 1u];
+} sb_save_location_t;
 
 typedef enum {
     SB_SAVE_OK = 0,
@@ -75,5 +81,21 @@ sb_save_result_t sb_save_prepare_path(const char *base, const char *relative);
 sb_save_result_t sb_save_write_prepared(const char *base, const char *relative,
                                        const uint8_t uuid[16],
                                        const uint8_t *data, size_t length);
+
+/* Read-only adapter from a selected absolute path to a root-anchored location.
+ * Resolve existing directories/symlinks using filesystem semantics. After the
+ * first missing component, accept only plain names (no '.' or '..'). Repeated
+ * separators and trailing '/' are harmless directory syntax and are collapsed.
+ * Reject dangling/looping symlinks, non-directories, and inaccessible prefixes.
+ * Validate the final relative path against the preparation limits; '/' itself
+ * is not a supported save directory. No directories or files are created.
+ * INVALID_ARGUMENT: invalid input or an unrepresentable/ambiguous path.
+ * IO_ERROR: resolution failed. Output is empty on any failure.
+ * On success pass "/" and location.relative to preparation/coordinator APIs.
+ * Concurrent path changes are unsupported; this is not a retained directory
+ * handle or a proof of durability. The full root-anchored path must be prepared.
+ */
+sb_save_result_t sb_save_resolve_location(const char *selected,
+                                         sb_save_location_t *location);
 
 #endif

@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE 700
 #define _POSIX_C_SOURCE 200809L
 #include "sb_save.h"
 #include "vcart.h"
@@ -185,18 +186,15 @@ sb_save_result_t sb_save_prepare_directory(const char *parent, const char *child
     return result;
 }
 
-/* Validate and split before filesystem operations. Returns an owned leaf fd
-   only on success. At most parent + child are held during traversal. */
-static sb_save_result_t open_prepared_path(const char *base, const char *relative,
-                                          int *leaf) {
-    *leaf = -1;
-    if (!base || !*base || !relative || !*relative)
-        return SB_SAVE_INVALID_ARGUMENT;
+/* Shared syntax/limit checks for preparation and the resolved location. */
+static sb_save_result_t split_save_path(const char *relative,
+                                       char path[SB_SAVE_MAX_PATH_BYTES + 1u],
+                                       char *components[SB_SAVE_MAX_COMPONENTS],
+                                       size_t *component_count) {
+    if (!relative || !*relative) return SB_SAVE_INVALID_ARGUMENT;
     size_t length = strnlen(relative, SB_SAVE_MAX_PATH_BYTES + 1u);
     if (length > SB_SAVE_MAX_PATH_BYTES) return SB_SAVE_INVALID_ARGUMENT;
 
-    char path[SB_SAVE_MAX_PATH_BYTES + 1u];
-    char *components[SB_SAVE_MAX_COMPONENTS];
     size_t count = 0;
     memcpy(path, relative, length + 1u);
     char *component = path;
@@ -211,6 +209,22 @@ static sb_save_result_t open_prepared_path(const char *base, const char *relativ
         components[count++] = component;
         component = &path[i + 1];
     }
+
+    *component_count = count;
+    return SB_SAVE_OK;
+}
+
+/* Validate and split before filesystem operations. Returns an owned leaf fd
+   only on success. At most parent + child are held during traversal. */
+static sb_save_result_t open_prepared_path(const char *base, const char *relative,
+                                          int *leaf) {
+    *leaf = -1;
+    if (!base || !*base) return SB_SAVE_INVALID_ARGUMENT;
+    char path[SB_SAVE_MAX_PATH_BYTES + 1u];
+    char *components[SB_SAVE_MAX_COMPONENTS];
+    size_t count;
+    sb_save_result_t result = split_save_path(relative, path, components, &count);
+    if (result != SB_SAVE_OK) return result;
 
     int parentfd = open(base, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
     if (parentfd < 0) return SB_SAVE_IO_ERROR;
@@ -243,4 +257,66 @@ sb_save_result_t sb_save_write_prepared(const char *base, const char *relative,
     sb_save_result_t result = open_prepared_path(base, relative, &leaf);
     if (result != SB_SAVE_OK) return result;
     return write_save_in_directory(leaf, uuid, data, length);
+}
+
+sb_save_result_t sb_save_resolve_location(const char *selected,
+                                         sb_save_location_t *location) {
+    if (location) location->relative[0] = '\0';
+    if (!selected || selected[0] != '/' || !location)
+        return SB_SAVE_INVALID_ARGUMENT;
+    size_t length = strnlen(selected, SB_SAVE_MAX_SELECTED_PATH_BYTES + 1u);
+    if (length > SB_SAVE_MAX_SELECTED_PATH_BYTES) return SB_SAVE_INVALID_ARGUMENT;
+
+    char input[SB_SAVE_MAX_SELECTED_PATH_BYTES + 1u];
+    char resolved[SB_SAVE_MAX_SELECTED_PATH_BYTES + 1u] = "/";
+    char candidate[SB_SAVE_MAX_SELECTED_PATH_BYTES + 1u];
+    memcpy(input, selected, length + 1u);
+    bool missing = false;
+    char *state = NULL;
+    for (char *part = strtok_r(input, "/", &state); part;
+         part = strtok_r(NULL, "/", &state)) {
+        if (missing && (strcmp(part, ".") == 0 || strcmp(part, "..") == 0))
+            return SB_SAVE_INVALID_ARGUMENT;
+        if (strlen(part) > SB_SAVE_MAX_COMPONENT_BYTES) return SB_SAVE_INVALID_ARGUMENT;
+        int n = snprintf(candidate, sizeof(candidate), "%s%s%s", resolved,
+                         strcmp(resolved, "/") == 0 ? "" : "/", part);
+        if (n < 0 || (size_t)n >= sizeof(candidate)) return SB_SAVE_INVALID_ARGUMENT;
+        if (!missing) {
+            /* Resolve one existing component at a time: '..' after a symlink
+               must refer to its target's parent, not the symlink's parent. */
+            char *physical = realpath(candidate, NULL);
+            if (physical) {
+                struct stat info;
+                if (stat(physical, &info) != 0 || !S_ISDIR(info.st_mode)) {
+                    free(physical);
+                    return SB_SAVE_IO_ERROR;
+                }
+                size_t physical_length = strlen(physical);
+                if (physical_length >= sizeof(resolved)) {
+                    free(physical);
+                    return SB_SAVE_INVALID_ARGUMENT;
+                }
+                memcpy(resolved, physical, physical_length + 1u);
+                free(physical);
+                continue;
+            }
+            if (errno != ENOENT) return SB_SAVE_IO_ERROR;
+            struct stat info;
+            /* An existing but dangling symlink is NOT a missing directory. */
+            if (lstat(candidate, &info) == 0 || errno != ENOENT)
+                return SB_SAVE_IO_ERROR;
+            missing = true;
+        }
+        memcpy(resolved, candidate, (size_t)n + 1u);
+    }
+
+    /* A root-anchored path includes every existing ancestor in preparation,
+       even one left visible after an earlier failed synchronization. */
+    char path[SB_SAVE_MAX_PATH_BYTES + 1u];
+    char *components[SB_SAVE_MAX_COMPONENTS];
+    size_t count;
+    sb_save_result_t result = split_save_path(resolved + 1, path, components, &count);
+    if (result != SB_SAVE_OK) return result;
+    memcpy(location->relative, resolved + 1, strlen(resolved));
+    return SB_SAVE_OK;
 }
