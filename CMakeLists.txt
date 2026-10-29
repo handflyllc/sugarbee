@@ -73,6 +73,13 @@ if(SUGARBEE_BUILD_HOST)
 endif()
 
 if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
+    # Include the host privately to test CLI and idle controls without an SDL window.
+    add_executable(test_console_host tests/test_console_host.c)
+    get_target_property(SUGARBEE_HOST_TEST_LIBRARIES sugarbee LINK_LIBRARIES)
+    target_link_libraries(test_console_host PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    sugarbee_warnings(test_console_host)
+    add_test(NAME console_host_controls COMMAND test_console_host)
+
     add_executable(test_font tests/test_font.c)
     target_link_libraries(test_font PRIVATE sugarbee_graphics PkgConfig::SDL2)
     sugarbee_warnings(test_font)

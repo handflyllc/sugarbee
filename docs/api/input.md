@@ -68,7 +68,8 @@ that cartridge from the idle screen. With `--cartridges DIRECTORY`, Up/Down
 moves once per press, stops at either end, and scrolls through eight visible
 rows. Exit Game returns to the list with the selection preserved.
 
-B/K closes the idle host or launcher. Start has no effect there. An empty
+Without `--console`, B/K closes the idle host or launcher and Start has no
+effect there. An empty
 list ignores navigation and confirmation. Without startup arguments, the
 idle screen displays launch instructions. Buttons held during launch remain
 hidden from the cartridge until released. B takes priority over rescan; rescan
@@ -85,7 +86,13 @@ console. See [launcher usage and limits](../development/launcher.md).
 In directory mode, a startup scan automatically launches a sole eligible
 cartridge if there are no scan errors or omitted eligible entries. Exiting,
 recovering from Guru, or rescanning never triggers automatic launch.
-Operating system power-off is not implemented.
+With the explicit leading `--console` flag, idle B/K does nothing and
+Start/Enter opens an Exit to system confirmation with Cancel selected.
+Up/Down selects; A/J activates; B/K or Start/Enter cancels. While the panel is
+open, launch, rescan, and list navigation are blocked. Confirming Exit to system
+ends the host loop, runs normal cleanup, and returns to the launching terminal.
+The OS continues running; operating system power-off is not implemented.
+See the launcher guide for the full flow.
 
 ## Button mapping
 

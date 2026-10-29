@@ -2,6 +2,13 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added an explicit leading `--console` flag and idle-host Exit to system
+  confirmation. Cancel is the default; confirming exit runs normal cleanup
+  and returns to the launching terminal without powering off the OS. Replaces
+  the preliminary shutdown test action. Idle B/K is ignored in console mode;
+  desktop and in-game controls remain unchanged. Added automated CLI and
+  idle-control checks.
+
 - Added a provisional per-update Lua instruction budget for accidental runaway
   loops, execution-limit diagnostics, and a manual regression cartridge.
   Extended coverage to top-level main.lua execution and init, each with a

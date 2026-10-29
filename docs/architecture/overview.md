@@ -69,7 +69,13 @@ releases cartridge textures, and clears session and pause state.
 
 The host then displays an idle screen without calling cartridge update or
 draw callbacks. Its window, renderer, retained-frame texture, and controllers
-remain alive. B or keyboard K closes the idle host.
+remain alive. B or keyboard K closes the idle host in desktop mode.
+With the explicit leading `--console` flag, idle B/K does nothing and Start/Enter
+opens an Exit to system confirmation. Cancel is selected initially; confirming
+exit ends the host loop and runs normal engine cleanup before returning to the
+launching terminal. The OS keeps running; no OS power-off is implemented.
+The panel blocks underlying launcher actions, and in-game
+pause/exit behavior remains unchanged. See [launcher controls](../development/launcher.md).
 
 A or keyboard J requests relaunch of the startup cartridge. The host retains
 the argv-owned startup path separately from the active session path.

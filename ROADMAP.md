@@ -1,6 +1,6 @@
 # Project SugarBee — Preliminary Roadmap
 
-Last reviewed: 2026-10-28.
+Last reviewed: 2026-10-29.
 
 This is a preliminary, revisable plan, not a release schedule or a promise of
 features. Review it at each major checkpoint. Choose the next small, testable
@@ -35,18 +35,25 @@ sandbox. Retest the relevant cases when budgets or execution paths change.
 See [lifecycle documentation](docs/api/timing.md) and
 [execution-limit checks](tests/execution-limit/README.md).
 
-### 2. Establish a bounded console reliability baseline — next to scope
+### 2. Establish a bounded console reliability baseline — in progress
 
-- Agree on essential failure recovery, useful diagnostics, and a clean OS
-  shutdown path on the current operating-system foundation.
-- Review remaining Lua restrictions and execution gaps, including coroutines,
-  state-closure finalizers, and native calls; decide what to address now and
-  what to document as outside the supported protection.
-- Define observable acceptance checks before expanding implementation.
+- Confirmed Exit to system is implemented behind the explicit `--console`
+  flag. It performs normal engine cleanup and returns to the launching terminal;
+  it does not shut down the OS or indicate that power may safely be removed.
+- Desktop checks passed. The user confirmed the Pi checks on `fadcc48`:
+  all 19 automated tests passed, confirmation and launcher interactions passed,
+  Exit to system returned status 0, and the cartridge shutdown callback did not
+  run a second time when leaving the idle host.
+- Next, review remaining Lua restrictions and execution gaps, including
+  coroutines, state-closure finalizers, and native calls. Agree on any small
+  restrictions before implementation; document unsupported protection.
+- Finish with combined startup, launch, pause/resume, error recovery, relaunch,
+  game-exit, and exit-to-terminal regression checks on desktop and Pi.
 
-Done when: the agreed console startup, recovery, game-exit, and OS-shutdown
-checks pass, with remaining limitations documented. Exiting SugarBee currently
-returns to the host environment; it does not power off the operating system.
+Done when: those checks pass and the execution-gap review is resolved with
+remaining limitations documented. Actual OS shutdown is deferred to deployment
+work. Persistent logging remains deferred unless validation exposes a concrete
+need for it.
 
 Keep this phase finite. Safely executing deliberately hostile cartridges would
 require a separate scope decision, not an assumed extension of loop protection.
@@ -98,14 +105,15 @@ the active milestone, define requirements for boot behavior, graphics, input,
 audio, storage, updates, recovery, and maintenance before choosing an OS or
 image-building approach. No alternative distribution is selected or scheduled.
 
-Repeatable development and console images are later work. They must not become
+Actual OS shutdown and its deployment permissions are later work, alongside
+repeatable development and console images. They must not become
 an open-ended prerequisite for starting audio on the existing foundation.
 
 ## Ideas and deferred discussions — not scheduled
 
 - Splash artwork, cartridge icons, and directory configuration UI/files.
-- Persistent diagnostic logging; whether it belongs in the reliability baseline
-  should be decided when that phase is scoped.
+- Persistent diagnostic logging, unless validation exposes a concrete need
+  within the bounded reliability baseline.
 - Additional drawing primitives and framerate diagnostics.
 - The Invaders firing-rate Easter egg; its exact behavior remains undecided.
 - External compositions targeting SugarBee, MIDI integration, and evaluating
