@@ -126,8 +126,10 @@ no obvious clicks at pitch changes, and normal exit. On Pi commit `1664043`,
 the user confirmed all 44 tests, both listening tests, gameplay checks, and Exit
 to system status 0. This bounded native prototype is validated on desktop and
 Pi. A standalone linear ADSR component and edge-case tests are now implemented;
-triangle integration, retrigger behavior, and Pi envelope validation remain
-pending. The full synth, Lua controls, and WAV playback remain future checkpoints.
+triangle integration now captures per-note settings, preserves phase on retrigger,
+and separates note-off from short stop. All 45 automated tests pass; the user
+confirmed clean desktop ADSR playback, smooth transitions, and normal exit. Pi
+validation remains pending. The full synth, Lua controls, and WAV playback remain future checkpoints.
 
 Done when: each selected audio slice meets its agreed behavior and resource
 constraints with automated checks where appropriate and listening tests.

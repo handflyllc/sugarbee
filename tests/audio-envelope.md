@@ -5,9 +5,9 @@ cmake --build build
 ctest --test-dir build -R '^audio_envelope$' --output-on-failure
 ```
 
-This checkpoint is pure C: no SDL, Lua, audio device, or triangle integration.
-The library is built even with `SUGARBEE_BUILD_HOST=OFF`. There is nothing new
-to listen to; both existing tone tools keep their previous behavior.
+The envelope component is pure C: it does not depend on SDL, Lua, or a device.
+The library is built even with `SUGARBEE_BUILD_HOST=OFF`. Triangle integration and its listening sequence are now documented in
+[audio-triangle.md](audio-triangle.md).
 
 ## Contract
 
@@ -17,7 +17,8 @@ to listen to; both existing tone tools keep their previous behavior.
 - Settings are copied per note. Editing the caller's settings changes neither
   the current stages nor the later release. New settings apply on the next start.
 - Start requires idle state. Active starts return false unchanged; retrigger
-  semantics remain deferred rather than becoming part of this prototype.
+  is available separately through `sb_envelope_retrigger`. Retrigger captures new
+  settings and attacks from the current level over the full new attack duration.
 - Timing is fixed to the engine's 48,000 frames/second. Positive durations
   round to the nearest frame, half upward, with a minimum of one frame.
 - Attack rises linearly from zero to one; decay falls linearly to sustain.
@@ -51,6 +52,7 @@ all combinations of zero durations with sustain zero/one, explicit immediate
 transitions, frame rounding, invalid/nonfinite input without partial mutation,
 NULL arguments, and finite bounded monotonic output at ten-second limits.
 
-Desktop automated checks pass. Pi validation, triangle integration, audible
-ADSR checks, active-note retrigger behavior, and an audible stop control remain
-future work. No Lua API or configurable synthesizer is exposed.
+Desktop automated checks also cover retrigger from attack, decay, sustain, and
+release, and invalid retrigger without mutation. Triangle integration supplies
+a separate audible stop fade. The user confirmed clean desktop ADSR playback, smooth transitions, and normal
+exit. Pi validation for ADSR remains pending. No Lua API or complete synthesizer is exposed.

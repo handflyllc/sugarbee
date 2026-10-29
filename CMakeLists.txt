@@ -77,7 +77,7 @@ if(SUGARBEE_BUILD_HOST)
 
     add_library(sugarbee_audio STATIC src/sb_audio_sdl.c src/sb_audio_tone.c src/sb_audio_triangle.c)
     target_include_directories(sugarbee_audio PUBLIC "${PROJECT_SOURCE_DIR}/include")
-    target_link_libraries(sugarbee_audio PRIVATE PkgConfig::SDL2 m)
+    target_link_libraries(sugarbee_audio PRIVATE sugarbee_envelope PkgConfig::SDL2 m)
     sugarbee_warnings(sugarbee_audio)
 
     add_executable(sbee-triangle-test tools/sbee-triangle-test.c)

@@ -23,13 +23,20 @@ static void settle_zero_stages(sb_envelope_t *e) {
 void sb_envelope_reset(sb_envelope_t *e) {
     if (e) *e = (sb_envelope_t){0};
 }
+bool sb_envelope_settings_valid(const sb_envelope_settings_t *s) {
+    return s && in_range(s->attack, 10.0) && in_range(s->decay, 10.0) &&
+           in_range(s->release, 10.0) && in_range(s->sustain, 1.0);
+}
 bool sb_envelope_start(sb_envelope_t *e, const sb_envelope_settings_t *s) {
-    if (!e || !s || e->stage != SB_ENVELOPE_IDLE ||
-        !in_range(s->attack, 10.0) || !in_range(s->decay, 10.0) ||
-        !in_range(s->release, 10.0) || !in_range(s->sustain, 1.0)) return false;
+    if (!e || e->stage != SB_ENVELOPE_IDLE) return false;
+    return sb_envelope_retrigger(e, s);
+}
+bool sb_envelope_retrigger(sb_envelope_t *e, const sb_envelope_settings_t *s) {
+    if (!e || !sb_envelope_settings_valid(s)) return false;
     /* Build before assignment, so even settings stored in e can be captured. */
     sb_envelope_t next = {0};
     next.settings = *s;
+    next.level = next.attack_start = e->stage == SB_ENVELOPE_IDLE ? 0.0 : e->level;
     next.attack_frames = duration_frames(s->attack);
     next.decay_frames = duration_frames(s->decay);
     next.release_frames = duration_frames(s->release);
@@ -54,7 +61,7 @@ double sb_envelope_advance(sb_envelope_t *e) {
     switch (e->stage) {
         case SB_ENVELOPE_ATTACK:
             ++e->elapsed;
-            e->level = (double)e->elapsed / e->attack_frames;
+            e->level = e->attack_start + (1.0 - e->attack_start) * e->elapsed / e->attack_frames;
             if (e->elapsed == e->attack_frames) {
                 e->level = 1.0;
                 e->elapsed = 0;

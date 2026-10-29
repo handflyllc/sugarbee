@@ -82,11 +82,14 @@ int main(int argc, char **argv) {
         while (sb_audio_test_tone_active(g_engine.audio) && SDL_GetTicks() - start < 2500)
             SDL_Delay(5);
         CHECK(!sb_audio_test_tone_active(g_engine.audio));
+        CHECK(sb_audio_configure_triangle(g_engine.audio, 0.01, 0.1, 0.7, 0.15));
+        CHECK(!sb_audio_configure_triangle(g_engine.audio, -1, 0.1, 0.7, 0.15));
         CHECK(sb_audio_start_triangle(g_engine.audio, 220));
         CHECK(!sb_audio_start_test_tone(g_engine.audio));
-        CHECK(!sb_audio_start_triangle(g_engine.audio, 440));
+        CHECK(sb_audio_start_triangle(g_engine.audio, 440));
         CHECK(sb_audio_set_triangle_pitch(g_engine.audio, 660));
         CHECK(!sb_audio_set_triangle_pitch(g_engine.audio, 1000));
+        sb_audio_note_off_triangle(g_engine.audio);
         sb_audio_stop_triangle(g_engine.audio);
         sb_audio_stop_triangle(g_engine.audio);
         start = SDL_GetTicks();

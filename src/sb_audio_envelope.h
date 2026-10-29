@@ -17,7 +17,7 @@ typedef enum {
 typedef struct {
     sb_envelope_settings_t settings; /* Captured by value at start. */
     uint32_t attack_frames, decay_frames, release_frames, elapsed;
-    double level, release_start;
+    double level, attack_start, release_start;
     sb_envelope_stage_t stage;
 } sb_envelope_t;
 
@@ -29,6 +29,11 @@ void sb_envelope_reset(sb_envelope_t *envelope);
  * finite 0..1. Positive times round to nearest frame (half up), minimum one.
  * Zero-duration stages transition immediately, including at start/note-off. */
 bool sb_envelope_start(sb_envelope_t *envelope, const sb_envelope_settings_t *settings);
+/* Validate a complete settings request without changing state. */
+bool sb_envelope_settings_valid(const sb_envelope_settings_t *settings);
+/* Capture new settings and attack from current level over the full attack
+ * duration. Idle starts at zero. Invalid requests leave everything unchanged. */
+bool sb_envelope_retrigger(sb_envelope_t *envelope, const sb_envelope_settings_t *settings);
 /* Release from current level using captured release time. Repeated calls
  * during release and calls while idle do nothing. */
 void sb_envelope_note_off(sb_envelope_t *envelope);

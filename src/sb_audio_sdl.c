@@ -116,3 +116,19 @@ bool sb_audio_triangle_active(sb_audio_t *audio) {
     SDL_UnlockAudioDevice(audio->device);
     return active;
 }
+
+bool sb_audio_configure_triangle(sb_audio_t *audio, double attack, double decay,
+                                  double sustain, double release) {
+    if (!audio) return false;
+    sb_envelope_settings_t settings = {attack, decay, sustain, release};
+    SDL_LockAudioDevice(audio->device);
+    bool ok = sb_audio_triangle_configure(&audio->triangle, &settings);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+void sb_audio_note_off_triangle(sb_audio_t *audio) {
+    if (!audio) return;
+    SDL_LockAudioDevice(audio->device);
+    sb_audio_triangle_note_off(&audio->triangle);
+    SDL_UnlockAudioDevice(audio->device);
+}

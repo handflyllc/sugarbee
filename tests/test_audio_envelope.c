@@ -105,6 +105,25 @@ int main(void) {
         CHECK(e.level == (stage == 0 ? 1 : stage == 1 ? 0.25 : 0));
     }
     CHECK(e.stage == SB_ENVELOPE_IDLE);
+    /* Retrigger from attack, decay, sustain, and release at known levels. */
+    for (unsigned stage = 0; stage < 4; ++stage) {
+        sb_envelope_reset(&e);
+        s = (sb_envelope_settings_t){4*FRAME, 4*FRAME, 0.5, 4*FRAME};
+        CHECK(sb_envelope_start(&e, &s));
+        unsigned steps = stage == 0 ? 2 : stage == 1 ? 6 : 8;
+        for (unsigned i = 0; i < steps; ++i) sb_envelope_advance(&e);
+        if (stage == 3) { sb_envelope_note_off(&e); sb_envelope_advance(&e); }
+        double level = e.level;
+        sb_envelope_settings_t new_note = {8*FRAME, 4*FRAME, 0.2, 2*FRAME};
+        CHECK(sb_envelope_retrigger(&e, &new_note));
+        CHECK(e.level == level && e.elapsed == 0 && e.attack_frames == 8);
+        for (unsigned i = 1; i <= 8; ++i)
+            CHECK(NEAR(sb_envelope_advance(&e), level + (1-level)*i/8));
+        CHECK(e.stage == SB_ENVELOPE_DECAY && e.release_frames == 2);
+    }
+    memcpy(before, &e, sizeof(e));
+    s.attack = NAN;
+    CHECK(!sb_envelope_retrigger(&e, &s) && memcmp(before, &e, sizeof(e)) == 0);
     puts("Standalone ADSR checks passed");
     return 0;
 }

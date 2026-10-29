@@ -20,12 +20,16 @@ void sb_audio_destroy(sb_audio_t *audio);
 bool sb_audio_start_test_tone(sb_audio_t *audio);
 bool sb_audio_test_tone_active(sb_audio_t *audio);
 
-/* Native prototype only: 220--660 Hz, peak 0.05, centered, ten-ms fades.
- * Start refuses an active triangle or diagnostic tone. Pitch changes preserve
- * phase, including during stopping; invalid/nonfinite pitches change nothing.
- * Stop is harmless when silent/already stopping. Active includes the stop fade.
- * All controls run on the host control thread. NULL is safe/unavailable.
- * This is not the future nine-voice synth API or its full frequency contract. */
+/* Native prototype: 220--660 Hz, peak 0.05, centered. Configure validates all
+ * four ADSR fields before updating; current notes retain their captured values.
+ * Start/retrigger preserves active phase and attacks from current level over
+ * the full new attack time; it refuses a playing diagnostic sine tone.
+ * Pitch changes preserve envelope progress. Note-off uses captured release;
+ * stop overrides it with 10 ms. Repeated note-off/stop do not restart fades.
+ * Controls are host-thread only. NULL is safe/unavailable. Not a Lua API. */
+bool sb_audio_configure_triangle(sb_audio_t *audio, double attack, double decay,
+                                  double sustain, double release);
+void sb_audio_note_off_triangle(sb_audio_t *audio);
 bool sb_audio_start_triangle(sb_audio_t *audio, double frequency);
 bool sb_audio_set_triangle_pitch(sb_audio_t *audio, double frequency);
 void sb_audio_stop_triangle(sb_audio_t *audio);

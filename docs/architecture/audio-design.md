@@ -403,9 +403,28 @@ Positive durations round to the nearest frame (half upward, minimum one), while
 zero stages transition immediately. Note-off releases from the current level;
 repeated note-off does not restart release. Sustain has no duration limit.
 
-The component starts only when idle; active-note retrigger behavior remains
-undecided for the next checkpoint. It is not yet connected to the triangle voice
-or SDL callback. Reset is initialization/cleanup, not the future audible stop
-fade. See the [timing contract and edge-case tests](../../tests/audio-envelope.md)
-for exact boundary semantics. Desktop tests pass; integration/listening and Pi
-validation remain pending. Existing tone behavior is unchanged.
+The original start operation remains idle-only; a separate retrigger operation
+now captures new settings and attacks from the current level. Triangle
+integration is described below. Reset remains initialization/cleanup, not an
+audible stop fade. See the [timing contract and edge-case tests](../../tests/audio-envelope.md)
+for exact boundary semantics. All 45 desktop tests pass, and the user confirmed clean ADSR playback, smooth
+transitions, and normal exit. Pi ADSR validation remains pending.
+
+## Native triangle ADSR integration
+
+The triangle now captures the agreed ADSR defaults or a validated complete native
+configuration at each note-on. Active note-on preserves oscillator phase, changes
+pitch, and attacks from the current level to one over the full new attack time.
+At level one, that is a hold for the attack duration. The rule applies during
+attack, decay, sustain, release, or short stop; retrigger cancels a pending stop.
+Settings edits alone leave the current note and its captured release unchanged.
+
+Note-off uses configured release from the current level; stop instead uses a
+separate ten-ms fade. Repeated stop/note-off cannot extend an active stop. Zero
+ADSR durations remain truly immediate, so arbitrary settings are not promised
+click-free. The renderer samples the current level before advancing one frame.
+
+The updated [native listening sequence](../../tests/audio-triangle.md) and tests
+cover ADSR, pitch-only changes, retrigger during release, and short stop overriding
+a long release. All 45 automated tests pass. The user confirmed clean desktop
+ADSR playback, smooth transitions, and normal exit. Pi checks remain pending. Pitch remains limited to 220–660 Hz, volume/pan fixed, and Lua deferred.

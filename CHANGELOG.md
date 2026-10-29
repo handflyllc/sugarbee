@@ -2,6 +2,10 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Connected ADSR to the native triangle with validated configuration, per-note
+  capture, current-level/phase-preserving retrigger, configured note-off release,
+  and separate short stop. Expanded regression and listening tests; Lua deferred.
+
 - Added a standalone C linear ADSR envelope with per-note settings capture,
   immediate zero-duration transitions, and automated timing/edge-case tests.
   Triangle integration, retrigger behavior, and Lua controls remain deferred.
