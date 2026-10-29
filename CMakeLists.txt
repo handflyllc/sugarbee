@@ -26,6 +26,12 @@ add_library(sugarbee_vcart STATIC src/vcart.c)
 target_include_directories(sugarbee_vcart PUBLIC "${PROJECT_SOURCE_DIR}/include")
 sugarbee_warnings(sugarbee_vcart)
 
+# Bounded save storage is independent of SDL and Lua (Linux/POSIX backend).
+add_library(sugarbee_save STATIC src/sb_save.c)
+target_include_directories(sugarbee_save PUBLIC "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(sugarbee_save PRIVATE sugarbee_vcart)
+sugarbee_warnings(sugarbee_save)
+
 if(SUGARBEE_BUILD_PACKER)
     add_executable(sbee-pack tools/sbee-pack.c)
     target_link_libraries(sbee-pack PRIVATE sugarbee_vcart)
@@ -60,6 +66,7 @@ if(SUGARBEE_BUILD_HOST)
 
     add_executable(sugarbee src/main.c)
     target_link_libraries(sugarbee PRIVATE
+        sugarbee_save
         sugarbee_graphics
         sugarbee_input
         sugarbee_timing
@@ -79,6 +86,22 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     target_link_libraries(test_console_host PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
     sugarbee_warnings(test_console_host)
     add_test(NAME console_host_controls COMMAND test_console_host)
+
+    add_executable(test_save_selection tests/test_save_selection.c)
+    target_link_libraries(test_save_selection PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    sugarbee_warnings(test_save_selection)
+    add_test(NAME host_save_selection COMMAND test_save_selection)
+    set_tests_properties(host_save_selection PROPERTIES TIMEOUT 5)
+
+    add_executable(test_host_save tests/test_host_save.c)
+    target_link_libraries(test_host_save PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    target_link_options(test_host_save PRIVATE
+        "-Wl,--wrap=fsync" "-Wl,--wrap=renameat" "-Wl,--wrap=write" "-Wl,--wrap=mkdirat")
+    sugarbee_warnings(test_host_save)
+    add_test(NAME host_save_storage COMMAND test_host_save)
+    set_tests_properties(host_save_storage PROPERTIES TIMEOUT 15)
+
+
 
     add_executable(test_lua_libraries tests/test_lua_libraries.c)
     target_link_libraries(test_lua_libraries PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
@@ -144,6 +167,58 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
 endif()
 
 if(BUILD_TESTING)
+    add_executable(test_save tests/test_save.c)
+    target_link_libraries(test_save PRIVATE sugarbee_save)
+    sugarbee_warnings(test_save)
+    add_test(NAME save_reader COMMAND test_save)
+    set_tests_properties(save_reader PROPERTIES TIMEOUT 5)
+
+    add_executable(test_save_write tests/test_save_write.c)
+    target_link_libraries(test_save_write PRIVATE sugarbee_save)
+    # Linux linker fault injection stays confined to this test executable.
+    target_link_options(test_save_write PRIVATE
+        "-Wl,--wrap=write" "-Wl,--wrap=fsync" "-Wl,--wrap=close"
+        "-Wl,--wrap=renameat" "-Wl,--wrap=unlinkat")
+    sugarbee_warnings(test_save_write)
+    add_test(NAME save_writer COMMAND test_save_write)
+    set_tests_properties(save_writer PROPERTIES TIMEOUT 15)
+
+    add_executable(test_save_interruption tests/test_save_interruption.c)
+    target_link_libraries(test_save_interruption PRIVATE sugarbee_save)
+    target_link_options(test_save_interruption PRIVATE
+        "-Wl,--wrap=write" "-Wl,--wrap=fsync" "-Wl,--wrap=renameat")
+    sugarbee_warnings(test_save_interruption)
+    foreach(point IN ITEMS partial_write file_synced replaced)
+        add_test(NAME save_interruption_${point} COMMAND test_save_interruption ${point})
+        set_tests_properties(save_interruption_${point} PROPERTIES TIMEOUT 15)
+    endforeach()
+
+    add_executable(test_save_directory tests/test_save_directory.c)
+    target_link_libraries(test_save_directory PRIVATE sugarbee_save)
+    target_link_options(test_save_directory PRIVATE
+        "-Wl,--wrap=mkdirat" "-Wl,--wrap=openat" "-Wl,--wrap=fsync" "-Wl,--wrap=close")
+    sugarbee_warnings(test_save_directory)
+    add_test(NAME save_directory COMMAND test_save_directory)
+    set_tests_properties(save_directory PROPERTIES TIMEOUT 15)
+
+    add_executable(test_save_path tests/test_save_path.c)
+    target_link_libraries(test_save_path PRIVATE sugarbee_save)
+    target_link_options(test_save_path PRIVATE
+        "-Wl,--wrap=mkdirat" "-Wl,--wrap=openat" "-Wl,--wrap=fsync"
+        "-Wl,--wrap=close" "-Wl,--wrap=write" "-Wl,--wrap=renameat")
+    sugarbee_warnings(test_save_path)
+    add_test(NAME save_path COMMAND test_save_path)
+    set_tests_properties(save_path PROPERTIES TIMEOUT 15)
+
+    add_executable(test_save_location tests/test_save_location.c)
+    target_link_libraries(test_save_location PRIVATE sugarbee_save)
+    target_link_options(test_save_location PRIVATE "-Wl,--wrap=mkdirat" "-Wl,--wrap=fsync")
+    sugarbee_warnings(test_save_location)
+    add_test(NAME save_location COMMAND test_save_location)
+    set_tests_properties(save_location PROPERTIES TIMEOUT 15)
+
+
+
     add_executable(test_timing tests/test_timing.c)
     target_link_libraries(test_timing PRIVATE sugarbee_timing)
     sugarbee_warnings(test_timing)
@@ -190,6 +265,11 @@ if(BUILD_TESTING)
     endif()
 
     if(LUA54_INTERPRETER_COMPATIBLE)
+        add_test(NAME save_lab_behavior
+            COMMAND "${LUA54_INTERPRETER}"
+                "${PROJECT_SOURCE_DIR}/tests/save-lab/test.lua"
+                "${PROJECT_SOURCE_DIR}/examples/save-lab/main.lua")
+        set_tests_properties(save_lab_behavior PROPERTIES TIMEOUT 5)
         foreach(cartridge IN ITEMS graphics-demo moving-box sprite-demo
                 asset-demo sprite-sheet-demo pong-lab invaders-lab pacman-demo)
             add_test(NAME cartridge_smoke_${cartridge}

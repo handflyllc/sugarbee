@@ -2,6 +2,58 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Completed bounded minimal-save validation on desktop and Pi. The user
+  confirmed all 37 tests and eight interactive Save Lab checks at `525e215`,
+  with Exit to system status 0. Actual power-loss testing remains deferred.
+
+- Added three externally timed process-interruption save tests covering partial
+  writes, synchronized temporary files, and replacement before directory sync.
+  Fresh processes verify complete data and recovery; abandoned temporary files
+  remain ignored. These tests do not simulate power loss.
+
+- Added a counter-based Save Lab with explicit save/reload controls, a fixed
+  cartridge UUID, isolated persistent test storage, and behavior tests.
+
+- Added `sugarbee.save(string)` and `sugarbee.load_save()` with exact two-value
+  results, strict argument validation, and binary-safe 64 KiB storage. Added
+  Lua API/lifecycle/failure tests, including allocation-error recovery, and an
+  API reference. The Save Lab and Pi validation are now complete as noted above.
+
+- Connected internal host load/save calls to the selected directory and active
+  cartridge UUID. Access includes init, gameplay, and eligible shutdown; idle
+  and failed sessions are denied. Added lifecycle, UUID isolation, and failure
+  propagation tests. No Lua bindings or automatic saving are introduced.
+
+- Added a read-only save-path adapter that resolves existing symlinked locations
+  and rejects ambiguous missing-component paths. Results retain the full path
+  beneath `/` for preparation retries. Added resolution, bound, and partial-
+  preparation retry tests; host storage calls and Lua integration remain pending.
+
+- Added selection-only `--save-dir` and XDG/HOME defaults. Relative overrides
+  are anchored at launch; unavailable storage selection does not block startup.
+  Added parser/selection tests. No save directories or files are created, and
+  storage operations and Lua bindings remain disconnected from the host.
+
+- Added bounded nested save-directory preparation beneath an existing durable
+  base and a C prepare-and-write coordinator. All path/data validation precedes
+  filesystem changes; preparation failures never reach the writer. Added
+  path-boundary, failure/retry, and replacement-result regression tests.
+  Host directory selection and Lua integration remain pending.
+
+- Added separate one-level save-directory preparation: create or verify a child,
+  synchronize child then parent, and preserve existing permissions and data.
+  Added isolated failure/retry tests. Full-path handling and writer integration
+  remain pending.
+
+- Added an internal C save writer for existing directories with synchronized
+  temporary-file replacement. Early failures preserve the old save; failures
+  after replacement report uncertain durability. Added isolated read-back and
+  injected-failure tests. Directory creation and host/Lua integration remain pending.
+
+- Added an internal bounded C save reader and isolated storage tests. Reads
+  canonical UUID files up to 64 KiB without truncation; distinguishes missing,
+  oversized, and I/O failures. No Lua/host integration yet.
+
 - Retained Lua `__close` support and added six isolated host regression cases
   covering normal/error exits, runaway cleanup, and multiple closing methods.
   Each CTest case has a five-second external timeout and verifies state cleanup

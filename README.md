@@ -26,6 +26,8 @@ See [dependencies](docs/development/dependencies.md) and
 - [2D graphics API](docs/api/graphics.md)
 - [Controller/keyboard input API](docs/api/input.md)
 - [Simulation timing and callbacks](docs/api/timing.md)
+- [Save/load API](docs/api/saves.md)
+- [Interactive Save Lab](examples/save-lab/README.md)
 - [Current architecture](docs/architecture/overview.md)
 - [Imported historical design](docs/architecture/project_sugarbee_technical_design_specification.md)
 

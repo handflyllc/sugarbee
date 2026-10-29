@@ -1,8 +1,15 @@
 # SugarBee saves — settled initial design
 
 Status: initial API, storage policy, and durability contract agreed on 2026-10-29.
-Save support and the API below are not implemented. This document records the
-accepted design before implementation; it is not an available API reference.
+The bounded C storage layer, host selection and path adapter, internal host
+operations, and Lua bindings are implemented with desktop regression tests.
+See the [Lua save API](../api/saves.md) for the available interface. Automatic
+saving is not implemented. The [counter Save Lab](../../examples/save-lab/README.md)
+and behavior tests are implemented. The user confirmed all six desktop
+interactive checks passed. Controlled process-interruption/recovery tests pass
+on desktop and Pi. The user confirmed all 37 tests and eight interactive checks
+on Pi commit `525e215`, with Exit to system returning status 0. The bounded
+milestone is complete; actual power-loss testing remains deferred.
 
 ## Scope and ownership
 
@@ -58,14 +65,15 @@ are invalid and ignored, following the XDG specification. This is persistent
 user data worth backing up, separate from cartridge files and caches.
 
 A host command-line option, `--save-dir DIRECTORY`, overrides the root for Pi
-deployment and isolated tests. It is not implemented yet. The host generates
+deployment and isolated tests. Selection is implemented, but not yet connected
+to storage operations. The storage layer generates
 one canonical UUID filename, `<uuid>.sav`, within the selected root. There is
 no directory or filename selection from Lua.
 
 An inaccessible selected location must produce a failure, not a silent fallback
 to a different directory. Cartridge media may remain read-only while saves use
-a separate writable location. Precise CLI option ordering and path handling
-must be integrated with the existing parser during implementation review.
+a separate writable location. See [launcher selection rules](../development/launcher.md#save-directory-selection)
+for CLI ordering, relative overrides, and unavailable-default behavior.
 
 ## Replacement and durability contract
 
@@ -145,3 +153,356 @@ deployment work; a completed save is not permission to remove console power.
   atomic destination replacement on the same filesystem.
 - [Linux fsync](https://man7.org/linux/man-pages/man2/fsync.2.html) distinguishes
   synchronizing file contents from synchronizing the containing directory.
+
+## First storage checkpoint: bounded reader
+
+`sb_save_read` in `include/sb_save.h` accepts a host-selected directory and a
+16-byte UUID. It reads the canonical UUID filename without creating files or
+directories. Success returns caller-owned bytes and an explicit length, including
+an allocated buffer for an empty save. Failures clear the outputs. The reader
+returns distinct missing, oversized, I/O, and invalid-C-argument results.
+Missing save directories are treated as no save; other directory errors are
+storage failures. Save-file symlinks and non-regular files are rejected. The
+host-selected root may itself resolve through a symlink.
+
+The Linux/POSIX reader bounds allocation and reads to 65,537 bytes, using the
+extra byte to detect oversize even if a file grows after its initial size check.
+Concurrent modification is not a supported snapshot guarantee. Read operations
+may update filesystem access metadata, but never write save contents.
+
+The isolated `save_reader` CTest case covers empty and binary data, the exact
+limit, oversize rejection, UUID selection, missing files/directories, invalid
+arguments, read-only files, permission denial when run without root privileges,
+and rejection of directory/FIFO/symlink save entries. A five-second CTest timeout
+protects against accidental blocking. No real user save directory is used.
+
+Run with `ctest --test-dir build -R '^save_reader$' --output-on-failure`.
+Directory defaults and `--save-dir` selection are described in the fifth
+checkpoint below. Storage integration and Lua bindings remain unimplemented.
+Pi validation of the storage checkpoints passed at `525e215`; see the validation record below.
+
+## Second storage checkpoint: existing-directory writer
+
+`sb_save_write` takes the selected directory, UUID, bytes, and length. The root
+must already exist; a missing or inaccessible directory returns `SB_SAVE_IO_ERROR`
+without creating it. The caller is responsible for provisioning the directory;
+directory preparation is separate from the writer. NULL data is accepted only
+for a zero-length save. Oversized input is rejected before filesystem changes.
+
+The writer exclusively creates a temporary file in the opened directory with
+owner read/write permissions (0600, further restricted by the process umask).
+It handles short and interrupted writes, synchronizes and closes the completed
+file, renames it over the UUID destination, then synchronizes the directory.
+Interrupted synchronization is retried. Zero-progress writes fail instead of
+spinning. Closing a descriptor is not retried after an error on Linux.
+
+Existing non-regular save entries, including symlinks, are rejected. Replacement
+produces a new file with the temporary file's permissions; it does not preserve
+arbitrary metadata from a previous save. Concurrent directory changes and
+writers are outside the supported scope.
+
+Before replacement, storage failures return `SB_SAVE_IO_ERROR` and leave the
+previous save untouched. After replacement, a directory-sync failure returns
+`SB_SAVE_DURABILITY_UNCERTAIN`. A final directory-close failure also returns
+that conservative result, even if synchronization already succeeded. The writer
+never tries to roll back a replacement. Only successful file and directory
+synchronization and descriptor closure return `SB_SAVE_OK`.
+
+On early failure the writer attempts to remove only its own temporary file.
+A failed removal is reported to stderr; the primary save outcome is unchanged.
+Temporary names cannot be selected by the reader as UUID saves. Exclusive
+creation tries up to 128 distinct candidate names; existing temporary entries
+are never overwritten or automatically deleted. Exhaustion returns an I/O
+error. Controlled process-interruption tests are described below. Automatic leftover
+cleanup is not implemented, and actual power-loss testing remains deferred;
+these error-injection tests do not establish power-loss guarantees.
+
+`save_writer` uses isolated temporary directories and the real reader to verify
+first saves, replacement, empty/binary/exact-limit data, oversize rejection, and
+UUID independence. Linker wrappers confined to the test executable inject
+write, file-sync, file-close, rename, directory-sync, directory-close, and
+cleanup failures. Tests verify unchanged old data before replacement, visible
+new data with uncertain durability afterward, temporary cleanup (including a
+failed cleanup), short/interrupted operations, collision handling, and rejected
+non-regular destinations. Tests also check synchronization/close/rename ordering.
+The production library has no fault-injection controls.
+
+Run both storage cases through CTest:
+
+```sh
+ctest --test-dir build -R '^save_(reader|writer)$' --output-on-failure
+```
+
+The writer case has a 15-second external test timeout; storage I/O itself has
+no runtime wall-clock bound. Nested preparation and its separate coordinator
+are described below. Host operations and Lua bindings are described in the
+seventh and eighth checkpoints. Pi validation passed at `525e215`; actual power-loss testing remains deferred.
+
+## Third storage checkpoint: one-level directory preparation
+
+`sb_save_prepare_directory(parent, child)` prepares exactly one child beneath
+an existing host-selected parent. The parent directory's own placement must
+already be durable. This helper does not establish durability for its ancestors.
+The child must be nonempty and cannot be `.`, `..`, an absolute path, or contain
+`/`. Other ordinary Linux filename characters are allowed. Invalid arguments
+return `SB_SAVE_INVALID_ARGUMENT` before filesystem operations.
+
+Creation requests mode 0700 subject to the process umask. Existing permissions
+are never changed. An existing child must be a real directory: file, FIFO, and
+symlink entries are rejected, including symlinks pointing at directories. The
+host-selected parent path may resolve through symlinks. Concurrent changes to
+the directory tree remain outside the supported contract.
+
+After creating or opening the child, the helper synchronizes the child, then
+the parent, and closes both descriptors. It repeats synchronization for existing
+directories too, because a previous attempt may have left creation incomplete
+from a durability perspective. Interrupted synchronization is retried; close
+errors are reported without retrying the descriptor close.
+
+`SB_SAVE_OK` means preparation and required synchronization/closure completed.
+`SB_SAVE_IO_ERROR` means preparation failed, but a created directory may remain.
+The helper never rolls back by removing a directory, never edits save contents,
+and never reports `SB_SAVE_DURABILITY_UNCERTAIN`: it performs no save replacement.
+Callers must retry successfully before relying on preparation. The existing
+writer still requires a prepared directory and does not invoke this helper.
+
+The isolated `save_directory` test covers first creation, repeated calls,
+permissions, invalid names, non-directory entries, parent aliases, and existing
+save preservation. Test-only linker wrappers inject creation, child-open,
+child/parent-sync, and child/parent-close failures. Each partial-creation case
+is followed by a retry that must synchronize both directories. Interrupted
+synchronization and operation ordering are also checked. The CTest case has a
+15-second external timeout.
+
+Run all storage checks with:
+
+```sh
+ctest --test-dir build -R '^save_(reader|writer|directory)$' --output-on-failure
+```
+
+These are desktop regression checks, not power-loss validation. The next
+checkpoint below composes this operation for nested paths; later checkpoints
+connect host operations and Lua bindings. Pi validation passed at `525e215`; actual power-loss testing remains deferred.
+
+## Fourth storage checkpoint: nested preparation and C coordinator
+
+`sb_save_prepare_path(base, relative)` prepares a nonempty relative directory
+path beneath an existing base. `sb_save_write_prepared(base, relative, uuid,
+data, length)` validates the save arguments and size, prepares the path, and
+then invokes the existing replacement logic through the opened leaf directory.
+The standalone existing-directory writer keeps its previous contract.
+
+The base directory's own placement must already be durable; neither operation
+prepares its ancestors. A host-selected base may resolve through symlinks,
+but every component of the relative path must be a real directory. The limits
+are 1,024 relative-path bytes (excluding the terminating zero), 32 components,
+and 255 bytes per component. Absolute paths, empty components, trailing slashes,
+`.` and `..` are rejected with `SB_SAVE_INVALID_ARGUMENT`. All components are
+validated before filesystem operations, so a bad later component cannot leave
+an earlier directory behind. Oversized save data is rejected before preparation.
+These are byte limits; no text encoding conversion is performed.
+
+Traversal uses opened directory handles, retaining at most the current parent
+and child during preparation. Each child and its parent are synchronized before
+advancing, including already-existing components. A failed preparation leaves
+created directories in place for retry. The coordinator transfers the verified
+leaf handle directly to the writer rather than resolving a constructed path
+again. Concurrent directory changes remain outside the supported contract.
+
+Preparation failures, including descriptor-close failures, return
+`SB_SAVE_IO_ERROR`; no temporary save is opened and no replacement is attempted.
+Existing save contents remain untouched. Once preparation succeeds, the writer
+retains its existing success, pre-replacement error, and post-replacement
+`SB_SAVE_DURABILITY_UNCERTAIN` outcomes. The preparation-only entry point closes
+the leaf handle and reports any close failure as an I/O error.
+
+The isolated `save_path` test exercises exact and exceeded path/component limits,
+invalid names, missing and partially existing paths, repeated synchronization,
+permission preservation, symlink/file rejection, and empty/binary/exact-size
+save read-back. Test-only wrappers inject second-level creation, opening,
+synchronization, and close failures. They verify that writer operations never
+run after a preparation failure, previous save contents and inode are unchanged,
+and a retry synchronizes both levels before saving. Further injected write,
+file-sync, rename, and final directory-sync failures verify the coordinator's
+result propagation. The case has a 15-second external CTest timeout.
+
+Run all storage checks with:
+
+```sh
+ctest --test-dir build -R '^save_(reader|writer|directory|path)$' --output-on-failure
+```
+
+Selection of a durable base, configuration-file support, migration, Lua bindings,
+interrupted-write/power-loss validation, and Pi validation remain outside this
+checkpoint. Host location selection is implemented in the next checkpoint below. A future host
+configuration key such as `save_dir` is a discussion option, not implemented;
+CLI-over-configuration-over-default precedence is proposed for that discussion.
+Changing the chosen root does not automatically move existing saves.
+
+## Fifth checkpoint: host selection only
+
+The host now accepts `--save-dir DIRECTORY` after optional leading `--console`
+and before a cartridge argument. It selects that exact directory, otherwise
+absolute XDG_DATA_HOME plus `sugarbee/saves`, otherwise absolute HOME plus
+`.local/share/sugarbee/saves`. Relative overrides are prefixed with the launch
+working directory once; they do not require the destination to exist. The host
+stores the absolute path independently of environment/argv contents.
+
+Selection performs no save-storage operations. It reports the selected path or
+an unavailable-storage diagnostic and continues startup in either case. A missing
+usable default never activates Guru. Path buffers are bounded at 4096 bytes
+including the terminating zero; overflow leaves no truncated destination and
+never silently selects a different location. This host selection limit is
+separate from the relative-path limits of the C preparation API. The sixth
+checkpoint below adapts paths between these contracts without connecting the
+host to storage operations.
+
+The `host_save_selection` regression test verifies precedence, environment
+fallback, parser errors, relative-path capture, spaces, boundary lengths, and
+no created directories. Desktop headless host checks also verified successful
+startup and clean exit with a relative override and with no default available.
+Physical launcher/gameplay and Pi validation remain separate checks. The console
+labels successful selection `(selection only)` to avoid implying writable or
+durably prepared storage.
+
+## Sixth checkpoint: read-only path adapter
+
+`sb_save_resolve_location(selected, &location)` accepts a selected absolute path
+of at most 4095 bytes. It resolves each existing component with filesystem
+semantics, including existing symlinked home/data directories and `.`/`..`.
+For example, `link/../saves` refers to the parent of the link's target, not the
+lexical parent of the link. Every existing component must resolve to a directory.
+Dangling or looping symlinks, non-directories, and inaccessible prefixes return
+`SB_SAVE_IO_ERROR`; they are not mistaken for directories that should be created.
+
+After the first truly missing component, only ordinary directory names are
+accepted. `missing/../saves` and `missing/./saves` are rejected as ambiguous rather
+than simplified. Repeated and trailing slashes are collapsed as ordinary Linux
+directory syntax. The adapter does not create, synchronize, or write anything.
+It never falls back to another location.
+
+The result is `location.relative`, a canonical existing prefix plus validated
+missing suffix, relative to the fixed preparation anchor `/`. The full result,
+including all existing ancestors, must fit the preparation limits: 1024 bytes,
+32 components, and 255 bytes per component. Invalid input, ambiguous paths,
+root-only destinations, and unrepresentable results return
+`SB_SAVE_INVALID_ARGUMENT`. The output is empty on failure. Future host bindings
+must translate resolution failures into an appropriate storage result rather
+than silently treating them as missing saves.
+
+A consumer can pass `/` and `location.relative` to the preparation or C save
+coordinator. It must not substitute the nearest existing ancestor as the base:
+that ancestor may be visible from an earlier creation whose synchronization
+failed. Retrying the entire root-anchored path synchronizes existing ancestors
+again. Resolution alone is neither preparation nor proof of durability. The
+returned spelling is not an open directory handle, and concurrent path changes
+remain unsupported. Internal host load/save wiring and Lua integration are
+described in the following checkpoints.
+
+The isolated `save_location` CTest case covers existing symlinks, symlink-plus-
+parent semantics, missing suffixes, ambiguous dot components, unavailable or
+non-directory prefixes, and resolved-path bounds. It checks that resolution
+performs no mkdir or synchronization and creates no suffix directories. An
+injected parent-sync failure during preparation leaves a directory visible;
+resolving and retrying then retains the same full path and synchronizes the
+ancestor again. The test has a 15-second external timeout. These regression checks passed on desktop and Pi; they are not power-loss validation.
+
+Run the storage checks and host selection tests with:
+
+```sh
+ctest --test-dir build -R '^(save_(reader|writer|directory|path|location)|host_save_selection)$' --output-on-failure
+```
+
+## Seventh checkpoint: internal host load/save operations
+
+`host_load_save` and `host_write_save` connect host state to the storage layer.
+They derive both location and UUID from the host; callers supply no alternate
+identity or path. They are internal C operations used by the Lua bindings.
+Startup remains selection-only, and nothing automatically requests a save.
+
+Access requires a loaded cartridge, a live Lua state, no active Guru, and no
+latched execution-limit failure. The initialization-completed flag is deliberately
+not the access gate: it is false while `init()` runs and is consumed before an
+eligible `shutdown()` callback. Both callbacks and normal gameplay can therefore
+use these operations. Idle, not-yet-loaded, and failed sessions are denied with
+`SB_SAVE_IO_ERROR`; failed-session cleanup does not gain a save opportunity.
+
+Load clears its output pointers, resolves the selected path on every request,
+and reads the active UUID file without creating or synchronizing directories.
+A missing directory/file returns `SB_SAVE_NOT_FOUND`. Save validates its arguments
+and byte count before path resolution or preparation, then resolves and invokes
+the root-anchored coordinator. Missing selection or failed resolution maps to
+`SB_SAVE_IO_ERROR`, including a selected path outside the preparation limits.
+There is no fallback or migration. Internal invalid C arguments remain distinct
+from expected storage failures.
+
+The writer's result is preserved, including `SB_SAVE_DURABILITY_UNCERTAIN` after
+replacement. Expected storage errors never activate Guru. Console diagnostics
+identify operation, stage, cartridge UUID, selected path, and result category;
+a normal missing-save result is quiet. Loads return caller-owned bytes, including
+empty saves, and failures reset valid outputs to NULL/zero.
+
+`host_save_storage` uses isolated temporary storage and simulated cartridge
+sessions. Test-only C callbacks run through the real init/update/shutdown
+dispatchers to verify availability and single-invocation shutdown behavior.
+Checks cover missing-load non-creation, binary and empty round-trips, UUID
+isolation and return to prior identity, unavailable selection, invalid paths,
+oversize rejection, and idle/failed-session denial. Injected preparation and
+write errors preserve old data; a post-replacement directory-sync failure
+reaches the host as uncertain durability with the new data visible. The subsequent binding checkpoint extends this same test with real Lua calls. CTest enforces a
+15-second timeout. These headless checks passed on desktop and Pi; they are not power-loss tests.
+
+Run with `ctest --test-dir build -R '^host_save_storage$' --output-on-failure`.
+The counter Save Lab is now available with user-confirmed desktop checks;
+Pi validation passed at `525e215`; actual power-loss testing remains deferred. `shutdown()` remains an optional extra save opportunity,
+not a reliable substitute for deliberate gameplay checkpoints.
+
+## Eighth checkpoint: Lua save/load bindings
+
+`sugarbee.save` accepts exactly one string, without numeric coercion;
+`sugarbee.load_save` takes no arguments. Both return exactly two values on
+ordinary completion, translating the host results as documented in the
+[API reference](../api/saves.md). Wrong types/counts raise Lua errors. No
+serializer, automatic save, or interactive lab is added.
+
+Loading copies the caller-owned C bytes to a Lua string inside a protected call,
+then frees the C buffer before returning or rethrowing an allocation error.
+The helper and stack space are prepared before the native allocation is owned.
+
+`host_save_storage` now also tests the registered Lua API: exact return counts,
+strict arguments, empty/binary/maximum-size strings, oversized input and files,
+missing-load non-creation, unavailable storage, top-level denial, init/update/
+shutdown calls, relaunch persistence, failed-write preservation, and uncertain
+post-replacement durability. An induced Lua allocation failure exercises the
+protected copy; a subsequent load succeeds. Existing C lifecycle/failure tests
+remain in place. These tests use temporary storage, not user saves.
+
+## Process-interruption checkpoint
+
+Three [interruption/recovery cases](../../tests/save-interruption.md) stop a child
+writer during a partial temporary-file write, after temporary-file synchronization,
+and after replacement but before directory synchronization. The parent kills and
+reaps the stopped writer; fresh processes read the expected complete old/new
+value, perform another save, and verify recovery. Each CTest case has an external
+15-second timeout. Only test executables contain the interception wrappers.
+
+The desktop checks pass. Pre-replacement interruptions leave the previous save
+intact and an ignored temporary file; recovery succeeds without deleting that
+leftover. Post-replacement interruption exposes the complete new save to a fresh
+process on the still-running system. This proves neither persistence after power
+loss nor durability of first-time directory creation. These cases also passed
+on Pi at `525e215`; actual power-loss validation remains deferred, and no
+automatic cleanup is added.
+
+## Pi validation and milestone completion
+
+The user validated commit `525e215` on the Pi: all 37 automated tests passed,
+including the three externally timed interruption cases, and all eight Save Lab
+interactive checks passed. These covered fresh startup, explicit save/reload,
+pause/resume, unsaved-change discard on relaunch, persistence after repacking
+with the fixed UUID, saving zero, and confirmed Exit to system with status 0.
+
+Together with desktop results, this completes the agreed bounded minimal-save
+milestone. Actual power-loss testing remains deferred. Filesystem/hardware
+persistence guarantees, concurrent writers, and automatic abandoned-file cleanup
+are not established or added by this validation.

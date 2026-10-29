@@ -18,6 +18,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <unistd.h>
 
 /* Cartridge asset readers and PNG decoding are outside the Lua adapter. */
 #include "sb_assets.h"
@@ -27,6 +28,7 @@
 #include "sb_graphics.h"
 #include "sb_input.h"
 #include "sb_timing.h"
+#include "sb_save.h"
 
 #define SB_LAUNCHER_MAX_CARTRIDGES 64
 #define SB_LAUNCHER_PATH_SIZE 4096
@@ -77,6 +79,9 @@ typedef struct {
     const char *cartridge_path;  /* Borrowed from argv or the stable launcher list. */
     const char *startup_cartridge_path; /* argv-owned; survives session cleanup */
     const char *cartridge_directory; /* argv-owned; valid for host lifetime */
+    const char *save_directory_override; /* argv-owned; selection only */
+    char save_directory[SB_LAUNCHER_PATH_SIZE]; /* Absolute, copied once at startup. */
+    const char *save_directory_error; /* Static diagnostic; NULL on successful selection. */
     launcher_cartridge_t cartridges[SB_LAUNCHER_MAX_CARTRIDGES];
     size_t cartridge_count;
     size_t cartridge_selection;
@@ -93,6 +98,68 @@ void trigger_guru_meditation(uint32_t code, const char* title, const char* messa
 void render_guru_meditation(void);
 static void end_cartridge(void);
 static void scan_cartridge_directory(const char *directory);
+
+/* Internal host operations shared by the Lua bindings and host tests.
+   cart_loaded is true before init and stays true during eligible shutdown,
+   whose cart_initialized flag is deliberately consumed before calling Lua. */
+static bool host_save_session_available(void) {
+    return g_engine.L && g_engine.cart_loaded && !g_engine.guru_active &&
+           !g_engine.execution_limit_exceeded;
+}
+
+static sb_save_result_t report_host_storage_result(const char *operation,
+                                                    const char *stage,
+                                                    sb_save_result_t result) {
+    if (result == SB_SAVE_OK || result == SB_SAVE_NOT_FOUND) return result;
+    const char *reason = "I/O error";
+    if (result == SB_SAVE_TOO_LARGE) reason = "save exceeds 65536 bytes";
+    else if (result == SB_SAVE_INVALID_ARGUMENT) reason = "invalid internal arguments";
+    else if (result == SB_SAVE_DURABILITY_UNCERTAIN)
+        reason = "replacement occurred; durability is uncertain";
+    char uuid[37];
+    vcart_uuid_to_string(g_engine.current_cart.cart_uuid, uuid);
+    fprintf(stderr, "[SugarBee] Save storage %s (%s), UUID %s, directory '%s': %s\n",
+            operation, stage, uuid,
+            g_engine.save_directory[0] ? g_engine.save_directory : "(unavailable)", reason);
+    return result;
+}
+
+sb_save_result_t host_load_save(uint8_t **data, size_t *length) {
+    if (data) *data = NULL;
+    if (length) *length = 0;
+    if (!data || !length)
+        return report_host_storage_result("load", "arguments", SB_SAVE_INVALID_ARGUMENT);
+    if (!host_save_session_available())
+        return report_host_storage_result("load", "no healthy active cartridge", SB_SAVE_IO_ERROR);
+    if (!g_engine.save_directory[0])
+        return report_host_storage_result("load", "no selected directory", SB_SAVE_IO_ERROR);
+
+    sb_save_location_t location;
+    if (sb_save_resolve_location(g_engine.save_directory, &location) != SB_SAVE_OK)
+        return report_host_storage_result("load", "path resolution", SB_SAVE_IO_ERROR);
+    char directory[SB_SAVE_MAX_PATH_BYTES + 2u];
+    snprintf(directory, sizeof(directory), "/%s", location.relative);
+    return report_host_storage_result("load", "read",
+        sb_save_read(directory, g_engine.current_cart.cart_uuid, data, length));
+}
+
+sb_save_result_t host_write_save(const uint8_t *data, size_t length) {
+    if (!data && length != 0)
+        return report_host_storage_result("save", "arguments", SB_SAVE_INVALID_ARGUMENT);
+    if (length > SB_SAVE_MAX_BYTES)
+        return report_host_storage_result("save", "size validation", SB_SAVE_TOO_LARGE);
+    if (!host_save_session_available())
+        return report_host_storage_result("save", "no healthy active cartridge", SB_SAVE_IO_ERROR);
+    if (!g_engine.save_directory[0])
+        return report_host_storage_result("save", "no selected directory", SB_SAVE_IO_ERROR);
+
+    sb_save_location_t location;
+    if (sb_save_resolve_location(g_engine.save_directory, &location) != SB_SAVE_OK)
+        return report_host_storage_result("save", "path resolution", SB_SAVE_IO_ERROR);
+    return report_host_storage_result("save", "prepare/write",
+        sb_save_write_prepared("/", location.relative, g_engine.current_cart.cart_uuid,
+                               data, length));
+}
 
 /* Count hooks run during Lua bytecode execution, not inside native calls. */
 static void lua_instruction_limit(lua_State *L, lua_Debug *ar) {
@@ -366,6 +433,62 @@ static int l_sugarbee_btnp(lua_State* L) {
     return 1;
 }
 
+/* Push exactly two results: nil and a stable storage failure code. */
+static int push_save_failure(lua_State *L, sb_save_result_t result) {
+    const char *code = "io_error";
+    if (result == SB_SAVE_NOT_FOUND) code = "not_found";
+    else if (result == SB_SAVE_TOO_LARGE) code = "too_large";
+    else if (result == SB_SAVE_DURABILITY_UNCERTAIN) code = "durability_uncertain";
+    lua_pushnil(L);
+    lua_pushstring(L, code);
+    return 2;
+}
+
+static int l_sugarbee_save(lua_State *L) {
+    if (lua_gettop(L) != 1) return luaL_error(L, "save expects exactly one string");
+    /* luaL_checklstring alone would also accept/coerce numbers. */
+    luaL_checktype(L, 1, LUA_TSTRING);
+    size_t length;
+    const char *data = lua_tolstring(L, 1, &length);
+    sb_save_result_t result = host_write_save((const uint8_t *)data, length);
+    if (result != SB_SAVE_OK) return push_save_failure(L, result);
+    lua_pushboolean(L, true);
+    lua_pushnil(L);
+    return 2;
+}
+
+/* Private protected-call helper: [borrowed bytes, length] -> [Lua string].
+   Never exposed to cartridge code. The caller retains ownership of bytes. */
+static int copy_loaded_save(lua_State *L) {
+    const char *data = lua_touserdata(L, 1);
+    size_t length = (size_t)lua_tointeger(L, 2);
+    lua_pushlstring(L, data, length);
+    return 1;
+}
+
+static int l_sugarbee_load_save(lua_State *L) {
+    if (lua_gettop(L) != 0) return luaL_error(L, "load_save expects no arguments");
+    /* Reserve stack and push the helper before acquiring native memory. */
+    luaL_checkstack(L, 3, "loading save");
+    lua_pushcfunction(L, copy_loaded_save);
+    uint8_t *data = NULL;
+    size_t length = 0;
+    sb_save_result_t result = host_load_save(&data, &length);
+    if (result != SB_SAVE_OK) {
+        lua_pop(L, 1);
+        return push_save_failure(L, result);
+    }
+    /* [helper, bytes, length] -> [string or error]. No allocating Lua pushes
+       occur between acquiring data and entering the protected call. */
+    lua_pushlightuserdata(L, data);
+    lua_pushinteger(L, (lua_Integer)length);
+    int status = lua_pcall(L, 2, 1, 0);
+    free(data);
+    if (status != LUA_OK) return lua_error(L);
+    lua_pushnil(L);
+    return 2;
+}
+
 void register_sugarbee_api(lua_State* L) {
     lua_newtable(L);
     lua_pushcfunction(L, l_sugarbee_cls);   lua_setfield(L, -2, "cls");
@@ -378,6 +501,8 @@ void register_sugarbee_api(lua_State* L) {
     lua_pushcfunction(L, l_sugarbee_texture_free); lua_setfield(L, -2, "texture_free");
     lua_pushcfunction(L, l_sugarbee_btn);   lua_setfield(L, -2, "btn");
     lua_pushcfunction(L, l_sugarbee_btnp);  lua_setfield(L, -2, "btnp");
+    lua_pushcfunction(L, l_sugarbee_save); lua_setfield(L, -2, "save");
+    lua_pushcfunction(L, l_sugarbee_load_save); lua_setfield(L, -2, "load_save");
     lua_setglobal(L, "sugarbee");
 }
 
@@ -1276,6 +1401,12 @@ static bool parse_host_arguments(int argc, char *argv[]) {
         g_engine.console_mode = true;
         ++first;
     }
+    if (argc > first && strcmp(argv[first], "--save-dir") == 0) {
+        if (argc <= first + 1 || argv[first + 1][0] == '\0' || argv[first + 1][0] == '-')
+            return false;
+        g_engine.save_directory_override = argv[first + 1];
+        first += 2;
+    }
     int remaining = argc - first;
     if (remaining == 0) return true;
     if (remaining == 1 && argv[first][0] != '\0' && argv[first][0] != '-') {
@@ -1290,13 +1421,80 @@ static bool parse_host_arguments(int argc, char *argv[]) {
     return false;
 }
 
+/* Pure path selection: no filesystem queries or creation. Missing defaults
+   disable selection without preventing host startup. No realpath: the selected
+   directory need not exist, and symlink/.. semantics must not be rewritten. */
+static bool resolve_save_directory(const char *override, const char *xdg,
+                                    const char *home, const char *cwd) {
+    g_engine.save_directory[0] = '\0';
+    g_engine.save_directory_error = NULL;
+    const char *base = NULL;
+    const char *suffix = NULL;
+    if (override) {
+        if (!*override) {
+            g_engine.save_directory_error = "empty explicit save directory";
+            return false;
+        }
+        if (override[0] == '/') base = override;
+        else {
+            if (!cwd || cwd[0] != '/') {
+                g_engine.save_directory_error = "cannot resolve the launch directory";
+                return false;
+            }
+            base = cwd;
+            suffix = override;
+        }
+    } else if (xdg && xdg[0] == '/') {
+        base = xdg;
+        suffix = "sugarbee/saves";
+    } else if (home && home[0] == '/') {
+        base = home;
+        suffix = ".local/share/sugarbee/saves";
+    } else {
+        g_engine.save_directory_error = "no absolute XDG_DATA_HOME or HOME; use --save-dir";
+        return false;
+    }
+
+    size_t base_length = strnlen(base, sizeof(g_engine.save_directory));
+    if (base_length >= sizeof(g_engine.save_directory)) goto too_long;
+    const char *separator = base[base_length - 1] == '/' ? "" : "/";
+    int n = suffix
+        ? snprintf(g_engine.save_directory, sizeof(g_engine.save_directory),
+                   "%s%s%s", base, separator, suffix)
+        : snprintf(g_engine.save_directory, sizeof(g_engine.save_directory), "%s", base);
+    if (n < 0 || (size_t)n >= sizeof(g_engine.save_directory)) goto too_long;
+    return true;
+
+too_long:
+    g_engine.save_directory[0] = '\0'; /* Never retain a truncated destination. */
+    g_engine.save_directory_error = "selected save directory exceeds the host path limit";
+    return false;
+}
+
+static bool select_host_save_directory(void) {
+    char cwd[SB_LAUNCHER_PATH_SIZE];
+    const char *launch_directory = NULL;
+    if (g_engine.save_directory_override && g_engine.save_directory_override[0] != '/')
+        launch_directory = getcwd(cwd, sizeof(cwd));
+    return resolve_save_directory(g_engine.save_directory_override,
+                                  getenv("XDG_DATA_HOME"), getenv("HOME"), launch_directory);
+}
+
 int main(int argc, char* argv[]) {
     if (!parse_host_arguments(argc, argv)) {
         fprintf(stderr,
-                "Usage: %s [--console] [cartridge.vcart]\n"
-                "       %s [--console] --cartridges DIRECTORY\n",
+                "Usage: %s [--console] [--save-dir DIRECTORY] [cartridge.vcart]\n"
+                "       %s [--console] [--save-dir DIRECTORY] --cartridges DIRECTORY\n",
                 argv[0], argv[0]);
         return 1;
+    }
+
+    if (select_host_save_directory()) {
+        printf("[SugarBee] Save directory: %s (selection only)\n", g_engine.save_directory);
+        fflush(stdout);
+    } else {
+        fprintf(stderr, "[SugarBee] Save storage unavailable: %s\n",
+                g_engine.save_directory_error);
     }
 
     if (!init_engine()) {
