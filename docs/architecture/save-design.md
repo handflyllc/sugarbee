@@ -3,8 +3,9 @@
 Status: initial API, storage policy, and durability contract agreed on 2026-10-29.
 The Lua API is not implemented. Internal bounded C reading, synchronized
 replacement, one-level and bounded nested directory preparation, and a C
-prepare-and-write coordinator are implemented. Host directory selection and
-Lua integration remain pending. This document records the accepted design,
+prepare-and-write coordinator are implemented. Host directory selection is
+implemented separately without storage access; selection-to-storage integration
+and Lua integration remain pending. This document records the accepted design,
 not an available Lua API reference.
 
 ## Scope and ownership
@@ -61,14 +62,15 @@ are invalid and ignored, following the XDG specification. This is persistent
 user data worth backing up, separate from cartridge files and caches.
 
 A host command-line option, `--save-dir DIRECTORY`, overrides the root for Pi
-deployment and isolated tests. It is not implemented yet. The host generates
+deployment and isolated tests. Selection is implemented, but not yet connected
+to storage operations. The storage layer generates
 one canonical UUID filename, `<uuid>.sav`, within the selected root. There is
 no directory or filename selection from Lua.
 
 An inaccessible selected location must produce a failure, not a silent fallback
 to a different directory. Cartridge media may remain read-only while saves use
-a separate writable location. Precise CLI option ordering and path handling
-must be integrated with the existing parser during implementation review.
+a separate writable location. See [launcher selection rules](../development/launcher.md#save-directory-selection-storage-integration-pending)
+for CLI ordering, relative overrides, and unavailable-default behavior.
 
 ## Replacement and durability contract
 
@@ -172,7 +174,8 @@ and rejection of directory/FIFO/symlink save entries. A five-second CTest timeou
 protects against accidental blocking. No real user save directory is used.
 
 Run with `ctest --test-dir build -R '^save_reader$' --output-on-failure`.
-Directory defaults, `--save-dir`, and Lua bindings remain unimplemented.
+Directory defaults and `--save-dir` selection are described in the fifth
+checkpoint below. Storage integration and Lua bindings remain unimplemented.
 Pi validation of the storage checkpoints is pending.
 
 ## Second storage checkpoint: existing-directory writer
@@ -324,9 +327,35 @@ Run all storage checks with:
 ctest --test-dir build -R '^save_(reader|writer|directory|path)$' --output-on-failure
 ```
 
-Host resolution of XDG/HOME or `--save-dir`, selection of a durable base,
-configuration-file support, migration, Lua bindings, interrupted-write/power-loss
-validation, and Pi validation remain outside this checkpoint. A future host
+Selection of a durable base, configuration-file support, migration, Lua bindings,
+interrupted-write/power-loss validation, and Pi validation remain outside this
+checkpoint. Host location selection is implemented in the next checkpoint below. A future host
 configuration key such as `save_dir` is a discussion option, not implemented;
 CLI-over-configuration-over-default precedence is proposed for that discussion.
 Changing the chosen root does not automatically move existing saves.
+
+## Fifth checkpoint: host selection only
+
+The host now accepts `--save-dir DIRECTORY` after optional leading `--console`
+and before a cartridge argument. It selects that exact directory, otherwise
+absolute XDG_DATA_HOME plus `sugarbee/saves`, otherwise absolute HOME plus
+`.local/share/sugarbee/saves`. Relative overrides are prefixed with the launch
+working directory once; they do not require the destination to exist. The host
+stores the absolute path independently of environment/argv contents.
+
+Selection performs no save-storage operations. It reports the selected path or
+an unavailable-storage diagnostic and continues startup in either case. A missing
+usable default never activates Guru. Path buffers are bounded at 4096 bytes
+including the terminating zero; overflow leaves no truncated destination and
+never silently selects a different location. This host selection limit is
+separate from the relative-path limits of the C preparation API. Connecting the
+two, selecting a durable base, and handling paths acceptable to selection but
+not preparation remain later work.
+
+The `host_save_selection` regression test verifies precedence, environment
+fallback, parser errors, relative-path capture, spaces, boundary lengths, and
+no created directories. Desktop headless host checks also verified successful
+startup and clean exit with a relative override and with no default available.
+Physical launcher/gameplay and Pi validation remain separate checks. The console
+labels successful selection `(selection only)` to avoid implying writable or
+durably prepared storage.

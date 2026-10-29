@@ -86,6 +86,13 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     sugarbee_warnings(test_console_host)
     add_test(NAME console_host_controls COMMAND test_console_host)
 
+    add_executable(test_save_selection tests/test_save_selection.c)
+    target_link_libraries(test_save_selection PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    sugarbee_warnings(test_save_selection)
+    add_test(NAME host_save_selection COMMAND test_save_selection)
+    set_tests_properties(host_save_selection PROPERTIES TIMEOUT 5)
+
+
     add_executable(test_lua_libraries tests/test_lua_libraries.c)
     target_link_libraries(test_lua_libraries PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
     sugarbee_warnings(test_lua_libraries)

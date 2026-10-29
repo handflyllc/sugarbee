@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added selection-only `--save-dir` and XDG/HOME defaults. Relative overrides
+  are anchored at launch; unavailable storage selection does not block startup.
+  Added parser/selection tests. No save directories or files are created, and
+  storage operations and Lua bindings remain disconnected from the host.
+
 - Added bounded nested save-directory preparation beneath an existing durable
   base and a C prepare-and-write coordinator. All path/data validation precedes
   filesystem changes; preparation failures never reach the writer. Added

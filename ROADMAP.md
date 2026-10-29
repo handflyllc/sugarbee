@@ -81,7 +81,8 @@ Done when: the agreed API and failure contract are implemented, documented, and
 validated on desktop and Pi. Internal bounded reading and replacement writing
 for existing directories, bounded nested preparation beneath a durable base,
 and a C prepare-and-write coordinator are implemented with failure tests.
-Interruption/durability validation, host directory selection, host integration,
+Host save-directory selection is implemented without accessing storage.
+Interruption/durability validation, selection-to-storage integration,
 and the Lua API remain pending.
 
 ### 4. Begin audio implementation

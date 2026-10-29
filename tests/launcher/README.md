@@ -95,7 +95,7 @@ when a normal test package is needed.
 
 ## Coverage boundaries
 
-Twenty-two native CTest cases cover graphics, textures, assets, input, timing,
+Twenty-three native CTest cases cover graphics, textures, assets, input, timing,
 headers, packaging, host controls, Lua library policy, Lua closing behavior,
 and save storage. With Lua 5.4 installed, eight additional cartridge
 smoke tests run against a stand-in API. These do not exercise the real host
@@ -125,3 +125,20 @@ Run `./build/sugarbee --console` and repeat with the fixture directory using
 
 `console_host_controls` checks argument parsing and idle state transitions.
 Physical input, rendering, pause integration, and Guru recovery remain manual.
+
+## Host save-directory selection
+
+`host_save_selection` exercises the real parser and selection code without SDL:
+CLI precedence, XDG/HOME fallback, absolute and relative overrides, paths with
+spaces, missing defaults, invalid argument forms, and path-size limits. It also
+changes cwd after selection to verify the stored destination remains fixed,
+and verifies no destination or intermediate directories are created.
+
+For a manual check, launch with `--save-dir ./test-saves` (before any cartridge
+argument). The console should show the launch directory plus that relative
+path, with the marker `(selection only)`. No test-saves directory should appear
+unless it already existed. Repeat with an absolute override and without an
+override to observe default selection. A host launched without XDG_DATA_HOME
+and HOME should report unavailable storage but still open normally. These checks
+exercise selection only; existing games, pause/exit, and launcher controls should
+retain their behavior. Keep environment changes local to the test process.

@@ -7,11 +7,47 @@ Run from the repository root after building:
 ./build/sugarbee /path/to/game.vcart
 ./build/sugarbee --cartridges /path/to/vcarts
 ./build/sugarbee --console --cartridges /path/to/vcarts
+./build/sugarbee --console --save-dir ./test-saves --cartridges /path/to/vcarts
 ```
 
 Quote paths containing spaces. Invalid command forms print usage and exit
 before opening a window. No arguments opens an idle host, not a Guru error.
 No default cartridge directory or configuration file is implemented.
+
+## Save-directory selection (storage integration pending)
+
+The accepted command forms are:
+
+```sh
+./build/sugarbee [--console] [--save-dir DIRECTORY] [cartridge.vcart]
+./build/sugarbee [--console] [--save-dir DIRECTORY] --cartridges DIRECTORY
+```
+
+Square brackets above indicate optional arguments; do not type them. `--console`
+remains first when present, followed by `--save-dir` before the cartridge or
+`--cartridges` argument. Duplicate, misplaced, empty, or missing options/values
+are usage errors. A value beginning with `-` must be expressed as a path such
+as `./-saves`. Quote paths containing spaces.
+
+Selection precedence is explicit `--save-dir`, then an absolute
+`XDG_DATA_HOME` plus `/sugarbee/saves`, then an absolute `HOME` plus
+`/.local/share/sugarbee/saves`. Unset, empty, or relative `XDG_DATA_HOME` is
+ignored in favor of HOME. An explicit choice never silently falls back.
+
+Relative overrides are anchored once to the launch working directory and copied
+into host state. Paths need not exist; no `realpath` resolution or normalization
+of `.`/`..` or symlinks is performed. A selected path can contain at most 4095
+bytes. If it cannot fit, or a relative override's launch directory cannot be
+obtained, save selection is unavailable rather than truncated or redirected.
+An absolute XDG path that exceeds the limit does not fall back to HOME.
+
+Startup reports `Save directory: ... (selection only)` on success. With no
+usable absolute default (or another selection failure), it reports
+`Save storage unavailable: ...` and continues normal host startup without Guru.
+Selection does not create, prepare, check writability, or read/write save storage.
+The save APIs are not connected to the host yet. Runtime path preparation,
+permission failures, and save operations will be handled in a later checkpoint.
+Configuration-file lookup and automatic migration are not implemented.
 
 ## Console mode: confirmed exit to system
 
@@ -105,5 +141,5 @@ The launcher displays its 64-cartridge capacity, additional eligible cartridges 
   logging are future discussion items, not implemented features.
 
 See the [manual checklist](../../tests/launcher/README.md). The automated suite
-includes twenty-two native tests and, when Lua 5.4 is available, eight cartridge smoke
+includes twenty-three native tests and, when Lua 5.4 is available, eight cartridge smoke
 tests using a stand-in API. It does not automate the launcher interaction flow.

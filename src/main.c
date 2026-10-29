@@ -18,6 +18,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <unistd.h>
 
 /* Cartridge asset readers and PNG decoding are outside the Lua adapter. */
 #include "sb_assets.h"
@@ -77,6 +78,9 @@ typedef struct {
     const char *cartridge_path;  /* Borrowed from argv or the stable launcher list. */
     const char *startup_cartridge_path; /* argv-owned; survives session cleanup */
     const char *cartridge_directory; /* argv-owned; valid for host lifetime */
+    const char *save_directory_override; /* argv-owned; selection only */
+    char save_directory[SB_LAUNCHER_PATH_SIZE]; /* Absolute, copied once at startup. */
+    const char *save_directory_error; /* Static diagnostic; NULL on successful selection. */
     launcher_cartridge_t cartridges[SB_LAUNCHER_MAX_CARTRIDGES];
     size_t cartridge_count;
     size_t cartridge_selection;
@@ -1276,6 +1280,12 @@ static bool parse_host_arguments(int argc, char *argv[]) {
         g_engine.console_mode = true;
         ++first;
     }
+    if (argc > first && strcmp(argv[first], "--save-dir") == 0) {
+        if (argc <= first + 1 || argv[first + 1][0] == '\0' || argv[first + 1][0] == '-')
+            return false;
+        g_engine.save_directory_override = argv[first + 1];
+        first += 2;
+    }
     int remaining = argc - first;
     if (remaining == 0) return true;
     if (remaining == 1 && argv[first][0] != '\0' && argv[first][0] != '-') {
@@ -1290,13 +1300,80 @@ static bool parse_host_arguments(int argc, char *argv[]) {
     return false;
 }
 
+/* Pure path selection: no filesystem queries or creation. Missing defaults
+   disable selection without preventing host startup. No realpath: the selected
+   directory need not exist, and symlink/.. semantics must not be rewritten. */
+static bool resolve_save_directory(const char *override, const char *xdg,
+                                    const char *home, const char *cwd) {
+    g_engine.save_directory[0] = '\0';
+    g_engine.save_directory_error = NULL;
+    const char *base = NULL;
+    const char *suffix = NULL;
+    if (override) {
+        if (!*override) {
+            g_engine.save_directory_error = "empty explicit save directory";
+            return false;
+        }
+        if (override[0] == '/') base = override;
+        else {
+            if (!cwd || cwd[0] != '/') {
+                g_engine.save_directory_error = "cannot resolve the launch directory";
+                return false;
+            }
+            base = cwd;
+            suffix = override;
+        }
+    } else if (xdg && xdg[0] == '/') {
+        base = xdg;
+        suffix = "sugarbee/saves";
+    } else if (home && home[0] == '/') {
+        base = home;
+        suffix = ".local/share/sugarbee/saves";
+    } else {
+        g_engine.save_directory_error = "no absolute XDG_DATA_HOME or HOME; use --save-dir";
+        return false;
+    }
+
+    size_t base_length = strnlen(base, sizeof(g_engine.save_directory));
+    if (base_length >= sizeof(g_engine.save_directory)) goto too_long;
+    const char *separator = base[base_length - 1] == '/' ? "" : "/";
+    int n = suffix
+        ? snprintf(g_engine.save_directory, sizeof(g_engine.save_directory),
+                   "%s%s%s", base, separator, suffix)
+        : snprintf(g_engine.save_directory, sizeof(g_engine.save_directory), "%s", base);
+    if (n < 0 || (size_t)n >= sizeof(g_engine.save_directory)) goto too_long;
+    return true;
+
+too_long:
+    g_engine.save_directory[0] = '\0'; /* Never retain a truncated destination. */
+    g_engine.save_directory_error = "selected save directory exceeds the host path limit";
+    return false;
+}
+
+static bool select_host_save_directory(void) {
+    char cwd[SB_LAUNCHER_PATH_SIZE];
+    const char *launch_directory = NULL;
+    if (g_engine.save_directory_override && g_engine.save_directory_override[0] != '/')
+        launch_directory = getcwd(cwd, sizeof(cwd));
+    return resolve_save_directory(g_engine.save_directory_override,
+                                  getenv("XDG_DATA_HOME"), getenv("HOME"), launch_directory);
+}
+
 int main(int argc, char* argv[]) {
     if (!parse_host_arguments(argc, argv)) {
         fprintf(stderr,
-                "Usage: %s [--console] [cartridge.vcart]\n"
-                "       %s [--console] --cartridges DIRECTORY\n",
+                "Usage: %s [--console] [--save-dir DIRECTORY] [cartridge.vcart]\n"
+                "       %s [--console] [--save-dir DIRECTORY] --cartridges DIRECTORY\n",
                 argv[0], argv[0]);
         return 1;
+    }
+
+    if (select_host_save_directory()) {
+        printf("[SugarBee] Save directory: %s (selection only)\n", g_engine.save_directory);
+        fflush(stdout);
+    } else {
+        fprintf(stderr, "[SugarBee] Save storage unavailable: %s\n",
+                g_engine.save_directory_error);
     }
 
     if (!init_engine()) {
