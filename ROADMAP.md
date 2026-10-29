@@ -65,17 +65,20 @@ deferred unless validation exposes a concrete need for it.
 Keep this phase finite. Safely executing deliberately hostile cartridges would
 require a separate scope decision, not an assumed extension of loop protection.
 
-### 3. Implement minimal save support — next to scope
+### 3. Implement minimal save support — design settled, implementation pending
 
-- Define a small Lua save API, ownership by persistent cartridge UUID, and
-  reasonable storage limits.
-- Use transactional replacement so a failed write preserves the previous save.
-- Exercise normal saves, failed writes, and recovery with a small lab.
-- Define and test the intended durability guarantees, including what happens
-  during interrupted writes or power loss, before claiming corruption protection.
+- Follow the [agreed minimal save design](docs/architecture/save-design.md):
+  one opaque string up to 64 KiB per UUID, explicit load/save calls, and a
+  host-controlled writable location separate from cartridges.
+- Use synchronized temporary-file replacement. Distinguish success, failure
+  before replacement (previous save untouched), and uncertain durability after
+  replacement; do not promise preservation after replacement already occurred.
+- Implement bounded storage and failure tests, then Lua bindings and a small lab.
+- Validate normal saves, failed and interrupted writes, recovery, and lifecycle
+  behavior on desktop and Pi before claiming durability guarantees.
 
-Done when: the minimal API and failure behavior are documented and tested on
-desktop and Pi, including the previous-save preservation requirement.
+Done when: the agreed API and failure contract are implemented, documented, and
+validated on desktop and Pi. No save functionality is implemented yet.
 
 ### 4. Begin audio implementation
 
