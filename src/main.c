@@ -29,6 +29,7 @@
 #include "sb_input.h"
 #include "sb_timing.h"
 #include "sb_save.h"
+#include "sb_audio.h"
 
 #define SB_LAUNCHER_MAX_CARTRIDGES 64
 #define SB_LAUNCHER_PATH_SIZE 4096
@@ -52,6 +53,7 @@ typedef enum {
 typedef struct {
     sb_graphics_t* graphics;
     sb_input_t* input;
+    sb_audio_t* audio; /* Host-owned; NULL means unavailable. */
     lua_State* L;
     bool is_running;
     bool console_mode;
@@ -739,6 +741,7 @@ bool init_engine(void) {
     g_engine.input = sb_input_create();
     if (!g_engine.input) return false;
 
+    g_engine.audio = sb_audio_create(); /* Failure is nonfatal and diagnosed once. */
     g_engine.is_running = true;
     return true;
 }
@@ -1227,6 +1230,8 @@ static void end_cartridge(void) {
 
 void shutdown_engine(void) {
     end_cartridge();
+    sb_audio_destroy(g_engine.audio);
+    g_engine.audio = NULL;
 
     sb_input_destroy(g_engine.input);
     sb_graphics_destroy(g_engine.graphics);

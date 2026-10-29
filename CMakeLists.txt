@@ -64,9 +64,15 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sugarbee_input PRIVATE PkgConfig::SDL2)
     sugarbee_warnings(sugarbee_input)
 
+    add_library(sugarbee_audio STATIC src/sb_audio_sdl.c)
+    target_include_directories(sugarbee_audio PUBLIC "${PROJECT_SOURCE_DIR}/include")
+    target_link_libraries(sugarbee_audio PRIVATE PkgConfig::SDL2)
+    sugarbee_warnings(sugarbee_audio)
+
     add_executable(sugarbee src/main.c)
     target_link_libraries(sugarbee PRIVATE
         sugarbee_save
+        sugarbee_audio
         sugarbee_graphics
         sugarbee_input
         sugarbee_timing
@@ -86,6 +92,17 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     target_link_libraries(test_console_host PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
     sugarbee_warnings(test_console_host)
     add_test(NAME console_host_controls COMMAND test_console_host)
+
+    add_executable(test_audio_host tests/test_audio_host.c)
+    target_link_libraries(test_audio_host PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    target_link_options(test_audio_host PRIVATE
+        "-Wl,--wrap=SDL_OpenAudioDevice" "-Wl,--wrap=SDL_CloseAudioDevice")
+    sugarbee_warnings(test_audio_host)
+    foreach(mode IN ITEMS silence unavailable open_failure)
+        add_test(NAME audio_host_${mode} COMMAND test_audio_host ${mode})
+        set_tests_properties(audio_host_${mode} PROPERTIES TIMEOUT 10
+            ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy")
+    endforeach()
 
     add_executable(test_save_selection tests/test_save_selection.c)
     target_link_libraries(test_save_selection PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})

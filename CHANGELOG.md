@@ -2,6 +2,10 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added host-owned SDL2 silent audio output (48 kHz stereo float), nonfatal
+  unavailable-device fallback, and teardown after cartridge shutdown. Added
+  dummy-driver lifecycle/failure tests. Test tone and Lua audio APIs are deferred.
+
 - Completed bounded minimal-save validation on desktop and Pi. The user
   confirmed all 37 tests and eight interactive Save Lab checks at `525e215`,
   with Exit to system status 0. Actual power-loss testing remains deferred.

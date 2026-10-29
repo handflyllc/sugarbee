@@ -1,7 +1,8 @@
 # SugarBee audio — settled initial design
 
 Status: initial scope and behavioral design settled on 2026-10-18.
-Audio and the illustrated API are not implemented. This is a design checkpoint,
+The silent SDL2 output foundation is implemented. Synthesis, WAV playback, and
+the illustrated Lua API are not implemented. This is a design checkpoint,
 not an available API reference or a claim of measured hardware performance.
 Names and signatures remain illustrative until implementation review. The
 remaining engineering details below must be resolved before an implementation
@@ -132,8 +133,9 @@ behavior must be reconciled with that meaning during implementation. The
 10-second limit applies to transitions, not total note duration.
 
 Longer ambience can use WAV loops; externally authored scores remain deferred.
-The internal sample rate and any additional numerical stability margin for the
-filter must be specified and tested before publishing a concrete API contract.
+The foundation uses a 48,000 Hz internal sample rate. Any additional numerical
+stability margin for the filter must be specified and tested before publishing
+a concrete synthesis API contract.
 
 ## Filtering
 
@@ -282,7 +284,8 @@ remain to be specified. A more sophisticated limiter is deferred.
 
 ## Remaining implementation questions
 
-- Audio backend, dependencies, device format, buffering, and latency.
+- Measure hardware compatibility and latency for the initial SDL2 backend and
+  buffer choice described below.
 - Thread-safe communication between Lua/game updates and audio processing.
 - Detecting an active audio-device failure and transitioning to unavailable audio.
 - Implementing the agreed resource ownership and teardown rules.
@@ -317,3 +320,36 @@ Lua sandboxing/execution limits remain separate engine work deferred until Pong
 is complete. Pi DEV/Console deployment and audio performance require hardware
 access. This checkpoint does not schedule those items or revive deferred MIDI,
 composition-format, or advanced synthesis work.
+
+## First implementation checkpoint: silent host output
+
+The host now owns an SDL2 audio backend independently of cartridge sessions.
+After graphics and input initialize, it attempts to initialize audio and open
+the default playback device. Initialization or device-open failure emits one
+explanatory diagnostic and leaves audio unavailable without stopping gameplay.
+No per-frame retries or automatic device reconnection are introduced.
+
+The callback format is 48,000 Hz, native-endian float32, two interleaved stereo
+channels. The requested buffer is 1,024 frames (about 21.3 ms of audio, not a
+measured end-to-end latency). Only callback buffer-size changes are allowed;
+SDL handles conversion when the hardware format differs. The callback fills
+its entire buffer with zero-valued silence. It allocates nothing, logs nothing,
+and accesses neither Lua nor mutable game state.
+
+Cartridge exit/relaunch preserves the device. On host exit, eligible Lua
+shutdown runs first; native teardown then closes the device, releases its SDL
+audio subsystem reference, and finally the host calls SDL_Quit. SDL close waits
+for the callback to finish; there is no application drain loop. This is not a
+hard wall-clock guarantee against a stalled OS/audio driver.
+
+The [foundation checks](../../tests/audio-foundation.md) exercise silence,
+unavailable initialization, injected open failure, session lifetime, and clean
+teardown using SDL's dummy drivers. All 40 automated tests passed. The user
+confirmed the interactive Pong/Save Lab checks and one-message unavailable-audio
+fallback without gameplay disruption. Pi and audible-output validation remain
+pending; silent operation alone does not establish that sound reaches hardware.
+No test tone, synthesizer, WAV loading, Lua audio API, live failure detection,
+or cartridge fade/mixing behavior is implemented in this checkpoint.
+
+SDL reference: [opening a device](https://wiki.libsdl.org/SDL2/SDL_OpenAudioDevice)
+and [closing a device](https://wiki.libsdl.org/SDL2/SDL_CloseAudioDevice).

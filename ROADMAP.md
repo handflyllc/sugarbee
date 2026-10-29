@@ -96,7 +96,7 @@ including repack persistence and Exit to system returning status 0.
 This completes the agreed bounded save milestone. Actual power-loss testing
 remains deferred; these checks do not establish hardware durability guarantees.
 
-### 4. Begin audio implementation
+### 4. Begin audio implementation — silent foundation started
 
 Audio is the next major creative milestone after the bounded reliability and
 minimal-save phases. A custom console OS image is not a prerequisite.
@@ -108,6 +108,12 @@ minimal-save phases. A custom console OS image is not a prerequisite.
   through small sound-focused labs and Pi testing.
 - Keep synthesis expressive while keeping music authoring outside the engine.
   SID file import and a DAW are not goals.
+
+The SDL2 silent-output foundation now opens a host-owned device, permits silent
+fallback on initialization/open failure, and closes after cartridge shutdown.
+All 40 automated tests pass. The user confirmed normal Pong/Save Lab behavior
+and one-message unavailable-audio fallback without gameplay disruption. Pi
+validation, audible output testing, test tone, and Lua audio controls remain pending.
 
 Done when: each selected audio slice meets its agreed behavior and resource
 constraints with automated checks where appropriate and listening tests.

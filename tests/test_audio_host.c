@@ -1,0 +1,97 @@
+/* Test real host lifetime with SDL dummy output; inject only open failure. */
+#define main sugarbee_host_main
+#include "../src/main.c"
+#undef main
+
+SDL_AudioDeviceID __real_SDL_OpenAudioDevice(const char *, int,
+    const SDL_AudioSpec *, SDL_AudioSpec *, int);
+void __real_SDL_CloseAudioDevice(SDL_AudioDeviceID device);
+static bool fail_open, format_ok, silence_ok;
+static unsigned opens, closes, shutdown_calls;
+static SDL_AudioCallback original_callback;
+static void *original_userdata;
+static SDL_atomic_t callbacks;
+
+static void observe_callback(void *userdata, Uint8 *stream, int length) {
+    (void)userdata;
+    original_callback(original_userdata, stream, length);
+    SDL_AtomicAdd(&callbacks, 1);
+}
+SDL_AudioDeviceID __wrap_SDL_OpenAudioDevice(const char *device, int capture,
+    const SDL_AudioSpec *desired, SDL_AudioSpec *obtained, int changes) {
+    ++opens;
+    format_ok = !device && !capture && desired->freq == 48000 &&
+        desired->format == AUDIO_F32SYS && desired->channels == 2 &&
+        desired->samples == 1024 && desired->callback &&
+        changes == SDL_AUDIO_ALLOW_SAMPLES_CHANGE;
+    if (fail_open) { SDL_SetError("injected device-open failure"); return 0; }
+    /* Check every requested byte and boundary guards using the actual callback. */
+    unsigned char buffer[8194]; memset(buffer, 0xa5, sizeof(buffer));
+    desired->callback(desired->userdata, buffer + 1, 8192);
+    silence_ok = buffer[0] == 0xa5 && buffer[8193] == 0xa5;
+    for (size_t i = 1; i < 8193; ++i) silence_ok = silence_ok && buffer[i] == 0;
+    original_callback = desired->callback;
+    original_userdata = desired->userdata;
+    SDL_AudioSpec observed = *desired;
+    observed.callback = observe_callback;
+    return __real_SDL_OpenAudioDevice(device, capture, &observed, obtained, changes);
+}
+void __wrap_SDL_CloseAudioDevice(SDL_AudioDeviceID device) {
+    ++closes;
+    __real_SDL_CloseAudioDevice(device);
+}
+#define CHECK(expr) do { if (!(expr)) { \
+    fprintf(stderr, "Audio host check failed at line %d: %s\n", __LINE__, #expr); \
+    return 1; \
+} } while (0)
+static int check_shutdown(lua_State *L) {
+    (void)L;
+    ++shutdown_calls;
+    if (!g_engine.audio || closes != 0) return luaL_error(L, "audio closed before Lua shutdown");
+    return 0;
+}
+static bool session(void) {
+    g_engine.L = luaL_newstate();
+    if (!g_engine.L) return false;
+    g_engine.cart_loaded = true;
+    g_engine.cart_initialized = true;
+    lua_pushcfunction(g_engine.L, check_shutdown);
+    lua_setglobal(g_engine.L, "shutdown");
+    return true;
+}
+int main(int argc, char **argv) {
+    CHECK(argc == 2);
+    bool available = !strcmp(argv[1], "silence");
+    fail_open = !strcmp(argv[1], "open_failure");
+    if (!available && !fail_open) {
+        CHECK(!strcmp(argv[1], "unavailable"));
+        CHECK(SDL_setenv("SDL_AUDIODRIVER", "sugarbee-nonexistent-driver", 1) == 0);
+    }
+    CHECK(init_engine());
+    CHECK(g_engine.is_running && g_engine.graphics && g_engine.input);
+    CHECK((g_engine.audio != NULL) == available);
+    if (available) {
+        CHECK(format_ok && silence_ok && opens == 1);
+        Uint32 start = SDL_GetTicks();
+        while (SDL_AtomicGet(&callbacks) == 0 && SDL_GetTicks() - start < 2000) SDL_Delay(5);
+        CHECK(SDL_AtomicGet(&callbacks) > 0);
+        sb_audio_t *audio = g_engine.audio;
+        CHECK(session()); end_cartridge();
+        CHECK(shutdown_calls == 1 && g_engine.audio == audio && closes == 0 && opens == 1);
+        CHECK(session()); /* A new cartridge still uses the existing device. */
+    } else {
+        CHECK(opens == (fail_open ? 1u : 0u) && closes == 0);
+        CHECK(SDL_WasInit(SDL_INIT_AUDIO) == 0);
+        CHECK(!g_engine.guru_active);
+    }
+    shutdown_engine();
+    CHECK(!g_engine.audio && SDL_WasInit(0) == 0);
+    CHECK(closes == (available ? 1u : 0u));
+    if (available) CHECK(shutdown_calls == 2);
+    int count = SDL_AtomicGet(&callbacks);
+    SDL_Delay(30);
+    CHECK(SDL_AtomicGet(&callbacks) == count);
+    sb_audio_destroy(NULL);
+    puts("Audio host lifecycle checks passed");
+    return 0;
+}
