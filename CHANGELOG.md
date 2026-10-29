@@ -2,6 +2,9 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added a counter-based Save Lab with explicit save/reload controls, a fixed
+  cartridge UUID, isolated persistent test storage, and behavior tests.
+
 - Added `sugarbee.save(string)` and `sugarbee.load_save()` with exact two-value
   results, strict argument validation, and binary-safe 64 KiB storage. Added
   Lua API/lifecycle/failure tests, including allocation-error recovery, and an

@@ -82,6 +82,7 @@ end
 
 The [save design](../architecture/save-design.md) details bounds, path resolution,
 and durability expectations. Desktop regression tests cover API results,
-lifecycle access, and injected failures. Interactive lab, Pi, and interruption/
-power-loss validation remain pending; successful synchronization is not a
+lifecycle access, and injected failures. The [Save Lab](../../examples/save-lab/README.md)
+provides interactive checks; the user confirmed all six desktop checks passed.
+Pi and interruption/power-loss validation remain pending; successful synchronization is not a
 blanket guarantee against hardware failure.

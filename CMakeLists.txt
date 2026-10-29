@@ -255,6 +255,11 @@ if(BUILD_TESTING)
     endif()
 
     if(LUA54_INTERPRETER_COMPATIBLE)
+        add_test(NAME save_lab_behavior
+            COMMAND "${LUA54_INTERPRETER}"
+                "${PROJECT_SOURCE_DIR}/tests/save-lab/test.lua"
+                "${PROJECT_SOURCE_DIR}/examples/save-lab/main.lua")
+        set_tests_properties(save_lab_behavior PROPERTIES TIMEOUT 5)
         foreach(cartridge IN ITEMS graphics-demo moving-box sprite-demo
                 asset-demo sprite-sheet-demo pong-lab invaders-lab pacman-demo)
             add_test(NAME cartridge_smoke_${cartridge}

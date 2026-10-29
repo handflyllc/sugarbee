@@ -86,8 +86,10 @@ read-only adapter resolves selected paths for root-anchored preparation.
 Internal host load/save calls now connect active-session identity and the
 selected directory to storage. Strict string-only Lua save/load bindings and
 their automated tests/API documentation are implemented; no automatic saving.
-The interactive save lab, interruption/durability validation, and Pi validation
-remain pending.
+The counter-based interactive save lab and its behavior tests are implemented.
+The user confirmed all six desktop interactive checks passed, including explicit
+save/reload, zero, pause/resume, and persistence after relaunch. Pi checks and
+interruption/durability validation remain pending.
 
 ### 4. Begin audio implementation
 

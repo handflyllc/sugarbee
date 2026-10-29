@@ -4,8 +4,9 @@ Status: initial API, storage policy, and durability contract agreed on 2026-10-2
 The bounded C storage layer, host selection and path adapter, internal host
 operations, and Lua bindings are implemented with desktop regression tests.
 See the [Lua save API](../api/saves.md) for the available interface. Automatic
-saving is not implemented. Interactive lab, Pi, and interruption/durability
-validation remain pending.
+saving is not implemented. The [counter Save Lab](../../examples/save-lab/README.md)
+and behavior tests are implemented. The user confirmed all six desktop
+interactive checks passed. Pi and interruption/durability validation remain pending.
 
 ## Scope and ownership
 
@@ -449,7 +450,8 @@ reaches the host as uncertain durability with the new data visible. The subseque
 15-second timeout. These are desktop headless checks, not Pi or power-loss tests.
 
 Run with `ctest --test-dir build -R '^host_save_storage$' --output-on-failure`.
-User-facing save labs and physical validation remain future checkpoints. `shutdown()` remains an optional extra save opportunity,
+The counter Save Lab is now available with user-confirmed desktop checks;
+Pi validation remains pending. `shutdown()` remains an optional extra save opportunity,
 not a reliable substitute for deliberate gameplay checkpoints.
 
 ## Eighth checkpoint: Lua save/load bindings
