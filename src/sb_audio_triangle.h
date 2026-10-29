@@ -3,13 +3,19 @@
 #define SB_AUDIO_TRIANGLE_H
 #include <stdbool.h>
 #include <stddef.h>
+#include "sb_audio_envelope.h"
 
 typedef struct {
-    double phase, frequency, gain, release_gain;
-    unsigned attack_frame, release_left;
-    bool active, stopping;
+    double phase, frequency, stop_start;
+    unsigned stop_left;
+    bool active, stopping, configured;
+    sb_envelope_settings_t settings;
+    sb_envelope_t envelope;
 } sb_audio_triangle_t;
 
+/* Full settings update, captured only on the next start/retrigger. */
+bool sb_audio_triangle_configure(sb_audio_triangle_t *voice, const sb_envelope_settings_t *settings);
+void sb_audio_triangle_note_off(sb_audio_triangle_t *voice);
 bool sb_audio_triangle_start(sb_audio_triangle_t *voice, double frequency);
 bool sb_audio_triangle_pitch(sb_audio_triangle_t *voice, double frequency);
 void sb_audio_triangle_stop(sb_audio_triangle_t *voice);

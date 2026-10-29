@@ -2,6 +2,17 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Validated native triangle ADSR and retrigger on Pi commit `710b738`: all 45
+  tests, ADSR/sine listening, gameplay checks, and Exit to system status 0 passed.
+
+- Connected ADSR to the native triangle with validated configuration, per-note
+  capture, current-level/phase-preserving retrigger, configured note-off release,
+  and separate short stop. Expanded regression and listening tests; Lua deferred.
+
+- Added a standalone C linear ADSR envelope with per-note settings capture,
+  immediate zero-duration transitions, and automated timing/edge-case tests.
+  Triangle integration, retrigger behavior, and Lua controls remain deferred.
+
 - Validated the native triangle prototype on Pi commit `1664043`: all 44 tests,
   triangle/sine listening checks, gameplay checks, and Exit to system status 0
   passed. Full synthesis and Lua controls remain deferred.
