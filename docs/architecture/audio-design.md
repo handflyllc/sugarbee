@@ -1,7 +1,8 @@
 # SugarBee audio — settled initial design
 
 Status: initial scope and behavioral design settled on 2026-10-18.
-The silent SDL2 output foundation is implemented. Synthesis, WAV playback, and
+The SDL2 output foundation and opt-in native diagnostic tone are implemented.
+Synthesis, WAV playback, and
 the illustrated Lua API are not implemented. This is a design checkpoint,
 not an available API reference or a claim of measured hardware performance.
 Names and signatures remain illustrative until implementation review. The
@@ -346,10 +347,26 @@ The [foundation checks](../../tests/audio-foundation.md) exercise silence,
 unavailable initialization, injected open failure, session lifetime, and clean
 teardown using SDL's dummy drivers. All 40 automated tests passed. The user
 confirmed the interactive Pong/Save Lab checks and one-message unavailable-audio
-fallback without gameplay disruption. Pi and audible-output validation remain
-pending; silent operation alone does not establish that sound reaches hardware.
+fallback without gameplay disruption. Pi validation remains pending. Desktop audible-output validation is recorded
+in the diagnostic-tone checkpoint below.
 No test tone, synthesizer, WAV loading, Lua audio API, live failure detection,
 or cartridge fade/mixing behavior is implemented in this checkpoint.
 
 SDL reference: [opening a device](https://wiki.libsdl.org/SDL2/SDL_OpenAudioDevice)
 and [closing a device](https://wiki.libsdl.org/SDL2/SDL_CloseAudioDevice).
+
+## Native diagnostic-tone checkpoint
+
+The separate `sbee-audio-test` executable uses the same backend to request one
+440 Hz sine tone: one second at 48 kHz, amplitude 0.05, identical stereo channels,
+and ten-ms linear fades included in the duration. A small fixed oscillator
+advances by frame position independently of callback size. This is a diagnostic
+signal, not the nine-voice synth or a new agreed synthesis waveform.
+
+Native requests and queries synchronize with the callback using the SDL device
+lock. Requests while active are declined without restarting; unavailable audio
+returns false. No Lua interface or normal-host automatic tone is introduced.
+See [test instructions and limits](../../tests/audio-tone.md) for sample checks,
+listening instructions, and bounded tool wait behavior. All 42 automated tests
+passed. The user confirmed clean desktop output on the intended device, no clicks
+or distortion, and normal exit. Pi validation remains pending.

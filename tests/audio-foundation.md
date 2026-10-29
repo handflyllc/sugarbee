@@ -23,7 +23,7 @@ Dummy-driver tests do not establish hardware compatibility or audible quality.
 
 ## Interactive regression checks
 
-Run Pong and Save Lab normally. Expect silence: no tone or Lua audio API exists.
+Run Pong and Save Lab normally. Expect silence: the host never requests the diagnostic tone; no Lua audio API exists.
 Check play/change counter, pause, resume, exit to host, relaunch, and clean host
 exit. In Save Lab, check explicit saving and reloading as before.
 
@@ -42,5 +42,5 @@ Test console mode with the existing `--console` flag if desired.
 
 All 40 automated tests passed. The user confirmed the interactive Pong and Save
 Lab checks passed, and unavailable audio produced one message without disrupting
-gameplay. Pi validation remains pending. A subsequent test-tone checkpoint will
-establish that actual sound reaches the intended output.
+gameplay. Pi validation remains pending. The separate [test-tone executable](audio-tone.md) is now available for listening
+checks to establish that actual sound reaches the intended output.

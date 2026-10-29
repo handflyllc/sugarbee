@@ -113,7 +113,11 @@ The SDL2 silent-output foundation now opens a host-owned device, permits silent
 fallback on initialization/open failure, and closes after cartridge shutdown.
 All 40 automated tests pass. The user confirmed normal Pong/Save Lab behavior
 and one-message unavailable-audio fallback without gameplay disruption. Pi
-validation, audible output testing, test tone, and Lua audio controls remain pending.
+validation and Lua audio controls remain pending.
+A separate one-second diagnostic-tone executable and automated sample tests are
+implemented; all 42 tests pass. The user confirmed clean desktop tone output,
+correct device selection, no clicks/distortion, and normal exit. Normal host
+startup remains silent.
 
 Done when: each selected audio slice meets its agreed behavior and resource
 constraints with automated checks where appropriate and listening tests.

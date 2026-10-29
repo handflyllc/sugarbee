@@ -75,6 +75,12 @@ int main(int argc, char **argv) {
         Uint32 start = SDL_GetTicks();
         while (SDL_AtomicGet(&callbacks) == 0 && SDL_GetTicks() - start < 2000) SDL_Delay(5);
         CHECK(SDL_AtomicGet(&callbacks) > 0);
+        CHECK(sb_audio_start_test_tone(g_engine.audio));
+        CHECK(!sb_audio_start_test_tone(g_engine.audio)); /* Does not retrigger. */
+        start = SDL_GetTicks();
+        while (sb_audio_test_tone_active(g_engine.audio) && SDL_GetTicks() - start < 2500)
+            SDL_Delay(5);
+        CHECK(!sb_audio_test_tone_active(g_engine.audio));
         sb_audio_t *audio = g_engine.audio;
         CHECK(session()); end_cartridge();
         CHECK(shutdown_calls == 1 && g_engine.audio == audio && closes == 0 && opens == 1);
@@ -91,6 +97,7 @@ int main(int argc, char **argv) {
     int count = SDL_AtomicGet(&callbacks);
     SDL_Delay(30);
     CHECK(SDL_AtomicGet(&callbacks) == count);
+    CHECK(!sb_audio_start_test_tone(NULL) && !sb_audio_test_tone_active(NULL));
     sb_audio_destroy(NULL);
     puts("Audio host lifecycle checks passed");
     return 0;

@@ -2,6 +2,10 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added opt-in `sbee-audio-test`: a quiet one-second 440 Hz stereo sine tone
+  with ten-ms fades, synchronized native controls, and automated sample/output
+  checks. Normal host output stays silent; Lua controls and synthesis are deferred.
+
 - Added host-owned SDL2 silent audio output (48 kHz stereo float), nonfatal
   unavailable-device fallback, and teardown after cartridge shutdown. Added
   dummy-driver lifecycle/failure tests. Test tone and Lua audio APIs are deferred.

@@ -64,10 +64,14 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sugarbee_input PRIVATE PkgConfig::SDL2)
     sugarbee_warnings(sugarbee_input)
 
-    add_library(sugarbee_audio STATIC src/sb_audio_sdl.c)
+    add_library(sugarbee_audio STATIC src/sb_audio_sdl.c src/sb_audio_tone.c)
     target_include_directories(sugarbee_audio PUBLIC "${PROJECT_SOURCE_DIR}/include")
-    target_link_libraries(sugarbee_audio PRIVATE PkgConfig::SDL2)
+    target_link_libraries(sugarbee_audio PRIVATE PkgConfig::SDL2 m)
     sugarbee_warnings(sugarbee_audio)
+
+    add_executable(sbee-audio-test tools/sbee-audio-test.c)
+    target_link_libraries(sbee-audio-test PRIVATE sugarbee_audio PkgConfig::SDL2)
+    sugarbee_warnings(sbee-audio-test)
 
     add_executable(sugarbee src/main.c)
     target_link_libraries(sugarbee PRIVATE
@@ -92,6 +96,15 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     target_link_libraries(test_console_host PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
     sugarbee_warnings(test_console_host)
     add_test(NAME console_host_controls COMMAND test_console_host)
+
+    add_executable(test_audio_tone tests/test_audio_tone.c)
+    target_link_libraries(test_audio_tone PRIVATE sugarbee_audio)
+    sugarbee_warnings(test_audio_tone)
+    add_test(NAME audio_tone_samples COMMAND test_audio_tone)
+    set_tests_properties(audio_tone_samples PROPERTIES TIMEOUT 5)
+    add_test(NAME audio_tone_output COMMAND sbee-audio-test)
+    set_tests_properties(audio_tone_output PROPERTIES TIMEOUT 10
+        ENVIRONMENT "SDL_AUDIODRIVER=dummy")
 
     add_executable(test_audio_host tests/test_audio_host.c)
     target_link_libraries(test_audio_host PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
