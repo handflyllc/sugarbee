@@ -71,9 +71,10 @@ The host then displays an idle screen without calling cartridge update or
 draw callbacks. Its window, renderer, retained-frame texture, and controllers
 remain alive. B or keyboard K closes the idle host in desktop mode.
 With the explicit leading `--console` flag, idle B/K does nothing and Start/Enter
-opens a test-only shutdown confirmation. Cancel is selected initially; the
-confirmed test reports a request and keeps the host running. No OS power-off
-is implemented. The panel blocks underlying launcher actions, and in-game
+opens an Exit to system confirmation. Cancel is selected initially; confirming
+exit ends the host loop and runs normal engine cleanup before returning to the
+launching terminal. The OS keeps running; no OS power-off is implemented.
+The panel blocks underlying launcher actions, and in-game
 pause/exit behavior remains unchanged. See [launcher controls](../development/launcher.md).
 
 A or keyboard J requests relaunch of the startup cartridge. The host retains

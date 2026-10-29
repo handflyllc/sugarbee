@@ -87,11 +87,12 @@ In directory mode, a startup scan automatically launches a sole eligible
 cartridge if there are no scan errors or omitted eligible entries. Exiting,
 recovering from Guru, or rescanning never triggers automatic launch.
 With the explicit leading `--console` flag, idle B/K does nothing and
-Start/Enter opens a test-only shutdown confirmation with Cancel selected.
+Start/Enter opens an Exit to system confirmation with Cancel selected.
 Up/Down selects; A/J activates; B/K or Start/Enter cancels. While the panel is
-open, launch, rescan, and list navigation are blocked. Confirming the shutdown
-test only reports the request and returns to the idle screen. Actual operating
-system power-off is not implemented. See the launcher guide for the full flow.
+open, launch, rescan, and list navigation are blocked. Confirming Exit to system
+ends the host loop, runs normal cleanup, and returns to the launching terminal.
+The OS continues running; operating system power-off is not implemented.
+See the launcher guide for the full flow.
 
 ## Button mapping
 

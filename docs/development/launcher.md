@@ -13,30 +13,30 @@ Quote paths containing spaces. Invalid command forms print usage and exit
 before opening a window. No arguments opens an idle host, not a Guru error.
 No default cartridge directory or configuration file is implemented.
 
-## Console mode: shutdown confirmation test
+## Console mode: confirmed exit to system
 
 `--console` must be the first option. It can be used alone, before a direct
 cartridge path, or before `--cartridges DIRECTORY`. Hardware and display mode
-never enable it automatically. This checkpoint does not power off the OS.
+never enable it automatically. It does not enable OS power-off.
 
-At an idle console-mode host or launcher, Start/Enter opens a confirmation
-panel labelled TEST ONLY, with Cancel selected every time. Up/Down selects
-Cancel or Shut down (test); A/J activates the selected action. B/K or Start/Enter
-cancels. Opening consumes simultaneous confirmation/navigation input. While
-open, the panel blocks cartridge navigation, launch, and rescan. Inputs act on
+At an idle console-mode host or launcher, Start/Enter opens an Exit to system
+confirmation, with Cancel selected every time. Up/Down selects Cancel or Exit
+to system; A/J activates the selected action. B/K or Start/Enter cancels.
+Opening consumes simultaneous confirmation/navigation input. While open,
+the panel blocks cartridge navigation, launch, and rescan. Inputs act on
 press edges rather than repeating while held.
 
-Confirming Shut down (test) prints one console message, closes the panel, and
-shows a no-power-off confirmation on the idle screen. SugarBee stays running;
-no OS shutdown command or cartridge cleanup is invoked by this test action.
-Opening the panel again clears that notice and selects Cancel.
+Confirming Exit to system stops the host loop, runs normal engine cleanup,
+and exits successfully to the launching TTY or terminal. The OS keeps running.
+This is not an indication that power can safely be removed, and it invokes
+no OS shutdown command. Actual OS shutdown is deferred to console deployment.
 
 B/K on the idle console-mode screen does nothing. Without `--console`, existing
 B/K-to-close behavior remains and Start does nothing while idle. Start during
-a game still opens the existing pause menu: exit the game before requesting
-shutdown. Guru recovery remains B/K. Window-close/OS quit events still close
-SugarBee normally, including during this test panel. Actual OS shutdown and
-its deployment permissions are deferred to a separate checkpoint.
+a game still opens the existing pause menu: exit the game before exiting to
+the system. The game shutdown callback runs on Exit Game and is not called
+again when leaving the idle host. Guru recovery remains B/K. Window-close/OS
+quit events still close SugarBee normally, including during confirmation.
 
 ## Discovery
 

@@ -55,38 +55,39 @@ int main(void) {
     handle_idle_host_input(false, true, false, false, false, false);
     CHECK(g_engine.is_running);
     CHECK(handle_idle_host_input(true, false, false, true, true, true));
-    CHECK(g_engine.shutdown_confirmation && !g_engine.shutdown_selected);
+    CHECK(g_engine.system_exit_confirmation && !g_engine.system_exit_selected);
     CHECK(!g_engine.cartridge_launch_requested && !g_engine.cartridge_rescan_requested);
     CHECK(g_engine.cartridge_selection == 1);
     /* No new press edges: held buttons do not retrigger anything. */
     for (int i = 0; i < 10; ++i)
         handle_idle_host_input(false, false, false, false, false, false);
-    CHECK(g_engine.shutdown_confirmation && !g_engine.shutdown_selected);
+    CHECK(g_engine.system_exit_confirmation && !g_engine.system_exit_selected);
     handle_idle_host_input(false, false, false, true, false, true);
-    CHECK(g_engine.shutdown_selected && g_engine.cartridge_selection == 1);
+    CHECK(g_engine.system_exit_selected && g_engine.cartridge_selection == 1);
     CHECK(!g_engine.cartridge_rescan_requested);
     handle_idle_host_input(false, true, false, false, true, false);
-    CHECK(!g_engine.shutdown_confirmation && !g_engine.shutdown_test_reported);
+    CHECK(!g_engine.system_exit_confirmation && g_engine.is_running);
     CHECK(g_engine.is_running && !g_engine.cartridge_launch_requested);
 
     handle_idle_host_input(true, false, false, false, false, false);
-    CHECK(!g_engine.shutdown_selected); /* Reopen always selects Cancel. */
+    CHECK(!g_engine.system_exit_selected); /* Reopen always selects Cancel. */
     handle_idle_host_input(false, false, false, true, true, false);
-    CHECK(!g_engine.shutdown_confirmation && !g_engine.shutdown_test_reported);
+    CHECK(!g_engine.system_exit_confirmation && g_engine.is_running);
     handle_idle_host_input(true, false, false, false, false, false);
     handle_idle_host_input(false, false, false, true, false, false);
     handle_idle_host_input(false, false, false, false, true, false);
-    CHECK(g_engine.shutdown_test_reported && !g_engine.shutdown_confirmation);
-    CHECK(g_engine.is_running && !g_engine.cartridge_launch_requested);
+    CHECK(!g_engine.is_running && !g_engine.system_exit_confirmation);
+    CHECK(!g_engine.cartridge_launch_requested && !g_engine.cartridge_rescan_requested);
+    reset_host(true);
     handle_idle_host_input(true, false, false, false, false, false);
-    CHECK(!g_engine.shutdown_test_reported && !g_engine.shutdown_selected);
+    CHECK(g_engine.is_running && !g_engine.system_exit_selected);
     handle_idle_host_input(true, false, false, false, true, false);
-    CHECK(!g_engine.shutdown_confirmation && !g_engine.shutdown_test_reported);
+    CHECK(!g_engine.system_exit_confirmation && g_engine.is_running);
 
     /* Empty/direct-path idle hosts also have confirmation, without fake entries. */
     reset_host(true);
     handle_idle_host_input(true, false, false, false, false, false);
-    CHECK(g_engine.shutdown_confirmation);
+    CHECK(g_engine.system_exit_confirmation);
     handle_idle_host_input(false, true, false, false, false, false);
     g_engine.startup_cartridge_path = "game.vcart";
     handle_idle_host_input(false, false, false, false, true, false);
@@ -96,15 +97,15 @@ int main(void) {
     reset_host(true);
     g_engine.cart_loaded = true;
     handle_idle_host_input(true, false, false, false, true, false);
-    CHECK(!g_engine.shutdown_confirmation && !g_engine.cartridge_launch_requested);
+    CHECK(!g_engine.system_exit_confirmation && !g_engine.cartridge_launch_requested);
     g_engine.cart_loaded = false;
     g_engine.guru_active = true;
     handle_idle_host_input(true, true, false, false, true, false);
-    CHECK(!g_engine.shutdown_confirmation && g_engine.is_running);
+    CHECK(!g_engine.system_exit_confirmation && g_engine.is_running);
 
     reset_host(false);
     handle_idle_host_input(true, false, false, false, false, false);
-    CHECK(!g_engine.shutdown_confirmation);
+    CHECK(!g_engine.system_exit_confirmation);
     g_engine.cartridge_directory = "/tmp/carts";
     g_engine.cartridge_count = 2;
     handle_idle_host_input(false, false, false, true, false, false);

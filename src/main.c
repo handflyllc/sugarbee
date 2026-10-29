@@ -53,9 +53,8 @@ typedef struct {
     lua_State* L;
     bool is_running;
     bool console_mode;
-    bool shutdown_confirmation;
-    bool shutdown_selected;
-    bool shutdown_test_reported;
+    bool system_exit_confirmation;
+    bool system_exit_selected;
     bool paused;
     pause_menu_selection_t pause_selection;
     bool blocked_buttons[SB_MAX_PLAYERS][SB_BUTTON_COUNT];
@@ -666,7 +665,7 @@ static void draw_cartridge_list(void) {
     }
     sb_graphics_text(g_engine.graphics,
                      g_engine.console_mode
-                         ? "UP/DOWN: Select  A/J: Launch  X/U: Rescan  START: Shutdown test"
+                         ? "UP/DOWN: Select  A/J: Launch  X/U: Rescan  START: Exit to system"
                          : "UP/DOWN: Select  A/J: Launch  X/U: Rescan  B/K: Close",
                      80, 650,
                      255, 255, 255, 2);
@@ -677,30 +676,27 @@ static bool handle_idle_host_input(bool start, bool back, bool up, bool down,
                                    bool confirm, bool rescan) {
     if (g_engine.cart_loaded || g_engine.guru_active) return false;
 
-    if (g_engine.console_mode && g_engine.shutdown_confirmation) {
+    if (g_engine.console_mode && g_engine.system_exit_confirmation) {
         if (back || start) {
-            g_engine.shutdown_confirmation = false;
+            g_engine.system_exit_confirmation = false;
             return true;
         }
         if (confirm) {
-            if (g_engine.shutdown_selected) {
-                /* Test action only: no OS command, cleanup, or host exit. */
-                printf("[SugarBee] Shutdown test requested; no power-off performed.\n");
-                fflush(stdout);
-                g_engine.shutdown_test_reported = true;
+            if (g_engine.system_exit_selected) {
+                /* main_loop returns; main then performs normal engine cleanup. */
+                g_engine.is_running = false;
             }
-            g_engine.shutdown_confirmation = false;
+            g_engine.system_exit_confirmation = false;
             return true;
         }
-        if (up && !down) g_engine.shutdown_selected = false;
-        else if (down && !up) g_engine.shutdown_selected = true;
+        if (up && !down) g_engine.system_exit_selected = false;
+        else if (down && !up) g_engine.system_exit_selected = true;
         return false;
     }
 
     if (g_engine.console_mode && start) {
-        g_engine.shutdown_confirmation = true;
-        g_engine.shutdown_selected = false;
-        g_engine.shutdown_test_reported = false;
+        g_engine.system_exit_confirmation = true;
+        g_engine.system_exit_selected = false;
         return true; /* The opening press cannot confirm or move selection. */
     }
     if (back) {
@@ -722,17 +718,17 @@ static bool handle_idle_host_input(bool start, bool back, bool up, bool down,
     return false;
 }
 
-static void draw_shutdown_confirmation(void) {
+static void draw_system_exit_confirmation(void) {
     sb_graphics_rect(g_engine.graphics, 320, 190, 640, 320, 20, 20, 20, true);
-    sb_graphics_text(g_engine.graphics, "Shut down console?", 380, 220,
+    sb_graphics_text(g_engine.graphics, "Exit to system?", 380, 220,
                      255, 220, 80, 2);
-    sb_graphics_text(g_engine.graphics, "TEST ONLY - no power-off", 380, 260,
+    sb_graphics_text(g_engine.graphics, "Return to the system shell", 380, 260,
                      255, 220, 80, 2);
     sb_graphics_text(g_engine.graphics, "Cancel", 420, 325, 255, 255, 255, 2);
-    sb_graphics_text(g_engine.graphics, "Shut down (test)", 420, 370,
+    sb_graphics_text(g_engine.graphics, "Exit to system", 420, 370,
                      255, 255, 255, 2);
     sb_graphics_text(g_engine.graphics, ">", 380,
-                     g_engine.shutdown_selected ? 370 : 325, 255, 220, 80, 2);
+                     g_engine.system_exit_selected ? 370 : 325, 255, 220, 80, 2);
     sb_graphics_text(g_engine.graphics,
                      "UP/DOWN: Select  A/J: Confirm  B/K or START: Cancel",
                      360, 455, 200, 200, 200, 1);
@@ -833,7 +829,7 @@ void main_loop(void) {
 
                 bool pause_changed = false;
 
-                bool shutdown_dialog_changed = handle_idle_host_input(
+                bool system_exit_dialog_changed = handle_idle_host_input(
                     start_pressed, back_pressed, up_pressed, down_pressed,
                     confirm_pressed, rescan_pressed);
 
@@ -873,7 +869,7 @@ void main_loop(void) {
                         bool pressed = sb_input_pressed(g_engine.input, player, (sb_button_t)button);
 
                         if (g_engine.paused || pause_changed ||
-                            g_engine.shutdown_confirmation || shutdown_dialog_changed ||
+                            g_engine.system_exit_confirmation || system_exit_dialog_changed ||
                             g_engine.cartridge_launch_requested ||
                             g_engine.cartridge_rescan_requested) {
                             g_engine.blocked_buttons[player][button] = down || pressed;
@@ -960,7 +956,7 @@ void main_loop(void) {
 
             sb_graphics_text(g_engine.graphics,
                              g_engine.console_mode
-                                 ? "START / ENTER: Shutdown test"
+                                 ? "START / ENTER: Exit to system"
                                  : "B / K: Close SugarBee",
                              g_engine.console_mode ? 400 : 480, 430,
                              255, 255, 255, 2);
@@ -996,12 +992,8 @@ void main_loop(void) {
         }
 
         if (g_engine.console_mode && !g_engine.cart_loaded && !g_engine.guru_active) {
-            if (g_engine.shutdown_confirmation) {
-                draw_shutdown_confirmation();
-            } else if (g_engine.shutdown_test_reported) {
-                sb_graphics_text(g_engine.graphics,
-                                 "Shutdown test complete - no power-off", 80, 690,
-                                 255, 220, 80, 2);
+            if (g_engine.system_exit_confirmation) {
+                draw_system_exit_confirmation();
             }
         }
 

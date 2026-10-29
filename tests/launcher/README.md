@@ -100,19 +100,21 @@ headers, and packaging. With Lua 5.4 installed, eight additional cartridge
 smoke tests run against a stand-in API. These do not exercise the real host
 launcher; the launcher interaction checks above remain manual.
 
-## Console-only shutdown confirmation (test action)
+## Console-only Exit to system confirmation
 
 Run `./build/sugarbee --console` and repeat with the fixture directory using
 `./build/sugarbee --console --cartridges DIRECTORY`.
 
-- Idle B/K does not close SugarBee; Start/Enter opens the TEST ONLY panel.
+- Idle B/K does not close SugarBee; Start/Enter opens the Exit to system panel.
 - Cancel starts selected every time. A/J cancels immediately on that selection.
 - Up/Down selects within the panel without moving the cartridge selection.
-- B/K and Start/Enter each cancel, including after selecting Shut down (test).
+- B/K and Start/Enter each cancel, including after selecting Exit to system.
 - Holding Start, directions, or A does not repeatedly act. Opening with Start
   and A together does not confirm; cancellation with B and A together cancels.
-- A/J on Shut down (test) prints exactly one test request, displays the
-  no-power-off notice, and returns to the idle screen. The OS and host keep running.
+- A/J on Exit to system closes SugarBee and returns to the launching TTY or
+  terminal with exit status zero. The OS keeps running; no power-off occurs.
+- Exit the normal shutdown-test cartridge to the launcher, then Exit to system:
+  its shutdown callback must not run a second time.
 - X/U cannot rescan while confirmation is open; A/J cannot launch a cartridge.
 - Both controllers and keyboard controls work. Cancel preserves list selection.
 - Empty lists, directory errors, and direct-path idle hosts can open the panel.
