@@ -19,7 +19,10 @@ and its return values are ignored.
 The callback is skipped if cartridge initialization failed or Guru
 Meditation is active. An absent or non-function `shutdown` value is
 ignored. Errors raised by the callback are reported to the console;
-native cleanup still continues.
+native cleanup still continues. Shutdown has its own fresh provisional allowance
+of 1,000,000 Lua instructions. Exceeding it reports a console error without
+activating Guru, even if the callback catches the limit error and returns.
+The callback is not retried; native cleanup follows the existing exit path.
 
 Closing the window ends the cartridge session and closes SugarBee. Selecting
 Exit Game instead ends the cartridge session and returns to an idle host.
@@ -41,8 +44,22 @@ can then be launched in a fresh Lua state. Discovery reads the header and
 `main.lua` but neither compiles nor executes Lua; eligibility is not a guarantee
 that initialization or gameplay succeeds.
 
-Callback execution has no time limit, so a callback that never returns can
-prevent the host from processing menu input or completing cartridge cleanup.
+Top-level `main.lua` execution and `init()` each receive a fresh provisional
+allowance of 10,000,000 Lua instructions. File reading and compilation are not
+covered. Startup limit failures skip shutdown and use normal Guru recovery.
+
+Each main-thread `update()` and `draw()` call has its own fresh provisional
+allowance of 1,000,000 Lua instructions. Nested Lua functions share the calling
+stage's allowance. Exceeding it shows an execution-limit Guru; B/K returns to the host
+and the failed session skips shutdown. The hook is cleared after each protected call returns.
+A caught limit error that returns to the host still fails the session.
+
+These limits catch accidental Lua loops, not deliberate bypasses.
+They do not cover finalizers during Lua state closure or coroutine execution, prevent
+Lua code from replacing hooks, or guarantee escape from repeatedly caught
+errors. Native calls cannot be interrupted by this hook. There is no wall-clock
+limit; uncovered execution can still prevent menu input or cleanup.
+See [execution-limit checks](../../tests/execution-limit/README.md).
 
 ```lua
 local x = 100

@@ -2,6 +2,17 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added a provisional per-update Lua instruction budget for accidental runaway
+  loops, execution-limit diagnostics, and a manual regression cartridge.
+  Extended coverage to top-level main.lua execution and init, each with a
+  separate larger startup budget and stage-specific diagnostics. Each draw now
+  also receives a fresh instruction budget, with runaway and normal-draw checks.
+  Shutdown also has a bounded allowance; limit failures report to the console
+  and continue native cleanup without Guru or retry. Compilation, finalizers
+  during state closure, native calls, and deliberate bypasses remain outside
+  this checkpoint.
+  Added Pacman Demo to the launcher fixtures (four eligible, two rejected).
+
 - Check the standalone Lua interpreter version during CMake configuration.
   Cartridge smoke tests require Lua 5.4; missing, incompatible, or unusable
   interpreters produce a diagnostic and disable only those optional tests.

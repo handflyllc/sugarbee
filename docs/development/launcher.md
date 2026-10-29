@@ -64,8 +64,10 @@ of its startup cartridge. Without a startup path or directory, A/J does nothing.
 Guru Meditation remains visible until B/K cleans up the failed session and
 returns to the list or idle host. Failed sessions skip the Lua shutdown callback.
 Holding the recovery button does not close the host; release and press again to
-close it. The original diagnostic remains in the console. Recovery cannot
-interrupt a Lua callback that never returns.
+close it. The original diagnostic remains in the console. Instruction limits
+catch ordinary runaway main-thread Lua execution in the supported lifecycle
+stages. Recovery still cannot interrupt blocked native calls or execution
+outside those limits; see [lifecycle limits](../api/timing.md).
 
 X/U rescans the directory, refreshes counts, and selects the first entry without launching it. Rescan works with empty lists and after directory errors. Holding the button does not repeat the scan.
 

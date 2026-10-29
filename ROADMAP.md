@@ -1,0 +1,121 @@
+# Project SugarBee — Preliminary Roadmap
+
+Last reviewed: 2026-10-28.
+
+This is a preliminary, revisable plan, not a release schedule or a promise of
+features. Review it at each major checkpoint. Choose the next small, testable
+step together; new ideas do not automatically become requirements.
+
+## Working foundation
+
+SugarBee currently provides cartridge loading and bounded asset validation,
+2D graphics, controller and keyboard input, fixed-step timing, Lua lifecycle
+callbacks, a host pause/exit menu, and cartridge discovery and launching.
+Invaders Lab, Pong Lab, and the Pac-Man demo help exercise the engine.
+The launcher has passed desktop and Raspberry Pi checks.
+
+Designed, implemented, and validated are separate states. In particular, audio
+has an agreed initial design but is not implemented. Execution limits are
+implemented and validated on desktop and Pi for the documented accidental-loop
+cases. The budgets remain provisional, with explicit coverage limitations.
+
+## Preliminary priority order
+
+### 1. Lua execution-limit validation — completed
+
+- Top-level main.lua, init, update, draw, and shutdown budgets were validated.
+- Desktop automated and real-host checks passed. The user confirmed all Pi
+  execution-limit cases on commit `873a8b6`, including shutdown and recovery,
+  and confirmed Pong and Pac-Man play after recovery.
+- The earlier Pi shutdown hang was reproduced on an older main checkout;
+  shutdown_runaway passed after switching to the execution-limit branch.
+
+These limits address accidental runaway Lua loops; they are not a complete
+sandbox. Retest the relevant cases when budgets or execution paths change.
+See [lifecycle documentation](docs/api/timing.md) and
+[execution-limit checks](tests/execution-limit/README.md).
+
+### 2. Establish a bounded console reliability baseline — next to scope
+
+- Agree on essential failure recovery, useful diagnostics, and a clean OS
+  shutdown path on the current operating-system foundation.
+- Review remaining Lua restrictions and execution gaps, including coroutines,
+  state-closure finalizers, and native calls; decide what to address now and
+  what to document as outside the supported protection.
+- Define observable acceptance checks before expanding implementation.
+
+Done when: the agreed console startup, recovery, game-exit, and OS-shutdown
+checks pass, with remaining limitations documented. Exiting SugarBee currently
+returns to the host environment; it does not power off the operating system.
+
+Keep this phase finite. Safely executing deliberately hostile cartridges would
+require a separate scope decision, not an assumed extension of loop protection.
+
+### 3. Implement minimal save support
+
+- Define a small Lua save API, ownership by persistent cartridge UUID, and
+  reasonable storage limits.
+- Use transactional replacement so a failed write preserves the previous save.
+- Exercise normal saves, failed writes, and recovery with a small lab.
+- Define and test the intended durability guarantees, including what happens
+  during interrupted writes or power loss, before claiming corruption protection.
+
+Done when: the minimal API and failure behavior are documented and tested on
+desktop and Pi, including the previous-save preservation requirement.
+
+### 4. Begin audio implementation
+
+Audio is the next major creative milestone after the bounded reliability and
+minimal-save phases. A custom console OS image is not a prerequisite.
+
+- Use the [settled initial audio design](docs/architecture/audio-design.md) as
+  the starting point: WAV playback and nine explicitly controlled,
+  SID-inspired synth voices.
+- Choose the first implementation slice at that checkpoint, then develop it
+  through small sound-focused labs and Pi testing.
+- Keep synthesis expressive while keeping music authoring outside the engine.
+  SID file import and a DAW are not goals.
+
+Done when: each selected audio slice meets its agreed behavior and resource
+constraints with automated checks where appropriate and listening tests.
+Do not treat the entire audio design as a single implementation step.
+
+## Labs alongside engine work
+
+Continue small labs to reinforce concepts and expose real engine needs. Select
+each independently, preferably to exercise the current engine milestone.
+A lab is a fundamentals exercise, not a commitment to reproduce a full game.
+
+Possible later exercises include Snake, vertical and horizontal scrolling, and
+a small four-panel world with movement in any direction. These are options,
+not scheduled projects. Needs discovered in a lab become discussion points;
+they do not automatically expand engine scope.
+
+## Later deployment evaluation
+
+Debian/Raspberry Pi OS remains the working foundation. When deployment becomes
+the active milestone, define requirements for boot behavior, graphics, input,
+audio, storage, updates, recovery, and maintenance before choosing an OS or
+image-building approach. No alternative distribution is selected or scheduled.
+
+Repeatable development and console images are later work. They must not become
+an open-ended prerequisite for starting audio on the existing foundation.
+
+## Ideas and deferred discussions — not scheduled
+
+- Splash artwork, cartridge icons, and directory configuration UI/files.
+- Persistent diagnostic logging; whether it belongs in the reliability baseline
+  should be decided when that phase is scoped.
+- Additional drawing primitives and framerate diagnostics.
+- The Invaders firing-rate Easter egg; its exact behavior remains undecided.
+- External compositions targeting SugarBee, MIDI integration, and evaluating
+  twelve or more synth voices. Consult the audio design before revisiting these.
+
+## At each major checkpoint
+
+1. Record what is implemented, tested, merged, and still outstanding.
+2. Review the next priority and give it a small scope and acceptance criteria.
+3. Update this roadmap when decisions change; keep detailed specifications and
+   test procedures in their existing documents rather than duplicating them here.
+4. Keep exploratory ideas separate from agreed work, and use the scope alarm
+   before a small milestone grows into a larger project.

@@ -97,7 +97,11 @@ and selection. Direct-path launch and relaunch remain supported.
 Failed launches and runtime Lua errors display Guru Meditation. B/K consumes
 the recovery input, ends the failed session while Guru remains active (skipping
 Lua shutdown), clears the Guru flag, and resets timing before returning to the
-host. This does not provide recovery from a Lua callback that never returns.
+host. Main-thread Lua instruction budgets now catch ordinary runaway loops in
+main.lua execution, init, update, draw, and shutdown. Shutdown limit failures
+report to the console and continue cleanup without Guru. These limits do not
+cover blocked native calls, state-closure finalizers, or deliberate bypasses;
+see [execution limits and lifecycle](../api/timing.md).
 
 X/U requests a rescan while the launcher is idle. The host performs it after
 the input step, resets selection to the first sorted entry, and resets timing.
