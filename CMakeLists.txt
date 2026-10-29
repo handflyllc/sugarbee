@@ -22,6 +22,17 @@ add_library(sugarbee_timing STATIC src/sb_timing.c)
 target_include_directories(sugarbee_timing PUBLIC "${PROJECT_SOURCE_DIR}/include")
 sugarbee_warnings(sugarbee_timing)
 
+# Standalone sample-timed envelope; independent of SDL, Lua, and oscillators.
+add_library(sugarbee_envelope STATIC src/sb_audio_envelope.c)
+sugarbee_warnings(sugarbee_envelope)
+if(BUILD_TESTING)
+    add_executable(test_audio_envelope tests/test_audio_envelope.c)
+    target_link_libraries(test_audio_envelope PRIVATE sugarbee_envelope)
+    sugarbee_warnings(test_audio_envelope)
+    add_test(NAME audio_envelope COMMAND test_audio_envelope)
+    set_tests_properties(audio_envelope PROPERTIES TIMEOUT 5)
+endif()
+
 add_library(sugarbee_vcart STATIC src/vcart.c)
 target_include_directories(sugarbee_vcart PUBLIC "${PROJECT_SOURCE_DIR}/include")
 sugarbee_warnings(sugarbee_vcart)

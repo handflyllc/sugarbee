@@ -393,3 +393,19 @@ clean triangle and original sine tones, normal gameplay checks, and Exit to
 system status 0. This validates the bounded native prototype on desktop and Pi,
 not full-range or nine-voice synthesis. See
 [prototype tests and listening instructions](../../tests/audio-triangle.md).
+
+## Standalone ADSR checkpoint
+
+A pure-C envelope component now captures validated per-note settings and advances
+linear attack, decay, sustain, and release at 48 kHz. Durations accept 0–10 seconds
+and sustain accepts 0–1; nonfinite values reject the complete request unchanged.
+Positive durations round to the nearest frame (half upward, minimum one), while
+zero stages transition immediately. Note-off releases from the current level;
+repeated note-off does not restart release. Sustain has no duration limit.
+
+The component starts only when idle; active-note retrigger behavior remains
+undecided for the next checkpoint. It is not yet connected to the triangle voice
+or SDL callback. Reset is initialization/cleanup, not the future audible stop
+fade. See the [timing contract and edge-case tests](../../tests/audio-envelope.md)
+for exact boundary semantics. Desktop tests pass; integration/listening and Pi
+validation remain pending. Existing tone behavior is unchanged.

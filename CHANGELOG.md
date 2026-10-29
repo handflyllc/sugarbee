@@ -2,6 +2,10 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added a standalone C linear ADSR envelope with per-note settings capture,
+  immediate zero-duration transitions, and automated timing/edge-case tests.
+  Triangle integration, retrigger behavior, and Lua controls remain deferred.
+
 - Validated the native triangle prototype on Pi commit `1664043`: all 44 tests,
   triangle/sine listening checks, gameplay checks, and Exit to system status 0
   passed. Full synthesis and Lua controls remain deferred.
