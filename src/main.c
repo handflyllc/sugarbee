@@ -522,6 +522,28 @@ void call_lua_global_function(const char* func_name, bool with_dt, double dt) {
     }
 }
 
+/* Open only supported cartridge libraries; leave the Lua stack unchanged. */
+static void open_cartridge_libraries(lua_State *L) {
+    static const luaL_Reg libraries[] = {
+        {LUA_GNAME, luaopen_base},
+        {LUA_TABLIBNAME, luaopen_table},
+        {LUA_STRLIBNAME, luaopen_string},
+        {LUA_MATHLIBNAME, luaopen_math},
+        {LUA_UTF8LIBNAME, luaopen_utf8},
+        {NULL, NULL}
+    };
+    for (const luaL_Reg *lib = libraries; lib->name; ++lib) {
+        luaL_requiref(L, lib->name, lib->func, 1);
+        lua_pop(L, 1);
+    }
+
+    /* The base library also exposes filesystem loading helpers. */
+    lua_pushnil(L);
+    lua_setglobal(L, "dofile");
+    lua_pushnil(L);
+    lua_setglobal(L, "loadfile");
+}
+
 static bool start_cartridge(const char *filepath) {
     /* A new session must not overwrite an existing Lua state. */
     if (!filepath || g_engine.L) return false;
@@ -536,7 +558,7 @@ static bool start_cartridge(const char *filepath) {
         return false;
     }
 
-    luaL_openlibs(g_engine.L);
+    open_cartridge_libraries(g_engine.L);
     register_sugarbee_api(g_engine.L);
 
     if (!load_virtual_cartridge(filepath)) {

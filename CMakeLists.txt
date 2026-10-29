@@ -80,6 +80,11 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     sugarbee_warnings(test_console_host)
     add_test(NAME console_host_controls COMMAND test_console_host)
 
+    add_executable(test_lua_libraries tests/test_lua_libraries.c)
+    target_link_libraries(test_lua_libraries PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    sugarbee_warnings(test_lua_libraries)
+    add_test(NAME lua_supported_libraries COMMAND test_lua_libraries)
+
     add_executable(test_font tests/test_font.c)
     target_link_libraries(test_font PRIVATE sugarbee_graphics PkgConfig::SDL2)
     sugarbee_warnings(test_font)

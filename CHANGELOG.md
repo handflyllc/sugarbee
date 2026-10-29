@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Restricted cartridge Lua libraries to base, table, string, math, and UTF-8.
+  Removed filesystem loading helpers and excluded coroutine, debug, io, os,
+  and package access. Added a host-library policy regression test. This is
+  a supported API restriction, not a complete sandbox.
+
 - Added an explicit leading `--console` flag and idle-host Exit to system
   confirmation. Cancel is the default; confirming exit runs normal cleanup
   and returns to the launching terminal without powering off the OS. Replaces
