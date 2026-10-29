@@ -14,7 +14,7 @@ Quote paths containing spaces. Invalid command forms print usage and exit
 before opening a window. No arguments opens an idle host, not a Guru error.
 No default cartridge directory or configuration file is implemented.
 
-## Save-directory selection (Lua integration pending)
+## Save-directory selection
 
 The accepted command forms are:
 
@@ -45,9 +45,9 @@ Startup reports `Save directory: ... (selection only)` on success. With no
 usable absolute default (or another selection failure), it reports
 `Save storage unavailable: ...` and continues normal host startup without Guru.
 Selection does not create, prepare, check writability, or read/write save storage.
-Internal C host operations now connect this selection to the storage layer when
-explicitly invoked. No Lua bindings or automatic callers exist yet, so ordinary
-startup/gameplay still performs no save I/O. A selected path can be rejected at
+The [Lua save/load API](../api/saves.md) connects this selection to storage only
+when a cartridge explicitly calls it. There is no automatic saving. A selected
+path can be rejected at
 operation time by stricter preparation limits or filesystem errors.
 Configuration-file lookup and automatic migration are not implemented.
 

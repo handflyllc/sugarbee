@@ -99,7 +99,7 @@ void render_guru_meditation(void);
 static void end_cartridge(void);
 static void scan_cartridge_directory(const char *directory);
 
-/* Internal host operations, not registered in the cartridge Lua API yet.
+/* Internal host operations shared by the Lua bindings and host tests.
    cart_loaded is true before init and stays true during eligible shutdown,
    whose cart_initialized flag is deliberately consumed before calling Lua. */
 static bool host_save_session_available(void) {
@@ -433,6 +433,62 @@ static int l_sugarbee_btnp(lua_State* L) {
     return 1;
 }
 
+/* Push exactly two results: nil and a stable storage failure code. */
+static int push_save_failure(lua_State *L, sb_save_result_t result) {
+    const char *code = "io_error";
+    if (result == SB_SAVE_NOT_FOUND) code = "not_found";
+    else if (result == SB_SAVE_TOO_LARGE) code = "too_large";
+    else if (result == SB_SAVE_DURABILITY_UNCERTAIN) code = "durability_uncertain";
+    lua_pushnil(L);
+    lua_pushstring(L, code);
+    return 2;
+}
+
+static int l_sugarbee_save(lua_State *L) {
+    if (lua_gettop(L) != 1) return luaL_error(L, "save expects exactly one string");
+    /* luaL_checklstring alone would also accept/coerce numbers. */
+    luaL_checktype(L, 1, LUA_TSTRING);
+    size_t length;
+    const char *data = lua_tolstring(L, 1, &length);
+    sb_save_result_t result = host_write_save((const uint8_t *)data, length);
+    if (result != SB_SAVE_OK) return push_save_failure(L, result);
+    lua_pushboolean(L, true);
+    lua_pushnil(L);
+    return 2;
+}
+
+/* Private protected-call helper: [borrowed bytes, length] -> [Lua string].
+   Never exposed to cartridge code. The caller retains ownership of bytes. */
+static int copy_loaded_save(lua_State *L) {
+    const char *data = lua_touserdata(L, 1);
+    size_t length = (size_t)lua_tointeger(L, 2);
+    lua_pushlstring(L, data, length);
+    return 1;
+}
+
+static int l_sugarbee_load_save(lua_State *L) {
+    if (lua_gettop(L) != 0) return luaL_error(L, "load_save expects no arguments");
+    /* Reserve stack and push the helper before acquiring native memory. */
+    luaL_checkstack(L, 3, "loading save");
+    lua_pushcfunction(L, copy_loaded_save);
+    uint8_t *data = NULL;
+    size_t length = 0;
+    sb_save_result_t result = host_load_save(&data, &length);
+    if (result != SB_SAVE_OK) {
+        lua_pop(L, 1);
+        return push_save_failure(L, result);
+    }
+    /* [helper, bytes, length] -> [string or error]. No allocating Lua pushes
+       occur between acquiring data and entering the protected call. */
+    lua_pushlightuserdata(L, data);
+    lua_pushinteger(L, (lua_Integer)length);
+    int status = lua_pcall(L, 2, 1, 0);
+    free(data);
+    if (status != LUA_OK) return lua_error(L);
+    lua_pushnil(L);
+    return 2;
+}
+
 void register_sugarbee_api(lua_State* L) {
     lua_newtable(L);
     lua_pushcfunction(L, l_sugarbee_cls);   lua_setfield(L, -2, "cls");
@@ -445,6 +501,8 @@ void register_sugarbee_api(lua_State* L) {
     lua_pushcfunction(L, l_sugarbee_texture_free); lua_setfield(L, -2, "texture_free");
     lua_pushcfunction(L, l_sugarbee_btn);   lua_setfield(L, -2, "btn");
     lua_pushcfunction(L, l_sugarbee_btnp);  lua_setfield(L, -2, "btnp");
+    lua_pushcfunction(L, l_sugarbee_save); lua_setfield(L, -2, "save");
+    lua_pushcfunction(L, l_sugarbee_load_save); lua_setfield(L, -2, "load_save");
     lua_setglobal(L, "sugarbee");
 }
 

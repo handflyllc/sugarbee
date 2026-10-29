@@ -1,5 +1,5 @@
-/* Private host operations tested through real lifecycle dispatch; the callbacks
-   below are C test fixtures, not production Lua save bindings. */
+/* Host storage and real Lua bindings tested through lifecycle dispatch.
+   C fixtures below also verify the internal operation contract directly. */
 #define main sugarbee_host_main
 #include "../src/main.c"
 #undef main
@@ -101,6 +101,25 @@ static bool remove_tree(const char *path) {
     return closedir(dir) == 0 && ok;
 }
 
+static bool run_lua(const char *source) {
+    int top = lua_gettop(g_engine.L);
+    if (luaL_dostring(g_engine.L, source) != LUA_OK) {
+        fprintf(stderr, "Lua save test: %s\n", lua_tostring(g_engine.L, -1));
+        lua_settop(g_engine.L, top);
+        return false;
+    }
+    return lua_gettop(g_engine.L) == top;
+}
+
+/* Fail long-string allocations (including Lua's retry after collection). */
+static void *limited_allocator(void *ud, void *ptr, size_t old_size, size_t new_size) {
+    (void)old_size;
+    bool *deny = ud;
+    if (new_size == 0) { free(ptr); return NULL; }
+    if (*deny && new_size >= SB_SAVE_MAX_BYTES) return NULL;
+    return realloc(ptr, new_size);
+}
+
 int main(void) {
     char root[] = "/tmp/sugarbee-host-save-XXXXXX";
     CHECK(mkdtemp(root));
@@ -111,10 +130,10 @@ int main(void) {
     CHECK(!g_engine.guru_active && mkdirs == 0 && access(selected, F_OK) != 0);
 
     CHECK(new_session(1));
-    /* No production Lua save API is exposed yet. */
+    /* Both bindings are registered on the real cartridge API. */
     lua_getglobal(g_engine.L, "sugarbee");
-    lua_getfield(g_engine.L, -1, "save"); CHECK(lua_isnil(g_engine.L, -1)); lua_pop(g_engine.L, 1);
-    lua_getfield(g_engine.L, -1, "load_save"); CHECK(lua_isnil(g_engine.L, -1)); lua_pop(g_engine.L, 2);
+    lua_getfield(g_engine.L, -1, "save"); CHECK(lua_isfunction(g_engine.L, -1)); lua_pop(g_engine.L, 1);
+    lua_getfield(g_engine.L, -1, "load_save"); CHECK(lua_isfunction(g_engine.L, -1)); lua_pop(g_engine.L, 2);
     CHECK(load_failure(SB_SAVE_NOT_FOUND));
     CHECK(mkdirs == 0 && writes == 0 && access(selected, F_OK) != 0);
     g_engine.cart_loaded = false; /* top-level script is not an active loaded session */
@@ -186,6 +205,88 @@ int main(void) {
     CHECK(new_session(1)); CHECK(matches(updated, sizeof(updated)));
     end_cartridge();
     CHECK(new_session(2)); CHECK(matches(initial, sizeof(initial)));
+    end_cartridge();
+    /* Real Lua bindings: exact result counts, binary data, errors and lifecycle. */
+    CHECK(new_session(3));
+    char missing[512]; snprintf(missing, sizeof(missing), "%s/not-created/saves", root);
+    CHECK(resolve_save_directory(missing, NULL, NULL, NULL));
+    unsigned before_missing = mkdirs;
+    CHECK(run_lua("local r = table.pack(sugarbee.load_save()); "
+                  "assert(r.n == 2 and r[1] == nil and r[2] == 'not_found')"));
+    CHECK(mkdirs == before_missing && access(missing, F_OK) != 0);
+    CHECK(!resolve_save_directory(NULL, NULL, NULL, NULL));
+    CHECK(run_lua("local a, b = sugarbee.load_save(); assert(a == nil and b == 'io_error'); "
+                  "a, b = sugarbee.save('x'); assert(a == nil and b == 'io_error')"));
+    CHECK(resolve_save_directory(selected, NULL, NULL, NULL));
+    CHECK(run_lua(
+        "function result(a, b, ...) "
+        " local r = table.pack(...); assert(r.n == 2 and r[1] == a and r[2] == b) end "
+        "result(nil, 'not_found', sugarbee.load_save()) "
+        "for _, v in ipairs({123, false, {}, function() end}) do "
+        " assert(not pcall(sugarbee.save, v)) end "
+        "assert(not pcall(sugarbee.save)) "
+        "assert(not pcall(sugarbee.save, nil)) "
+        "assert(not pcall(sugarbee.save, 'x', 'extra')) "
+        "assert(not pcall(sugarbee.load_save, 'extra')) "
+        "result(true, nil, sugarbee.save('')) "
+        "result('', nil, sugarbee.load_save()) "
+        "binary = string.char(0, 255, 1, 0) "
+        "result(true, nil, sugarbee.save(binary)) "
+        "result(binary, nil, sugarbee.load_save()) "
+        "large = string.rep('b', 65536) "
+        "result(true, nil, sugarbee.save(large)) "
+        "result(large, nil, sugarbee.load_save()) "
+        "result(nil, 'too_large', sugarbee.save(large .. 'x')) "
+        "result(large, nil, sugarbee.load_save())"));
+    char uuid[37], save_file[1024];
+    vcart_uuid_to_string(g_engine.current_cart.cart_uuid, uuid);
+    snprintf(save_file, sizeof(save_file), "%s/%s.sav", selected, uuid);
+    CHECK(truncate(save_file, SB_SAVE_MAX_BYTES + 1u) == 0);
+    CHECK(run_lua("result(nil, 'too_large', sugarbee.load_save()); "
+                  "result(true, nil, sugarbee.save(large))"));
+    fail_write = true;
+    CHECK(run_lua("result(nil, 'io_error', sugarbee.save('replacement'))"));
+    fail_write = false;
+    CHECK(run_lua("result(large, nil, sugarbee.load_save())"));
+    replaced = false; fail_final_sync = true;
+    CHECK(run_lua("result(nil, 'durability_uncertain', sugarbee.save('visible'))"));
+    fail_final_sync = false;
+    CHECK(run_lua("result('visible', nil, sugarbee.load_save())"));
+    g_engine.cart_loaded = false;
+    CHECK(run_lua("result(nil, 'io_error', sugarbee.load_save()) "
+                  "result(nil, 'io_error', sugarbee.save('top level'))"));
+    g_engine.cart_loaded = true;
+    CHECK(run_lua(
+        "function init() result(true, nil, sugarbee.save('init')); "
+        " result('init', nil, sugarbee.load_save()) end "
+        "function update(dt) result(true, nil, sugarbee.save('update')) end "
+        "function shutdown() result('update', nil, sugarbee.load_save()); "
+        " result(true, nil, sugarbee.save('shutdown')) end"));
+    call_lua_global_function("init", false, 0);
+    CHECK(!g_engine.guru_active);
+    g_engine.cart_initialized = true;
+    call_lua_global_function("update", true, 1.0/60.0);
+    CHECK(!g_engine.guru_active);
+    end_cartridge();
+    CHECK(new_session(3));
+    CHECK(run_lua("assert(sugarbee.load_save() == 'shutdown')"));
+
+    /* Exercise the protected copy's memory-error path, then recover normally. */
+    uint8_t full[SB_SAVE_MAX_BYTES]; memset(full, 'm', sizeof(full));
+    CHECK(host_write_save(full, sizeof(full)) == SB_SAVE_OK);
+    lua_close(g_engine.L);
+    bool deny_allocation = false;
+    g_engine.L = lua_newstate(limited_allocator, &deny_allocation);
+    CHECK(g_engine.L);
+    open_cartridge_libraries(g_engine.L); register_sugarbee_api(g_engine.L);
+    lua_getglobal(g_engine.L, "sugarbee");
+    lua_getfield(g_engine.L, -1, "load_save"); lua_remove(g_engine.L, -2);
+    deny_allocation = true;
+    CHECK(lua_pcall(g_engine.L, 0, 2, 0) == LUA_ERRMEM);
+    deny_allocation = false; lua_pop(g_engine.L, 1);
+    CHECK(run_lua("local data, code = sugarbee.load_save(); "
+                  "assert(#data == 65536 and code == nil)"));
+    CHECK(!g_engine.guru_active);
     end_cartridge();
     CHECK(remove_tree(root) && rmdir(root) == 0);
     puts("Internal host save/load lifecycle checks passed");

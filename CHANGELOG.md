@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added `sugarbee.save(string)` and `sugarbee.load_save()` with exact two-value
+  results, strict argument validation, and binary-safe 64 KiB storage. Added
+  Lua API/lifecycle/failure tests, including allocation-error recovery, and an
+  API reference. Interactive save lab and Pi validation remain pending.
+
 - Connected internal host load/save calls to the selected directory and active
   cartridge UUID. Access includes init, gameplay, and eligible shutdown; idle
   and failed sessions are denied. Added lifecycle, UUID isolation, and failure

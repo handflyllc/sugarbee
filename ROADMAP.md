@@ -84,8 +84,10 @@ and a C prepare-and-write coordinator are implemented with failure tests.
 Host save-directory selection is implemented without accessing storage, and a
 read-only adapter resolves selected paths for root-anchored preparation.
 Internal host load/save calls now connect active-session identity and the
-selected directory to storage without exposing Lua bindings or automatic saving.
-Interruption/durability validation, the Lua API, and Pi validation remain pending.
+selected directory to storage. Strict string-only Lua save/load bindings and
+their automated tests/API documentation are implemented; no automatic saving.
+The interactive save lab, interruption/durability validation, and Pi validation
+remain pending.
 
 ### 4. Begin audio implementation
 

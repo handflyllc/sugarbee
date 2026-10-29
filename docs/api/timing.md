@@ -187,3 +187,11 @@ existing gamepad/keyboard behavior. The original no-argument `update()` Lua
 callback is compatible with `update(dt)` calls.
 
 This timing API is not yet a stable public SugarBee ABI.
+
+## Explicit saves
+
+[Save/load calls](saves.md) are available in `init()`, gameplay callbacks, and
+eligible `shutdown()`, after the cartridge has loaded. They are synchronous;
+use deliberate checkpoints rather than saving every frame. Top-level calls
+return `io_error`, and failed-session cleanup does not run `shutdown()` or save
+automatically.

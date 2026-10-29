@@ -1,13 +1,11 @@
 # SugarBee saves — settled initial design
 
 Status: initial API, storage policy, and durability contract agreed on 2026-10-29.
-The Lua API is not implemented. Internal bounded C reading, synchronized
-replacement, one-level and bounded nested directory preparation, and a C
-prepare-and-write coordinator are implemented. Host directory selection is
-implemented separately without storage access. A read-only C path adapter is
-also implemented, and internal host load/save operations now use it. Lua
-bindings and automatic saving are not implemented. This document records the accepted design,
-not an available Lua API reference.
+The bounded C storage layer, host selection and path adapter, internal host
+operations, and Lua bindings are implemented with desktop regression tests.
+See the [Lua save API](../api/saves.md) for the available interface. Automatic
+saving is not implemented. Interactive lab, Pi, and interruption/durability
+validation remain pending.
 
 ## Scope and ownership
 
@@ -70,7 +68,7 @@ no directory or filename selection from Lua.
 
 An inaccessible selected location must produce a failure, not a silent fallback
 to a different directory. Cartridge media may remain read-only while saves use
-a separate writable location. See [launcher selection rules](../development/launcher.md#save-directory-selection-lua-integration-pending)
+a separate writable location. See [launcher selection rules](../development/launcher.md#save-directory-selection)
 for CLI ordering, relative overrides, and unavailable-default behavior.
 
 ## Replacement and durability contract
@@ -232,8 +230,8 @@ ctest --test-dir build -R '^save_(reader|writer)$' --output-on-failure
 
 The writer case has a 15-second external test timeout; storage I/O itself has
 no runtime wall-clock bound. Nested preparation and its separate coordinator
-are described below. Lua integration and Pi validation remain pending; internal host operations are
-described in the seventh checkpoint below.
+are described below. Host operations and Lua bindings are described in the
+seventh and eighth checkpoints. Pi validation remains pending.
 
 ## Third storage checkpoint: one-level directory preparation
 
@@ -278,8 +276,8 @@ ctest --test-dir build -R '^save_(reader|writer|directory)$' --output-on-failure
 ```
 
 These are desktop regression checks, not power-loss validation. The next
-checkpoint below composes this operation for nested paths. Host/Lua integration
-and Pi validation are pending.
+checkpoint below composes this operation for nested paths; later checkpoints
+connect host operations and Lua bindings. Pi validation remains pending.
 
 ## Fourth storage checkpoint: nested preparation and C coordinator
 
@@ -393,7 +391,8 @@ that ancestor may be visible from an earlier creation whose synchronization
 failed. Retrying the entire root-anchored path synchronizes existing ancestors
 again. Resolution alone is neither preparation nor proof of durability. The
 returned spelling is not an open directory handle, and concurrent path changes
-remain unsupported. Internal host load/save wiring is described below; Lua integration is pending.
+remain unsupported. Internal host load/save wiring and Lua integration are
+described in the following checkpoints.
 
 The isolated `save_location` CTest case covers existing symlinks, symlink-plus-
 parent semantics, missing suffixes, ambiguous dot components, unavailable or
@@ -414,7 +413,7 @@ ctest --test-dir build -R '^(save_(reader|writer|directory|path|location)|host_s
 
 `host_load_save` and `host_write_save` connect host state to the storage layer.
 They derive both location and UUID from the host; callers supply no alternate
-identity or path. They are internal C operations, not registered Lua functions.
+identity or path. They are internal C operations used by the Lua bindings.
 Startup remains selection-only, and nothing automatically requests a save.
 
 Access requires a loaded cartridge, a live Lua state, no active Guru, and no
@@ -446,11 +445,29 @@ Checks cover missing-load non-creation, binary and empty round-trips, UUID
 isolation and return to prior identity, unavailable selection, invalid paths,
 oversize rejection, and idle/failed-session denial. Injected preparation and
 write errors preserve old data; a post-replacement directory-sync failure
-reaches the host as uncertain durability with the new data visible. Tests also
-confirm no production Lua save bindings are registered. CTest enforces a
+reaches the host as uncertain durability with the new data visible. The subsequent binding checkpoint extends this same test with real Lua calls. CTest enforces a
 15-second timeout. These are desktop headless checks, not Pi or power-loss tests.
 
 Run with `ctest --test-dir build -R '^host_save_storage$' --output-on-failure`.
-Lua result translation, user-facing save labs, and physical validation remain
-future checkpoints. `shutdown()` remains an optional extra save opportunity,
+User-facing save labs and physical validation remain future checkpoints. `shutdown()` remains an optional extra save opportunity,
 not a reliable substitute for deliberate gameplay checkpoints.
+
+## Eighth checkpoint: Lua save/load bindings
+
+`sugarbee.save` accepts exactly one string, without numeric coercion;
+`sugarbee.load_save` takes no arguments. Both return exactly two values on
+ordinary completion, translating the host results as documented in the
+[API reference](../api/saves.md). Wrong types/counts raise Lua errors. No
+serializer, automatic save, or interactive lab is added.
+
+Loading copies the caller-owned C bytes to a Lua string inside a protected call,
+then frees the C buffer before returning or rethrowing an allocation error.
+The helper and stack space are prepared before the native allocation is owned.
+
+`host_save_storage` now also tests the registered Lua API: exact return counts,
+strict arguments, empty/binary/maximum-size strings, oversized input and files,
+missing-load non-creation, unavailable storage, top-level denial, init/update/
+shutdown calls, relaunch persistence, failed-write preservation, and uncertain
+post-replacement durability. An induced Lua allocation failure exercises the
+protected copy; a subsequent load succeeds. Existing C lifecycle/failure tests
+remain in place. These tests use temporary storage, not user saves.
