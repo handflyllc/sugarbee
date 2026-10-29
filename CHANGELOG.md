@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Connected internal host load/save calls to the selected directory and active
+  cartridge UUID. Access includes init, gameplay, and eligible shutdown; idle
+  and failed sessions are denied. Added lifecycle, UUID isolation, and failure
+  propagation tests. No Lua bindings or automatic saving are introduced.
+
 - Added a read-only save-path adapter that resolves existing symlinked locations
   and rejects ambiguous missing-component paths. Results retain the full path
   beneath `/` for preparation retries. Added resolution, bound, and partial-

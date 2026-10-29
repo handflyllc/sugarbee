@@ -83,8 +83,9 @@ for existing directories, bounded nested preparation beneath a durable base,
 and a C prepare-and-write coordinator are implemented with failure tests.
 Host save-directory selection is implemented without accessing storage, and a
 read-only adapter resolves selected paths for root-anchored preparation.
-Interruption/durability validation, host storage calls, and the Lua API remain
-pending.
+Internal host load/save calls now connect active-session identity and the
+selected directory to storage without exposing Lua bindings or automatic saving.
+Interruption/durability validation, the Lua API, and Pi validation remain pending.
 
 ### 4. Begin audio implementation
 

@@ -14,7 +14,7 @@ Quote paths containing spaces. Invalid command forms print usage and exit
 before opening a window. No arguments opens an idle host, not a Guru error.
 No default cartridge directory or configuration file is implemented.
 
-## Save-directory selection (storage integration pending)
+## Save-directory selection (Lua integration pending)
 
 The accepted command forms are:
 
@@ -45,8 +45,10 @@ Startup reports `Save directory: ... (selection only)` on success. With no
 usable absolute default (or another selection failure), it reports
 `Save storage unavailable: ...` and continues normal host startup without Guru.
 Selection does not create, prepare, check writability, or read/write save storage.
-The save APIs are not connected to the host yet. Runtime path preparation,
-permission failures, and save operations will be handled in a later checkpoint.
+Internal C host operations now connect this selection to the storage layer when
+explicitly invoked. No Lua bindings or automatic callers exist yet, so ordinary
+startup/gameplay still performs no save I/O. A selected path can be rejected at
+operation time by stricter preparation limits or filesystem errors.
 Configuration-file lookup and automatic migration are not implemented.
 
 ## Console mode: confirmed exit to system
@@ -141,5 +143,5 @@ The launcher displays its 64-cartridge capacity, additional eligible cartridges 
   logging are future discussion items, not implemented features.
 
 See the [manual checklist](../../tests/launcher/README.md). The automated suite
-includes twenty-four native tests and, when Lua 5.4 is available, eight cartridge smoke
+includes twenty-five native tests and, when Lua 5.4 is available, eight cartridge smoke
 tests using a stand-in API. It does not automate the launcher interaction flow.

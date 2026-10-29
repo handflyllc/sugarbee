@@ -28,6 +28,7 @@
 #include "sb_graphics.h"
 #include "sb_input.h"
 #include "sb_timing.h"
+#include "sb_save.h"
 
 #define SB_LAUNCHER_MAX_CARTRIDGES 64
 #define SB_LAUNCHER_PATH_SIZE 4096
@@ -97,6 +98,68 @@ void trigger_guru_meditation(uint32_t code, const char* title, const char* messa
 void render_guru_meditation(void);
 static void end_cartridge(void);
 static void scan_cartridge_directory(const char *directory);
+
+/* Internal host operations, not registered in the cartridge Lua API yet.
+   cart_loaded is true before init and stays true during eligible shutdown,
+   whose cart_initialized flag is deliberately consumed before calling Lua. */
+static bool host_save_session_available(void) {
+    return g_engine.L && g_engine.cart_loaded && !g_engine.guru_active &&
+           !g_engine.execution_limit_exceeded;
+}
+
+static sb_save_result_t report_host_storage_result(const char *operation,
+                                                    const char *stage,
+                                                    sb_save_result_t result) {
+    if (result == SB_SAVE_OK || result == SB_SAVE_NOT_FOUND) return result;
+    const char *reason = "I/O error";
+    if (result == SB_SAVE_TOO_LARGE) reason = "save exceeds 65536 bytes";
+    else if (result == SB_SAVE_INVALID_ARGUMENT) reason = "invalid internal arguments";
+    else if (result == SB_SAVE_DURABILITY_UNCERTAIN)
+        reason = "replacement occurred; durability is uncertain";
+    char uuid[37];
+    vcart_uuid_to_string(g_engine.current_cart.cart_uuid, uuid);
+    fprintf(stderr, "[SugarBee] Save storage %s (%s), UUID %s, directory '%s': %s\n",
+            operation, stage, uuid,
+            g_engine.save_directory[0] ? g_engine.save_directory : "(unavailable)", reason);
+    return result;
+}
+
+sb_save_result_t host_load_save(uint8_t **data, size_t *length) {
+    if (data) *data = NULL;
+    if (length) *length = 0;
+    if (!data || !length)
+        return report_host_storage_result("load", "arguments", SB_SAVE_INVALID_ARGUMENT);
+    if (!host_save_session_available())
+        return report_host_storage_result("load", "no healthy active cartridge", SB_SAVE_IO_ERROR);
+    if (!g_engine.save_directory[0])
+        return report_host_storage_result("load", "no selected directory", SB_SAVE_IO_ERROR);
+
+    sb_save_location_t location;
+    if (sb_save_resolve_location(g_engine.save_directory, &location) != SB_SAVE_OK)
+        return report_host_storage_result("load", "path resolution", SB_SAVE_IO_ERROR);
+    char directory[SB_SAVE_MAX_PATH_BYTES + 2u];
+    snprintf(directory, sizeof(directory), "/%s", location.relative);
+    return report_host_storage_result("load", "read",
+        sb_save_read(directory, g_engine.current_cart.cart_uuid, data, length));
+}
+
+sb_save_result_t host_write_save(const uint8_t *data, size_t length) {
+    if (!data && length != 0)
+        return report_host_storage_result("save", "arguments", SB_SAVE_INVALID_ARGUMENT);
+    if (length > SB_SAVE_MAX_BYTES)
+        return report_host_storage_result("save", "size validation", SB_SAVE_TOO_LARGE);
+    if (!host_save_session_available())
+        return report_host_storage_result("save", "no healthy active cartridge", SB_SAVE_IO_ERROR);
+    if (!g_engine.save_directory[0])
+        return report_host_storage_result("save", "no selected directory", SB_SAVE_IO_ERROR);
+
+    sb_save_location_t location;
+    if (sb_save_resolve_location(g_engine.save_directory, &location) != SB_SAVE_OK)
+        return report_host_storage_result("save", "path resolution", SB_SAVE_IO_ERROR);
+    return report_host_storage_result("save", "prepare/write",
+        sb_save_write_prepared("/", location.relative, g_engine.current_cart.cart_uuid,
+                               data, length));
+}
 
 /* Count hooks run during Lua bytecode execution, not inside native calls. */
 static void lua_instruction_limit(lua_State *L, lua_Debug *ar) {

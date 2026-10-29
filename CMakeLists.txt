@@ -66,6 +66,7 @@ if(SUGARBEE_BUILD_HOST)
 
     add_executable(sugarbee src/main.c)
     target_link_libraries(sugarbee PRIVATE
+        sugarbee_save
         sugarbee_graphics
         sugarbee_input
         sugarbee_timing
@@ -91,6 +92,15 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     sugarbee_warnings(test_save_selection)
     add_test(NAME host_save_selection COMMAND test_save_selection)
     set_tests_properties(host_save_selection PROPERTIES TIMEOUT 5)
+
+    add_executable(test_host_save tests/test_host_save.c)
+    target_link_libraries(test_host_save PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    target_link_options(test_host_save PRIVATE
+        "-Wl,--wrap=fsync" "-Wl,--wrap=renameat" "-Wl,--wrap=write" "-Wl,--wrap=mkdirat")
+    sugarbee_warnings(test_host_save)
+    add_test(NAME host_save_storage COMMAND test_host_save)
+    set_tests_properties(host_save_storage PROPERTIES TIMEOUT 15)
+
 
 
     add_executable(test_lua_libraries tests/test_lua_libraries.c)

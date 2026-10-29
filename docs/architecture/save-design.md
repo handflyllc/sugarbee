@@ -5,8 +5,8 @@ The Lua API is not implemented. Internal bounded C reading, synchronized
 replacement, one-level and bounded nested directory preparation, and a C
 prepare-and-write coordinator are implemented. Host directory selection is
 implemented separately without storage access. A read-only C path adapter is
-also implemented; invoking storage from the host and Lua integration remain
-pending. This document records the accepted design,
+also implemented, and internal host load/save operations now use it. Lua
+bindings and automatic saving are not implemented. This document records the accepted design,
 not an available Lua API reference.
 
 ## Scope and ownership
@@ -70,7 +70,7 @@ no directory or filename selection from Lua.
 
 An inaccessible selected location must produce a failure, not a silent fallback
 to a different directory. Cartridge media may remain read-only while saves use
-a separate writable location. See [launcher selection rules](../development/launcher.md#save-directory-selection-storage-integration-pending)
+a separate writable location. See [launcher selection rules](../development/launcher.md#save-directory-selection-lua-integration-pending)
 for CLI ordering, relative overrides, and unavailable-default behavior.
 
 ## Replacement and durability contract
@@ -232,7 +232,8 @@ ctest --test-dir build -R '^save_(reader|writer)$' --output-on-failure
 
 The writer case has a 15-second external test timeout; storage I/O itself has
 no runtime wall-clock bound. Nested preparation and its separate coordinator
-are described below. Host/Lua integration and Pi validation remain pending.
+are described below. Lua integration and Pi validation remain pending; internal host operations are
+described in the seventh checkpoint below.
 
 ## Third storage checkpoint: one-level directory preparation
 
@@ -392,7 +393,7 @@ that ancestor may be visible from an earlier creation whose synchronization
 failed. Retrying the entire root-anchored path synchronizes existing ancestors
 again. Resolution alone is neither preparation nor proof of durability. The
 returned spelling is not an open directory handle, and concurrent path changes
-remain unsupported. Actual host load/save wiring and Lua integration are pending.
+remain unsupported. Internal host load/save wiring is described below; Lua integration is pending.
 
 The isolated `save_location` CTest case covers existing symlinks, symlink-plus-
 parent semantics, missing suffixes, ambiguous dot components, unavailable or
@@ -408,3 +409,48 @@ Run the storage checks and host selection tests with:
 ```sh
 ctest --test-dir build -R '^(save_(reader|writer|directory|path|location)|host_save_selection)$' --output-on-failure
 ```
+
+## Seventh checkpoint: internal host load/save operations
+
+`host_load_save` and `host_write_save` connect host state to the storage layer.
+They derive both location and UUID from the host; callers supply no alternate
+identity or path. They are internal C operations, not registered Lua functions.
+Startup remains selection-only, and nothing automatically requests a save.
+
+Access requires a loaded cartridge, a live Lua state, no active Guru, and no
+latched execution-limit failure. The initialization-completed flag is deliberately
+not the access gate: it is false while `init()` runs and is consumed before an
+eligible `shutdown()` callback. Both callbacks and normal gameplay can therefore
+use these operations. Idle, not-yet-loaded, and failed sessions are denied with
+`SB_SAVE_IO_ERROR`; failed-session cleanup does not gain a save opportunity.
+
+Load clears its output pointers, resolves the selected path on every request,
+and reads the active UUID file without creating or synchronizing directories.
+A missing directory/file returns `SB_SAVE_NOT_FOUND`. Save validates its arguments
+and byte count before path resolution or preparation, then resolves and invokes
+the root-anchored coordinator. Missing selection or failed resolution maps to
+`SB_SAVE_IO_ERROR`, including a selected path outside the preparation limits.
+There is no fallback or migration. Internal invalid C arguments remain distinct
+from expected storage failures.
+
+The writer's result is preserved, including `SB_SAVE_DURABILITY_UNCERTAIN` after
+replacement. Expected storage errors never activate Guru. Console diagnostics
+identify operation, stage, cartridge UUID, selected path, and result category;
+a normal missing-save result is quiet. Loads return caller-owned bytes, including
+empty saves, and failures reset valid outputs to NULL/zero.
+
+`host_save_storage` uses isolated temporary storage and simulated cartridge
+sessions. Test-only C callbacks run through the real init/update/shutdown
+dispatchers to verify availability and single-invocation shutdown behavior.
+Checks cover missing-load non-creation, binary and empty round-trips, UUID
+isolation and return to prior identity, unavailable selection, invalid paths,
+oversize rejection, and idle/failed-session denial. Injected preparation and
+write errors preserve old data; a post-replacement directory-sync failure
+reaches the host as uncertain durability with the new data visible. Tests also
+confirm no production Lua save bindings are registered. CTest enforces a
+15-second timeout. These are desktop headless checks, not Pi or power-loss tests.
+
+Run with `ctest --test-dir build -R '^host_save_storage$' --output-on-failure`.
+Lua result translation, user-facing save labs, and physical validation remain
+future checkpoints. `shutdown()` remains an optional extra save opportunity,
+not a reliable substitute for deliberate gameplay checkpoints.
