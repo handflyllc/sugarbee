@@ -522,6 +522,28 @@ void call_lua_global_function(const char* func_name, bool with_dt, double dt) {
     }
 }
 
+/* Delegate ordinary semantics to Lua's original setmetatable (upvalue 1).
+   Inspect __gc raw: Lua registers finalizers from the actual metatable field,
+   not from its __index behavior. Any non-nil value must be rejected. */
+static int l_cartridge_setmetatable(lua_State *L) {
+    if (lua_istable(L, 2)) {
+        lua_pushliteral(L, "__gc");
+        lua_rawget(L, 2);
+        bool has_finalizer = !lua_isnil(L, -1);
+        lua_pop(L, 1);
+        if (has_finalizer) {
+            return luaL_error(L, "Cartridge __gc finalizers are not supported");
+        }
+    }
+
+    /* Forward all arguments; original function returns the target table. */
+    int nargs = lua_gettop(L);
+    lua_pushvalue(L, lua_upvalueindex(1));
+    lua_insert(L, 1);
+    lua_call(L, nargs, 1);
+    return 1;
+}
+
 /* Open only supported cartridge libraries; leave the Lua stack unchanged. */
 static void open_cartridge_libraries(lua_State *L) {
     static const luaL_Reg libraries[] = {
@@ -536,6 +558,11 @@ static void open_cartridge_libraries(lua_State *L) {
         luaL_requiref(L, lib->name, lib->func, 1);
         lua_pop(L, 1);
     }
+
+    /* Keep the original private; cartridges only receive the checked wrapper. */
+    lua_getglobal(L, "setmetatable");
+    lua_pushcclosure(L, l_cartridge_setmetatable, 1);
+    lua_setglobal(L, "setmetatable");
 
     /* The base library also exposes filesystem loading helpers. */
     lua_pushnil(L);

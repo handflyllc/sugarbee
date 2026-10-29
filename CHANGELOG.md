@@ -2,6 +2,10 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Reject cartridge metatables containing a non-nil `__gc` field while preserving
+  ordinary `setmetatable` behavior. Added shared/mutated metatable, collection,
+  and state-closure regression checks; automatic memory collection remains enabled.
+
 - Restricted cartridge Lua libraries to base, table, string, math, and UTF-8.
   Removed filesystem loading helpers and excluded coroutine, debug, io, os,
   and package access. Added a host-library policy regression test. This is
