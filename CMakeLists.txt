@@ -85,6 +85,15 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     sugarbee_warnings(test_lua_libraries)
     add_test(NAME lua_supported_libraries COMMAND test_lua_libraries)
 
+    add_executable(test_lua_close tests/test_lua_close.c)
+    target_link_libraries(test_lua_close PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    sugarbee_warnings(test_lua_close)
+    foreach(close_case normal error runaway limit_then_runaway multiple_error multiple_runaway)
+        add_test(NAME lua_close_${close_case} COMMAND test_lua_close ${close_case})
+        # Enforced by CTest outside the process, even if Lua recovery hangs.
+        set_tests_properties(lua_close_${close_case} PROPERTIES TIMEOUT 5)
+    endforeach()
+
     add_executable(test_font tests/test_font.c)
     target_link_libraries(test_font PRIVATE sugarbee_graphics PkgConfig::SDL2)
     sugarbee_warnings(test_font)
