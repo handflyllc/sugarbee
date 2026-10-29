@@ -1,11 +1,11 @@
 # SugarBee saves — settled initial design
 
 Status: initial API, storage policy, and durability contract agreed on 2026-10-29.
-The Lua API is not implemented. Internal bounded C reading and synchronized
-replacement in an existing directory are implemented; neither is connected to
-the host or Lua. A separate one-level directory preparation helper is also
-implemented; full-path creation and writer integration remain pending. This
-document records the accepted design, not an available Lua API reference.
+The Lua API is not implemented. Internal bounded C reading, synchronized
+replacement, one-level and bounded nested directory preparation, and a C
+prepare-and-write coordinator are implemented. Host directory selection and
+Lua integration remain pending. This document records the accepted design,
+not an available Lua API reference.
 
 ## Scope and ownership
 
@@ -227,8 +227,8 @@ ctest --test-dir build -R '^save_(reader|writer)$' --output-on-failure
 ```
 
 The writer case has a 15-second external test timeout; storage I/O itself has
-no runtime wall-clock bound. Full-path preparation, writer integration with
-directory preparation, host/Lua integration, and Pi validation remain pending.
+no runtime wall-clock bound. Nested preparation and its separate coordinator
+are described below. Host/Lua integration and Pi validation remain pending.
 
 ## Third storage checkpoint: one-level directory preparation
 
@@ -272,5 +272,61 @@ Run all storage checks with:
 ctest --test-dir build -R '^save_(reader|writer|directory)$' --output-on-failure
 ```
 
-These are desktop regression checks, not power-loss validation. Full-path
-handling, writer integration, host/Lua integration, and Pi validation are pending.
+These are desktop regression checks, not power-loss validation. The next
+checkpoint below composes this operation for nested paths. Host/Lua integration
+and Pi validation are pending.
+
+## Fourth storage checkpoint: nested preparation and C coordinator
+
+`sb_save_prepare_path(base, relative)` prepares a nonempty relative directory
+path beneath an existing base. `sb_save_write_prepared(base, relative, uuid,
+data, length)` validates the save arguments and size, prepares the path, and
+then invokes the existing replacement logic through the opened leaf directory.
+The standalone existing-directory writer keeps its previous contract.
+
+The base directory's own placement must already be durable; neither operation
+prepares its ancestors. A host-selected base may resolve through symlinks,
+but every component of the relative path must be a real directory. The limits
+are 1,024 relative-path bytes (excluding the terminating zero), 32 components,
+and 255 bytes per component. Absolute paths, empty components, trailing slashes,
+`.` and `..` are rejected with `SB_SAVE_INVALID_ARGUMENT`. All components are
+validated before filesystem operations, so a bad later component cannot leave
+an earlier directory behind. Oversized save data is rejected before preparation.
+These are byte limits; no text encoding conversion is performed.
+
+Traversal uses opened directory handles, retaining at most the current parent
+and child during preparation. Each child and its parent are synchronized before
+advancing, including already-existing components. A failed preparation leaves
+created directories in place for retry. The coordinator transfers the verified
+leaf handle directly to the writer rather than resolving a constructed path
+again. Concurrent directory changes remain outside the supported contract.
+
+Preparation failures, including descriptor-close failures, return
+`SB_SAVE_IO_ERROR`; no temporary save is opened and no replacement is attempted.
+Existing save contents remain untouched. Once preparation succeeds, the writer
+retains its existing success, pre-replacement error, and post-replacement
+`SB_SAVE_DURABILITY_UNCERTAIN` outcomes. The preparation-only entry point closes
+the leaf handle and reports any close failure as an I/O error.
+
+The isolated `save_path` test exercises exact and exceeded path/component limits,
+invalid names, missing and partially existing paths, repeated synchronization,
+permission preservation, symlink/file rejection, and empty/binary/exact-size
+save read-back. Test-only wrappers inject second-level creation, opening,
+synchronization, and close failures. They verify that writer operations never
+run after a preparation failure, previous save contents and inode are unchanged,
+and a retry synchronizes both levels before saving. Further injected write,
+file-sync, rename, and final directory-sync failures verify the coordinator's
+result propagation. The case has a 15-second external CTest timeout.
+
+Run all storage checks with:
+
+```sh
+ctest --test-dir build -R '^save_(reader|writer|directory|path)$' --output-on-failure
+```
+
+Host resolution of XDG/HOME or `--save-dir`, selection of a durable base,
+configuration-file support, migration, Lua bindings, interrupted-write/power-loss
+validation, and Pi validation remain outside this checkpoint. A future host
+configuration key such as `save_dir` is a discussion option, not implemented;
+CLI-over-configuration-over-default precedence is proposed for that discussion.
+Changing the chosen root does not automatically move existing saves.

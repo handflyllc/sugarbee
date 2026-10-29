@@ -174,6 +174,14 @@ if(BUILD_TESTING)
     add_test(NAME save_directory COMMAND test_save_directory)
     set_tests_properties(save_directory PROPERTIES TIMEOUT 15)
 
+    add_executable(test_save_path tests/test_save_path.c)
+    target_link_libraries(test_save_path PRIVATE sugarbee_save)
+    target_link_options(test_save_path PRIVATE
+        "-Wl,--wrap=mkdirat" "-Wl,--wrap=openat" "-Wl,--wrap=fsync"
+        "-Wl,--wrap=close" "-Wl,--wrap=write" "-Wl,--wrap=renameat")
+    sugarbee_warnings(test_save_path)
+    add_test(NAME save_path COMMAND test_save_path)
+    set_tests_properties(save_path PROPERTIES TIMEOUT 15)
 
 
     add_executable(test_timing tests/test_timing.c)

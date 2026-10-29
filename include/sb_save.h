@@ -6,6 +6,10 @@
 #include <stdint.h>
 
 #define SB_SAVE_MAX_BYTES (64u * 1024u)
+/* Limits for a relative nested path, excluding its terminating NUL. */
+#define SB_SAVE_MAX_PATH_BYTES 1024u
+#define SB_SAVE_MAX_COMPONENTS 32u
+#define SB_SAVE_MAX_COMPONENT_BYTES 255u
 
 typedef enum {
     SB_SAVE_OK = 0,
@@ -49,8 +53,27 @@ sb_save_result_t sb_save_write(const char *directory, const uint8_t uuid[16],
  * synchronized. All descriptors are closed before success is reported.
  * IO_ERROR may leave a created directory in place; retry preparation before
  * relying on it. Save contents are never touched. Concurrent directory changes
- * are unsupported. No full-path creation or save-writer integration yet.
+ * are unsupported. This operation does not invoke the writer.
  */
 sb_save_result_t sb_save_prepare_directory(const char *parent, const char *child);
+
+/* Prepare a nonempty relative path beneath an existing, durable base.
+ * Validate ALL components before creating anything: no absolute paths, empty
+ * components (including trailing '/'), '.', '..', or components over the
+ * limits above. Reject symlinks at every relative component. Existing
+ * components are synchronized too. IO_ERROR may leave directories for retry.
+ * The base itself may resolve through symlinks; its ancestors are not prepared.
+ */
+sb_save_result_t sb_save_prepare_path(const char *base, const char *relative);
+
+/* Validate data/size/path, prepare the nested directory, then replace the save
+ * using the same opened leaf directory (no path re-resolution). Preparation
+ * failures return IO_ERROR and never invoke the writer. Once writing starts,
+ * the result contract is the same as sb_save_write. No host path selection,
+ * migration, environment-variable lookup, or Lua integration is performed.
+ */
+sb_save_result_t sb_save_write_prepared(const char *base, const char *relative,
+                                       const uint8_t uuid[16],
+                                       const uint8_t *data, size_t length);
 
 #endif

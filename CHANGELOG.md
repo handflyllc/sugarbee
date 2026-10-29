@@ -2,6 +2,12 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added bounded nested save-directory preparation beneath an existing durable
+  base and a C prepare-and-write coordinator. All path/data validation precedes
+  filesystem changes; preparation failures never reach the writer. Added
+  path-boundary, failure/retry, and replacement-result regression tests.
+  Host directory selection and Lua integration remain pending.
+
 - Added separate one-level save-directory preparation: create or verify a child,
   synchronize child then parent, and preserve existing permissions and data.
   Added isolated failure/retry tests. Full-path handling and writer integration

@@ -78,15 +78,10 @@ static int sync_save_fd(int fd) {
     return result;
 }
 
-sb_save_result_t sb_save_write(const char *directory, const uint8_t uuid[16],
-                               const uint8_t *data, size_t length) {
-    if (!directory || !*directory || !uuid || (!data && length != 0))
-        return SB_SAVE_INVALID_ARGUMENT;
-    if (length > SB_SAVE_MAX_BYTES) return SB_SAVE_TOO_LARGE;
-
-    int dirfd = open(directory, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
-    if (dirfd < 0) return SB_SAVE_IO_ERROR;
-
+/* Takes ownership of an already opened directory, including on failure.
+   Arguments and size have been validated by the public entry point. */
+static sb_save_result_t write_save_in_directory(int dirfd, const uint8_t uuid[16],
+                                               const uint8_t *data, size_t length) {
     sb_save_result_t result = SB_SAVE_IO_ERROR;
     char filename[41], temporary[96];
     vcart_uuid_to_string(uuid, filename);
@@ -149,6 +144,33 @@ cleanup:
     return result;
 }
 
+sb_save_result_t sb_save_write(const char *directory, const uint8_t uuid[16],
+                               const uint8_t *data, size_t length) {
+    if (!directory || !*directory || !uuid || (!data && length != 0))
+        return SB_SAVE_INVALID_ARGUMENT;
+    if (length > SB_SAVE_MAX_BYTES) return SB_SAVE_TOO_LARGE;
+
+    int dirfd = open(directory, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    if (dirfd < 0) return SB_SAVE_IO_ERROR;
+    return write_save_in_directory(dirfd, uuid, data, length);
+}
+
+/* Borrows parentfd. Returns an owned, synchronized child descriptor, or -1.
+   The parent entry is synchronized even when the child already existed. */
+static int open_prepared_child(int parentfd, const char *child) {
+    if (mkdirat(parentfd, child, 0700) != 0 && errno != EEXIST) return -1;
+
+    /* EEXIST alone does not establish that this is a directory. */
+    int childfd = openat(parentfd, child,
+                         O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+    if (childfd < 0) return -1;
+    if (sync_save_fd(childfd) != 0 || sync_save_fd(parentfd) != 0) {
+        close(childfd);
+        return -1;
+    }
+    return childfd;
+}
+
 sb_save_result_t sb_save_prepare_directory(const char *parent, const char *child) {
     if (!parent || !*parent || !child || !*child || strchr(child, '/') ||
         strcmp(child, ".") == 0 || strcmp(child, "..") == 0)
@@ -156,25 +178,69 @@ sb_save_result_t sb_save_prepare_directory(const char *parent, const char *child
 
     int parentfd = open(parent, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
     if (parentfd < 0) return SB_SAVE_IO_ERROR;
-
-    sb_save_result_t result = SB_SAVE_IO_ERROR;
-    int childfd = -1;
-    if (mkdirat(parentfd, child, 0700) != 0 && errno != EEXIST) goto cleanup;
-
-    /* EEXIST alone does not establish that this is a directory. Do not follow
-       a child symlink, even one that points at a directory. */
-    childfd = openat(parentfd, child, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
-    if (childfd < 0) goto cleanup;
-
-    /* Repeat both syncs for existing children: a previous attempt may have
-       created the directory but failed before its parent entry was durable. */
-    if (sync_save_fd(childfd) != 0 || sync_save_fd(parentfd) != 0) goto cleanup;
-    result = SB_SAVE_OK;
-
-cleanup:
+    int childfd = open_prepared_child(parentfd, child);
+    sb_save_result_t result = childfd < 0 ? SB_SAVE_IO_ERROR : SB_SAVE_OK;
     if (childfd >= 0 && close(childfd) != 0) result = SB_SAVE_IO_ERROR;
     if (close(parentfd) != 0) result = SB_SAVE_IO_ERROR;
-    /* Never remove the child on failure; callers may retry and it may contain
-       existing data. No save replacement has occurred in this operation. */
     return result;
+}
+
+/* Validate and split before filesystem operations. Returns an owned leaf fd
+   only on success. At most parent + child are held during traversal. */
+static sb_save_result_t open_prepared_path(const char *base, const char *relative,
+                                          int *leaf) {
+    *leaf = -1;
+    if (!base || !*base || !relative || !*relative)
+        return SB_SAVE_INVALID_ARGUMENT;
+    size_t length = strnlen(relative, SB_SAVE_MAX_PATH_BYTES + 1u);
+    if (length > SB_SAVE_MAX_PATH_BYTES) return SB_SAVE_INVALID_ARGUMENT;
+
+    char path[SB_SAVE_MAX_PATH_BYTES + 1u];
+    char *components[SB_SAVE_MAX_COMPONENTS];
+    size_t count = 0;
+    memcpy(path, relative, length + 1u);
+    char *component = path;
+    for (size_t i = 0; i <= length; ++i) {
+        if (path[i] != '/' && path[i] != '\0') continue;
+        size_t component_length = (size_t)(&path[i] - component);
+        path[i] = '\0';
+        if (component_length == 0 || component_length > SB_SAVE_MAX_COMPONENT_BYTES ||
+            strcmp(component, ".") == 0 || strcmp(component, "..") == 0 ||
+            count == SB_SAVE_MAX_COMPONENTS)
+            return SB_SAVE_INVALID_ARGUMENT;
+        components[count++] = component;
+        component = &path[i + 1];
+    }
+
+    int parentfd = open(base, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    if (parentfd < 0) return SB_SAVE_IO_ERROR;
+    for (size_t i = 0; i < count; ++i) {
+        int childfd = open_prepared_child(parentfd, components[i]);
+        int closed = close(parentfd); /* A failed close is never retried. */
+        if (childfd < 0 || closed != 0) {
+            if (childfd >= 0) close(childfd);
+            return SB_SAVE_IO_ERROR;
+        }
+        parentfd = childfd;
+    }
+    *leaf = parentfd;
+    return SB_SAVE_OK;
+}
+
+sb_save_result_t sb_save_prepare_path(const char *base, const char *relative) {
+    int leaf;
+    sb_save_result_t result = open_prepared_path(base, relative, &leaf);
+    if (result == SB_SAVE_OK && close(leaf) != 0) result = SB_SAVE_IO_ERROR;
+    return result;
+}
+
+sb_save_result_t sb_save_write_prepared(const char *base, const char *relative,
+                                       const uint8_t uuid[16],
+                                       const uint8_t *data, size_t length) {
+    if (!uuid || (!data && length != 0)) return SB_SAVE_INVALID_ARGUMENT;
+    if (length > SB_SAVE_MAX_BYTES) return SB_SAVE_TOO_LARGE;
+    int leaf;
+    sb_save_result_t result = open_prepared_path(base, relative, &leaf);
+    if (result != SB_SAVE_OK) return result;
+    return write_save_in_directory(leaf, uuid, data, length);
 }
