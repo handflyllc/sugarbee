@@ -88,8 +88,9 @@ selected directory to storage. Strict string-only Lua save/load bindings and
 their automated tests/API documentation are implemented; no automatic saving.
 The counter-based interactive save lab and its behavior tests are implemented.
 The user confirmed all six desktop interactive checks passed, including explicit
-save/reload, zero, pause/resume, and persistence after relaunch. Pi checks and
-interruption/durability validation remain pending.
+save/reload, zero, pause/resume, and persistence after relaunch. Three controlled
+process-interruption/recovery tests also pass on desktop. Pi checks and actual
+power-loss/durability validation remain pending.
 
 ### 4. Begin audio implementation
 

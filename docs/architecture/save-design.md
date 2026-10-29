@@ -6,7 +6,8 @@ operations, and Lua bindings are implemented with desktop regression tests.
 See the [Lua save API](../api/saves.md) for the available interface. Automatic
 saving is not implemented. The [counter Save Lab](../../examples/save-lab/README.md)
 and behavior tests are implemented. The user confirmed all six desktop
-interactive checks passed. Pi and interruption/durability validation remain pending.
+interactive checks passed. Controlled process-interruption/recovery tests pass
+on desktop; Pi and actual power-loss/durability validation remain pending.
 
 ## Scope and ownership
 
@@ -210,8 +211,9 @@ A failed removal is reported to stderr; the primary save outcome is unchanged.
 Temporary names cannot be selected by the reader as UUID saves. Exclusive
 creation tries up to 128 distinct candidate names; existing temporary entries
 are never overwritten or automatically deleted. Exhaustion returns an I/O
-error. Crash-leftover cleanup and interruption/power-loss testing remain later
-work; these error-injection tests do not establish power-loss guarantees.
+error. Controlled process-interruption tests are described below. Automatic leftover
+cleanup is not implemented, and actual power-loss testing remains deferred;
+these error-injection tests do not establish power-loss guarantees.
 
 `save_writer` uses isolated temporary directories and the real reader to verify
 first saves, replacement, empty/binary/exact-limit data, oversize rejection, and
@@ -473,3 +475,19 @@ shutdown calls, relaunch persistence, failed-write preservation, and uncertain
 post-replacement durability. An induced Lua allocation failure exercises the
 protected copy; a subsequent load succeeds. Existing C lifecycle/failure tests
 remain in place. These tests use temporary storage, not user saves.
+
+## Process-interruption checkpoint
+
+Three [interruption/recovery cases](../../tests/save-interruption.md) stop a child
+writer during a partial temporary-file write, after temporary-file synchronization,
+and after replacement but before directory synchronization. The parent kills and
+reaps the stopped writer; fresh processes read the expected complete old/new
+value, perform another save, and verify recovery. Each CTest case has an external
+15-second timeout. Only test executables contain the interception wrappers.
+
+The desktop checks pass. Pre-replacement interruptions leave the previous save
+intact and an ignored temporary file; recovery succeeds without deleting that
+leftover. Post-replacement interruption exposes the complete new save to a fresh
+process on the still-running system. This proves neither persistence after power
+loss nor durability of first-time directory creation. Pi and actual power-loss
+validation remain separate future work; no automatic cleanup is added.

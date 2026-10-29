@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added three externally timed process-interruption save tests covering partial
+  writes, synchronized temporary files, and replacement before directory sync.
+  Fresh processes verify complete data and recovery; abandoned temporary files
+  remain ignored. These tests do not simulate power loss.
+
 - Added a counter-based Save Lab with explicit save/reload controls, a fixed
   cartridge UUID, isolated persistent test storage, and behavior tests.
 

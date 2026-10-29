@@ -183,6 +183,16 @@ if(BUILD_TESTING)
     add_test(NAME save_writer COMMAND test_save_write)
     set_tests_properties(save_writer PROPERTIES TIMEOUT 15)
 
+    add_executable(test_save_interruption tests/test_save_interruption.c)
+    target_link_libraries(test_save_interruption PRIVATE sugarbee_save)
+    target_link_options(test_save_interruption PRIVATE
+        "-Wl,--wrap=write" "-Wl,--wrap=fsync" "-Wl,--wrap=renameat")
+    sugarbee_warnings(test_save_interruption)
+    foreach(point IN ITEMS partial_write file_synced replaced)
+        add_test(NAME save_interruption_${point} COMMAND test_save_interruption ${point})
+        set_tests_properties(save_interruption_${point} PROPERTIES TIMEOUT 15)
+    endforeach()
+
     add_executable(test_save_directory tests/test_save_directory.c)
     target_link_libraries(test_save_directory PRIVATE sugarbee_save)
     target_link_options(test_save_directory PRIVATE

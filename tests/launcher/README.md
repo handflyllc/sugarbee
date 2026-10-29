@@ -95,10 +95,11 @@ when a normal test package is needed.
 
 ## Coverage boundaries
 
-Twenty-five native CTest cases cover graphics, textures, assets, input, timing,
+Twenty-eight native CTest cases cover graphics, textures, assets, input, timing,
 headers, packaging, host controls, Lua library policy, Lua closing behavior,
-and save storage. With Lua 5.4 installed, eight additional cartridge
-smoke tests run against a stand-in API. These do not exercise the real host
+and save storage, including process-interruption recovery. With Lua 5.4
+installed, the Save Lab behavior test and eight cartridge smoke tests run
+against stand-in APIs. These do not exercise the real host
 launcher; the launcher interaction checks above remain manual.
 
 ## Console-only Exit to system confirmation
