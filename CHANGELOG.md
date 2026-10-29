@@ -2,6 +2,14 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Validated the native triangle prototype on Pi commit `1664043`: all 44 tests,
+  triangle/sine listening checks, gameplay checks, and Exit to system status 0
+  passed. Full synthesis and Lua controls remain deferred.
+
+- Added a single native triangle prototype (220–660 Hz) with phase-preserving
+  pitch changes, short start/stop fades, sample tests, and `sbee-triangle-test`.
+  Normal host startup remains silent; Lua and full synthesis remain deferred.
+
 - Validated the audio foundation and diagnostic tone on Pi commit `d6c0dd9`:
   all 42 tests, listening, gameplay/fallback, and clean system exit passed.
   Documented selecting HDMI when the Pi routes audio to an unconnected A/V output.

@@ -77,10 +77,22 @@ int main(int argc, char **argv) {
         CHECK(SDL_AtomicGet(&callbacks) > 0);
         CHECK(sb_audio_start_test_tone(g_engine.audio));
         CHECK(!sb_audio_start_test_tone(g_engine.audio)); /* Does not retrigger. */
+        CHECK(!sb_audio_start_triangle(g_engine.audio, 440));
         start = SDL_GetTicks();
         while (sb_audio_test_tone_active(g_engine.audio) && SDL_GetTicks() - start < 2500)
             SDL_Delay(5);
         CHECK(!sb_audio_test_tone_active(g_engine.audio));
+        CHECK(sb_audio_start_triangle(g_engine.audio, 220));
+        CHECK(!sb_audio_start_test_tone(g_engine.audio));
+        CHECK(!sb_audio_start_triangle(g_engine.audio, 440));
+        CHECK(sb_audio_set_triangle_pitch(g_engine.audio, 660));
+        CHECK(!sb_audio_set_triangle_pitch(g_engine.audio, 1000));
+        sb_audio_stop_triangle(g_engine.audio);
+        sb_audio_stop_triangle(g_engine.audio);
+        start = SDL_GetTicks();
+        while (sb_audio_triangle_active(g_engine.audio) && SDL_GetTicks() - start < 2000)
+            SDL_Delay(5);
+        CHECK(!sb_audio_triangle_active(g_engine.audio));
         sb_audio_t *audio = g_engine.audio;
         CHECK(session()); end_cartridge();
         CHECK(shutdown_calls == 1 && g_engine.audio == audio && closes == 0 && opens == 1);
@@ -98,6 +110,10 @@ int main(int argc, char **argv) {
     SDL_Delay(30);
     CHECK(SDL_AtomicGet(&callbacks) == count);
     CHECK(!sb_audio_start_test_tone(NULL) && !sb_audio_test_tone_active(NULL));
+    CHECK(!sb_audio_start_triangle(NULL, 440));
+    CHECK(!sb_audio_set_triangle_pitch(NULL, 440));
+    CHECK(!sb_audio_triangle_active(NULL));
+    sb_audio_stop_triangle(NULL);
     sb_audio_destroy(NULL);
     puts("Audio host lifecycle checks passed");
     return 0;

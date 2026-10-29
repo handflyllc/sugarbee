@@ -1,6 +1,7 @@
 /* SDL2 audio foundation: fixed callback format, host lifetime, opt-in diagnostic tone. */
 #include "sb_audio.h"
 #include "sb_audio_tone.h"
+#include "sb_audio_triangle.h"
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +10,7 @@
 struct sb_audio {
     SDL_AudioDeviceID device;
     sb_audio_tone_t tone;
+    sb_audio_triangle_t triangle;
 };
 
 static void audio_output(void *userdata, Uint8 *stream, int length) {
@@ -19,6 +21,9 @@ static void audio_output(void *userdata, Uint8 *stream, int length) {
     if (audio->tone.active)
         sb_audio_tone_render(&audio->tone, (float *)stream,
                              (size_t)length / (2 * sizeof(float)));
+    else if (audio->triangle.active)
+        sb_audio_triangle_render(&audio->triangle, (float *)stream,
+                                 (size_t)length / (2 * sizeof(float)));
 }
 
 sb_audio_t *sb_audio_create(void) {
@@ -67,7 +72,7 @@ void sb_audio_destroy(sb_audio_t *audio) {
 bool sb_audio_start_test_tone(sb_audio_t *audio) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
-    bool started = !audio->tone.active;
+    bool started = !audio->tone.active && !audio->triangle.active;
     if (started) sb_audio_tone_start(&audio->tone);
     SDL_UnlockAudioDevice(audio->device);
     return started;
@@ -77,6 +82,37 @@ bool sb_audio_test_tone_active(sb_audio_t *audio) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
     bool active = audio->tone.active;
+    SDL_UnlockAudioDevice(audio->device);
+    return active;
+}
+
+bool sb_audio_start_triangle(sb_audio_t *audio, double frequency) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool started = !audio->tone.active && sb_audio_triangle_start(&audio->triangle, frequency);
+    SDL_UnlockAudioDevice(audio->device);
+    return started;
+}
+
+bool sb_audio_set_triangle_pitch(sb_audio_t *audio, double frequency) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool changed = sb_audio_triangle_pitch(&audio->triangle, frequency);
+    SDL_UnlockAudioDevice(audio->device);
+    return changed;
+}
+
+void sb_audio_stop_triangle(sb_audio_t *audio) {
+    if (!audio) return;
+    SDL_LockAudioDevice(audio->device);
+    sb_audio_triangle_stop(&audio->triangle);
+    SDL_UnlockAudioDevice(audio->device);
+}
+
+bool sb_audio_triangle_active(sb_audio_t *audio) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool active = audio->triangle.active;
     SDL_UnlockAudioDevice(audio->device);
     return active;
 }
