@@ -459,3 +459,37 @@ transitions are not claimed. HDMI is preferred for future Pi tests; degraded
 A/V output was observed with no established cause and is not an acceptance
 requirement for this milestone. See the [output observation](../../tests/audio-pan.md#pi-output-observation). Full-range
 aliasing control and final multi-voice headroom remain future work.
+
+## Standalone nine-voice bank checkpoint
+
+The pure C bank owns nine independent triangle voices, numbered 1–9. Each keeps
+its own ADSR, phase, pitch, volume, pan, and smoothing state. It sums normalized
+stereo voice output with double-precision accumulation and applies a fixed 1/9
+synth gain. Starting or stopping another voice does not change an existing
+voice's gain. Nine maximum-level coherent triangles remain bounded by ±1 per
+output channel; there is no clamp or active-count normalization here. Additional
+waveforms, filters, and WAV mixing will require reviewing that bound.
+
+Quiet diagnostic attenuation (0.05) is applied separately by the existing
+single-voice SDL diagnostic path. The bank itself has no diagnostic gain, SDL,
+Lua, allocation, or device ownership. Existing diagnostic loudness is preserved.
+The bank has not yet been connected to SDL or validated through listening/Pi
+checks. See [the native contract and automated checks](../../tests/audio-bank.md).
+
+## Native bank SDL checkpoint
+
+The bank now renders through the existing SDL device and callback. Per-slot
+native controls lock that device; the callback advances voices without
+allocation, logging, or Lua. The bank's fixed 1/9 headroom is retained, followed
+by separate approximately 0.791 bank diagnostic attenuation. Legacy diagnostics keep their existing
+loudness. Bank playback and the legacy sine/single-triangle diagnostics refuse
+conflicting note-on requests while the other path remains active.
+
+The [bank listening sequence and regression tests](../../tests/audio-bank.md)
+cover one, three, and nine voices, selective releases, short stops, and silence.
+Dummy-output tests do not establish listening quality or Pi performance.
+The user confirmed clean desktop listening at the final gain; all 50 automated
+tests pass. On Pi commit `d71e42d`, all 50 tests, bank/earlier tones, gameplay,
+and Exit to system status 0 passed. See the [output observations](../../tests/audio-bank.md#pi-validation-and-output-observations)
+for preliminary Bluetooth success and HDMI port-change behavior. Normal host startup is silent;
+Lua controls and cartridge-owned audio cleanup are not part of this checkpoint.

@@ -1,4 +1,4 @@
-/* Private prototype: quiet attenuation, native volume/pan, 220--660 Hz only. */
+/* Private prototype: normalized output, native volume/pan, 220--660 Hz only. */
 #ifndef SB_AUDIO_TRIANGLE_H
 #define SB_AUDIO_TRIANGLE_H
 #include <stdbool.h>
@@ -26,5 +26,6 @@ void sb_audio_triangle_note_off(sb_audio_triangle_t *voice);
 bool sb_audio_triangle_start(sb_audio_triangle_t *voice, double frequency);
 bool sb_audio_triangle_pitch(sb_audio_triangle_t *voice, double frequency);
 void sb_audio_triangle_stop(sb_audio_triangle_t *voice);
+/* Normalized waveform times envelope, volume, and pan; no diagnostic gain. */
 void sb_audio_triangle_render(sb_audio_triangle_t *voice, float *output, size_t frames);
 #endif

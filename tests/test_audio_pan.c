@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #define CHECK(e) do { if (!(e)) { fprintf(stderr, "Pan line %d: %s\n", __LINE__, #e); return 1; } } while (0)
-#define NEAR(a,b) (fabs((a)-(b)) < 1e-7)
+#define NEAR(a,b) (fabs((a)-(b)) < 2e-7)
 static float one[2], reference[2], whole[2400], pieces[2400];
 int main(void) {
     sb_audio_triangle_t v = {0};
@@ -17,7 +17,7 @@ int main(void) {
         CHECK(sb_audio_triangle_volume(&v, 1) && sb_audio_triangle_pan(&v, positions[p]));
         CHECK(sb_audio_triangle_start(&v, 440));
         for (unsigned i = 0; i < 120; ++i) {
-            double raw = .05*(1-4*fabs(v.phase-.5));
+            double raw = 1-4*fabs(v.phase-.5);
             sb_audio_triangle_render(&v, one, 1);
             CHECK(NEAR(one[0]*one[0]+one[1]*one[1], raw*raw));
             double angle = (positions[p]+1)*0.7853981633974483096;
@@ -34,7 +34,7 @@ int main(void) {
     CHECK(sb_audio_triangle_pan(&v, 1) && sb_audio_triangle_volume(&v, 0));
     for (unsigned i = 0; i < 480; ++i) {
         CHECK(NEAR(v.pan, -1+2*i/480.0) && NEAR(v.volume, 1-i/480.0));
-        double raw = .05*(1-4*fabs(v.phase-.5));
+        double raw = 1-4*fabs(v.phase-.5);
         double angle = (v.pan+1)*0.7853981633974483096;
         CHECK(sb_audio_triangle_pan(&v, 1)); /* Same target does not extend ramp. */
         sb_audio_triangle_render(&v, one, 1);

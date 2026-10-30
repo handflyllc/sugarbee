@@ -2,6 +2,26 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Validated the native nine-voice bank on Pi commit `d71e42d`: all 50 tests,
+  bank/earlier tones, gameplay, and Exit to system status 0 passed. Recorded
+  initial Bluetooth success and HDMI audio loss after a port change as output
+  observations, without claiming general hot-switching support.
+
+- Compare exact binary header bytes in the packager smoke test, avoiding
+  newline handling during text reads.
+
+- Connected the nine-voice bank to SDL with locked native controls, fixed 1/9
+  mixer headroom, and separate quiet diagnostic attenuation. Added
+  `sbee-bank-test` (approximately 0.791 diagnostic gain for audibility), callback/control
+  regression checks, and a timed dummy-output
+  test. Desktop and Pi listening confirmed. Lua controls and
+  cartridge audio lifecycle remain deferred.
+
+- Added a standalone nine-voice triangle bank with fixed 1/9 synth headroom,
+  independent voice controls, and automated isolation/mixing tests. Normalized
+  synthesis is separate from the existing quiet diagnostic attenuation.
+  Bank SDL integration, listening tests, and Lua controls remain deferred.
+
 - Validated native volume/pan on Pi commit `aa4f408`: all 47 tests, listening,
   earlier tones, gameplay, and Exit to system status 0 passed. Recorded HDMI
   as the preferred Pi test output and degraded A/V output of undetermined cause.

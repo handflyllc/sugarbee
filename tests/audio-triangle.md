@@ -77,3 +77,8 @@ remain later checkpoints.
 
 The earlier pre-ADSR triangle at `1664043` passed desktop/Pi listening, gameplay,
 and all 44 tests. Those results do not validate this new ADSR sequence.
+
+The standalone bank checkpoint normalizes the underlying triangle renderer.
+The existing single-voice SDL diagnostic path applies the separate 0.05 gain,
+retaining this listening tool's quiet output. The new nine-voice bank is not
+connected to this tool; see [bank tests](audio-bank.md).

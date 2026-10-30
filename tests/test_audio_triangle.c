@@ -23,13 +23,13 @@ int main(void) {
         unsigned crossings = 0;
         float peak = 0;
         for (unsigned i = 0; i < 48000; ++i) {
-            CHECK(isfinite(a[2*i]) && fabsf(a[2*i]) <= 0.050001f);
+            CHECK(isfinite(a[2*i]) && fabsf(a[2*i]) <= 1.000001f);
             CHECK(a[2*i] == a[2*i+1]);
             if (fabsf(a[2*i]) > peak) peak = fabsf(a[2*i]);
             if (i && a[2*(i-1)] <= 0 && a[2*i] > 0) ++crossings;
-            if (i < 480) CHECK(fabsf(a[2*i]) <= 0.05f*i/480 + 0.000001f);
+            if (i < 480) CHECK(fabsf(a[2*i]) <= 1.0f*i/480 + 0.000001f);
         }
-        CHECK(crossings == hz && peak > 0.017f);
+        CHECK(crossings == hz && peak > 0.34f);
         size_t offset = 0;
         while (offset < 48000) {
             size_t n = offset % 113 + 1;
@@ -49,7 +49,7 @@ int main(void) {
     CHECK(!sb_audio_triangle_pitch(&v, NAN) && v.frequency == 660);
     CHECK(!sb_audio_triangle_pitch(&v, 20000) && v.frequency == 660);
     sb_audio_triangle_render(&v, a, 1);
-    CHECK(fabs(a[0] - 0.05*0.5*sqrt(0.5)*(73.0/480)*(1-4*fabs(phase-0.5))) < 0.000001);
+    CHECK(fabs(a[0] - 0.5*sqrt(0.5)*(73.0/480)*(1-4*fabs(phase-0.5))) < 0.000001);
     /* Stopping during attack fades from the current level, not full volume. */
     gain = v.envelope.level;
     sb_audio_triangle_stop(&v);
@@ -59,7 +59,7 @@ int main(void) {
     sb_audio_triangle_render(&v, a+200, 380);
     CHECK(!v.active);
     for (unsigned i = 0; i < 480; ++i)
-        CHECK(fabsf(a[2*i]) <= 0.05*gain*(480-i)/480 + 0.000001);
+        CHECK(fabsf(a[2*i]) <= gain*(480-i)/480 + 0.000001);
     sb_audio_triangle_render(&v, a, 100);
     for (unsigned i = 0; i < 200; ++i) CHECK(a[i] == 0);
     CHECK(sb_audio_triangle_start(&v, 440));

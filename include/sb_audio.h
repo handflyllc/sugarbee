@@ -40,4 +40,21 @@ bool sb_audio_triangle_active(sb_audio_t *audio);
 bool sb_audio_set_triangle_volume(sb_audio_t *audio, double volume);
 bool sb_audio_set_triangle_pan(sb_audio_t *audio, double pan);
 
+/* Native bank diagnostic controls, voice numbers 1..9. The bank applies fixed
+ * 1/9 headroom; this SDL diagnostic path additionally applies gain approximately 0.791.
+ * Same pitch/ADSR/volume/pan rules as the triangle above. Independent slots,
+ * no automatic allocation/stealing. Note-on refuses an active legacy diagnostic;
+ * legacy diagnostics likewise refuse active bank voices. All calls lock the
+ * device, are control-thread only, and return false for NULL/invalid requests.
+ * Valid idle note-off/stop succeed harmlessly. No Lua API yet. */
+bool sb_audio_voice_configure(sb_audio_t *audio, unsigned voice, double attack,
+                              double decay, double sustain, double release);
+bool sb_audio_voice_note_on(sb_audio_t *audio, unsigned voice, double frequency);
+bool sb_audio_voice_pitch(sb_audio_t *audio, unsigned voice, double frequency);
+bool sb_audio_voice_volume(sb_audio_t *audio, unsigned voice, double volume);
+bool sb_audio_voice_pan(sb_audio_t *audio, unsigned voice, double pan);
+bool sb_audio_voice_note_off(sb_audio_t *audio, unsigned voice);
+bool sb_audio_voice_stop(sb_audio_t *audio, unsigned voice);
+bool sb_audio_voice_active(sb_audio_t *audio, unsigned voice);
+
 #endif

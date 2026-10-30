@@ -11,6 +11,7 @@ static unsigned opens, closes, shutdown_calls;
 static SDL_AudioCallback original_callback;
 static void *original_userdata;
 static SDL_atomic_t callbacks;
+static SDL_AudioDeviceID observed_device;
 
 static void observe_callback(void *userdata, Uint8 *stream, int length) {
     (void)userdata;
@@ -34,7 +35,8 @@ SDL_AudioDeviceID __wrap_SDL_OpenAudioDevice(const char *device, int capture,
     original_userdata = desired->userdata;
     SDL_AudioSpec observed = *desired;
     observed.callback = observe_callback;
-    return __real_SDL_OpenAudioDevice(device, capture, &observed, obtained, changes);
+    observed_device = __real_SDL_OpenAudioDevice(device, capture, &observed, obtained, changes);
+    return observed_device;
 }
 void __wrap_SDL_CloseAudioDevice(SDL_AudioDeviceID device) {
     ++closes;
@@ -88,6 +90,18 @@ int main(int argc, char **argv) {
         CHECK(!sb_audio_start_test_tone(g_engine.audio));
         CHECK(sb_audio_start_triangle(g_engine.audio, 440));
         CHECK(sb_audio_set_triangle_pitch(g_engine.audio, 660));
+        /* Normalized synthesis must retain quiet diagnostic output at the device. */
+        float samples[2048];
+        SDL_LockAudioDevice(observed_device);
+        original_callback(original_userdata, (Uint8 *)samples, sizeof(samples));
+        SDL_UnlockAudioDevice(observed_device);
+        float peak = 0;
+        for (size_t i = 0; i < 2048; ++i) {
+            float magnitude = samples[i] < 0 ? -samples[i] : samples[i];
+            CHECK(magnitude <= 0.017679f); /* 0.05 * 0.5 * sqrt(0.5). */
+            if (magnitude > peak) peak = magnitude;
+        }
+        CHECK(peak > 0.005f);
         CHECK(sb_audio_set_triangle_volume(g_engine.audio, 0));
         CHECK(sb_audio_set_triangle_pan(g_engine.audio, 1));
         CHECK(!sb_audio_set_triangle_volume(g_engine.audio, 2));
