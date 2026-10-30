@@ -29,7 +29,7 @@ int main(void) {
             if (i && a[2*(i-1)] <= 0 && a[2*i] > 0) ++crossings;
             if (i < 480) CHECK(fabsf(a[2*i]) <= 0.05f*i/480 + 0.000001f);
         }
-        CHECK(crossings == hz && peak > 0.049f);
+        CHECK(crossings == hz && peak > 0.017f);
         size_t offset = 0;
         while (offset < 48000) {
             size_t n = offset % 113 + 1;
@@ -49,7 +49,7 @@ int main(void) {
     CHECK(!sb_audio_triangle_pitch(&v, NAN) && v.frequency == 660);
     CHECK(!sb_audio_triangle_pitch(&v, 20000) && v.frequency == 660);
     sb_audio_triangle_render(&v, a, 1);
-    CHECK(fabs(a[0] - 0.05*(73.0/480)*(1-4*fabs(phase-0.5))) < 0.000001);
+    CHECK(fabs(a[0] - 0.05*0.5*sqrt(0.5)*(73.0/480)*(1-4*fabs(phase-0.5))) < 0.000001);
     /* Stopping during attack fades from the current level, not full volume. */
     gain = v.envelope.level;
     sb_audio_triangle_stop(&v);

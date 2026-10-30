@@ -2,6 +2,14 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Validated native volume/pan on Pi commit `aa4f408`: all 47 tests, listening,
+  earlier tones, gameplay, and Exit to system status 0 passed. Recorded HDMI
+  as the preferred Pi test output and degraded A/V output of undetermined cause.
+
+- Added native triangle volume and equal-power pan with 10 ms smoothing,
+  muted phase/envelope progression, sample tests, and `sbee-pan-test`.
+  Default volume is 0.5; fixed test attenuation remains separate. Lua deferred.
+
 - Validated native triangle ADSR and retrigger on Pi commit `710b738`: all 45
   tests, ADSR/sine listening, gameplay checks, and Exit to system status 0 passed.
 

@@ -25,8 +25,8 @@ Exit to system status 0.
 
 ## Native contract
 
-This remains one native voice, 220–660 Hz, fixed peak amplitude 0.05, centered
-stereo. The direct triangle is not band-limited; full-range aliasing control is
+This remains one native voice, 220–660 Hz, fixed attenuation 0.05, with native volume/pan controls (default volume
+0.5 and equal-power center). See [volume/pan](audio-pan.md). The direct triangle is not band-limited; full-range aliasing control is
 still deferred. It is not the nine-voice synth or a Lua API.
 
 Complete ADSR configuration validates all fields before changing anything.

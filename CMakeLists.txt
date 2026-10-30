@@ -80,6 +80,10 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sugarbee_audio PRIVATE sugarbee_envelope PkgConfig::SDL2 m)
     sugarbee_warnings(sugarbee_audio)
 
+    add_executable(sbee-pan-test tools/sbee-pan-test.c)
+    target_link_libraries(sbee-pan-test PRIVATE sugarbee_audio PkgConfig::SDL2)
+    sugarbee_warnings(sbee-pan-test)
+
     add_executable(sbee-triangle-test tools/sbee-triangle-test.c)
     target_link_libraries(sbee-triangle-test PRIVATE sugarbee_audio PkgConfig::SDL2)
     sugarbee_warnings(sbee-triangle-test)
@@ -111,6 +115,15 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     target_link_libraries(test_console_host PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
     sugarbee_warnings(test_console_host)
     add_test(NAME console_host_controls COMMAND test_console_host)
+
+    add_executable(test_audio_pan tests/test_audio_pan.c)
+    target_link_libraries(test_audio_pan PRIVATE sugarbee_audio)
+    sugarbee_warnings(test_audio_pan)
+    add_test(NAME audio_pan_samples COMMAND test_audio_pan)
+    set_tests_properties(audio_pan_samples PROPERTIES TIMEOUT 5)
+    add_test(NAME audio_pan_output COMMAND sbee-pan-test)
+    set_tests_properties(audio_pan_output PROPERTIES TIMEOUT 10
+        ENVIRONMENT "SDL_AUDIODRIVER=dummy")
 
     add_executable(test_audio_triangle tests/test_audio_triangle.c)
     target_link_libraries(test_audio_triangle PRIVATE sugarbee_audio)
