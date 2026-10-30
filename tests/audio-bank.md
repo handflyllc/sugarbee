@@ -79,8 +79,7 @@ diagnostic exclusion, release/stop isolation, silence, and active teardown.
 `audio_bank_output` runs the listening sequence with SDL dummy output under a
 10-second timeout. Passing it verifies control flow, not audible quality.
 The user confirmed clean desktop listening at the final gain setting. Pi
-validation remains pending. This
-triangle-only bound does not establish headroom for future resonant filters
+validation passed as recorded below. This triangle-only bound does not establish headroom for future resonant filters
 or mixed WAV playback.
 
 The first desktop listening run sounded clean but was almost inaudible even at
@@ -94,4 +93,19 @@ user's request it was raised another 10 dB to `0.25 * 10^(10/20)`, approximately
 Lower system volume before retrying, then adjust to a comfortable level.
 
 The user confirmed that the final level was suitable and the sequence sounded
-great. All 50 automated tests pass at this setting. Pi validation remains pending.
+great. All 50 automated tests pass at this setting.
+
+## Pi validation and output observations
+
+On Pi commit `d71e42d`, the user confirmed all 50 automated tests, clean bank
+and earlier diagnostic tones, successful gameplay checks, and Exit to system
+status 0. This validates the current native bank checkpoint on desktop and Pi.
+
+Bluetooth audio worked well in an initial test. Other Bluetooth connections
+remain untested; this is not a general compatibility or latency guarantee.
+HDMI worked well when booting with the cable connected to Pi HDMI port 0 and
+a valid display input. The user observed loss of negotiated audio after a port
+change. For repeatable validation, connect the intended display/input before
+booting and keep that connection stable. Live output switching and reconnection
+recovery have not been validated. HDMI remains the preferred Pi test output;
+these observations do not add an audio-device switching feature to this scope.

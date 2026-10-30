@@ -489,5 +489,7 @@ The [bank listening sequence and regression tests](../../tests/audio-bank.md)
 cover one, three, and nine voices, selective releases, short stops, and silence.
 Dummy-output tests do not establish listening quality or Pi performance.
 The user confirmed clean desktop listening at the final gain; all 50 automated
-tests pass. Pi validation remains pending. Normal host startup is silent;
+tests pass. On Pi commit `d71e42d`, all 50 tests, bank/earlier tones, gameplay,
+and Exit to system status 0 passed. See the [output observations](../../tests/audio-bank.md#pi-validation-and-output-observations)
+for preliminary Bluetooth success and HDMI port-change behavior. Normal host startup is silent;
 Lua controls and cartridge-owned audio cleanup are not part of this checkpoint.

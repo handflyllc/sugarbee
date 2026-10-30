@@ -140,8 +140,9 @@ audio quality is not an acceptance requirement for this milestone. A standalone 
 independent controls, and automated mixing/isolation checks. Diagnostic
 attenuation stays separate. The bank now has SDL integration, locked native controls, callback tests,
 and a native listening sequence. Desktop listening is confirmed and all 50
-automated tests pass. Pi validation remains pending;
-full synthesis, Lua controls, and WAV remain future work.
+automated tests pass. Pi validation passed at `d71e42d`: all 50 tests, clean
+bank/earlier tones, gameplay, and Exit to system status 0.
+Full synthesis, Lua controls, and WAV remain future work.
 See [bank scope and tests](tests/audio-bank.md).
 
 Done when: each selected audio slice meets its agreed behavior and resource
