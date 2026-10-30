@@ -453,5 +453,9 @@ use SDL device locking; no Lua API or additional voice is added. See
 [automated checks and listening instructions](../../tests/audio-pan.md). Desktop
 automated checks pass (47 tests). The user confirmed correct pan direction,
 mostly smooth volume changes, silent mute, and normal exit on desktop. Pi
-validation remains pending; perfectly smooth transitions are not claimed. Full-range
+validation passed at `aa4f408`: the user confirmed all 47 tests, pan/volume,
+earlier tones, gameplay, and Exit to system status 0. Perfectly smooth
+transitions are not claimed. HDMI is preferred for future Pi tests; degraded
+A/V output was observed with no established cause and is not an acceptance
+requirement for this milestone. See the [output observation](../../tests/audio-pan.md#pi-output-observation). Full-range
 aliasing control and final multi-voice headroom remain future work.

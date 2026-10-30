@@ -14,8 +14,9 @@ obvious clicks, silence during mute, and normal exit. Perceived loudness depends
 on your speakers and listening position. See [Pi output troubleshooting](audio-tone.md#pi-troubleshooting-no-audible-tone).
 All 47 automated tests pass. The user confirmed correct desktop pan direction,
 mostly smooth volume changes, silent mute, and normal exit. This records the
-reported result without claiming perfectly smooth transitions. Pi validation
-for these controls remains pending.
+reported result without claiming perfectly smooth transitions. On Pi commit
+`aa4f408`, the user confirmed all 47 tests, pan/volume checks, earlier tone and
+gameplay checks, and Exit to system status 0 passed.
 
 ## Contract
 
@@ -56,3 +57,12 @@ These tests establish generated samples and control behavior, not audibility.
 
 The voice still uses a direct, non-band-limited triangle at 220–660 Hz. Multiple
 voices, Lua controls, filters, other waveforms, and WAV playback remain deferred.
+
+## Pi output observation
+
+The user ran the validation with both HDMI and A/V output. HDMI sounded higher
+quality; A/V sounded notably degraded. The cause was not determined. Possible
+connection, wiring, or interference explanations are hypotheses, not diagnoses.
+HDMI is the preferred output for future Pi audio validation. A/V audio quality
+is not an acceptance requirement for the current milestone, and this observation
+does not add A/V troubleshooting to the implementation scope.

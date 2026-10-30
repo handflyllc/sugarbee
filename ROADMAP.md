@@ -133,8 +133,10 @@ validation passed at `710b738`: the user confirmed all 45 tests, clean
 ADSR/retrigger and sine output, gameplay checks, and Exit to system status 0.
 Native volume/equal-power pan now use 10 ms smoothing with automated checks;
 all 47 tests pass. The user confirmed correct desktop pan direction, mostly
-smooth volume changes, silent mute, and normal exit. Pi validation for these
-controls remains pending. The full synth,
+smooth volume changes, silent mute, and normal exit. On Pi commit `aa4f408`,
+the user confirmed all 47 tests, pan/volume, earlier tones, gameplay, and Exit
+to system status 0 passed. HDMI is the preferred future Pi test output; A/V
+audio quality is not an acceptance requirement for this milestone. The full synth,
 Lua controls, and WAV playback remain future checkpoints.
 
 Done when: each selected audio slice meets its agreed behavior and resource
