@@ -20,7 +20,7 @@ void sb_audio_destroy(sb_audio_t *audio);
 bool sb_audio_start_test_tone(sb_audio_t *audio);
 bool sb_audio_test_tone_active(sb_audio_t *audio);
 
-/* Native prototype: 220--660 Hz, peak 0.05, centered. Configure validates all
+/* Native prototype: 220--660 Hz, fixed attenuation 0.05. Configure validates all
  * four ADSR fields before updating; current notes retain their captured values.
  * Start/retrigger preserves active phase and attacks from current level over
  * the full new attack time; it refuses a playing diagnostic sine tone.
@@ -34,5 +34,10 @@ bool sb_audio_start_triangle(sb_audio_t *audio, double frequency);
 bool sb_audio_set_triangle_pitch(sb_audio_t *audio, double frequency);
 void sb_audio_stop_triangle(sb_audio_t *audio);
 bool sb_audio_triangle_active(sb_audio_t *audio);
+/* Native volume (0..1, default .5) and equal-power pan (-1..1, default 0).
+ * Finite inputs only. Active changes smooth over 10 ms; idle changes apply now.
+ * Controls preserve phase/envelope and volume zero does not stop the voice. */
+bool sb_audio_set_triangle_volume(sb_audio_t *audio, double volume);
+bool sb_audio_set_triangle_pan(sb_audio_t *audio, double pan);
 
 #endif

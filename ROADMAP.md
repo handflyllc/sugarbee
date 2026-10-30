@@ -131,7 +131,11 @@ and separates note-off from short stop. All 45 automated tests pass; the user
 confirmed clean desktop ADSR playback, smooth transitions, and normal exit. Pi
 validation passed at `710b738`: the user confirmed all 45 tests, clean
 ADSR/retrigger and sine output, gameplay checks, and Exit to system status 0.
-The full synth, Lua controls, and WAV playback remain future checkpoints.
+Native volume/equal-power pan now use 10 ms smoothing with automated checks;
+all 47 tests pass. The user confirmed correct desktop pan direction, mostly
+smooth volume changes, silent mute, and normal exit. Pi validation for these
+controls remains pending. The full synth,
+Lua controls, and WAV playback remain future checkpoints.
 
 Done when: each selected audio slice meets its agreed behavior and resource
 constraints with automated checks where appropriate and listening tests.

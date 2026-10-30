@@ -88,6 +88,10 @@ int main(int argc, char **argv) {
         CHECK(!sb_audio_start_test_tone(g_engine.audio));
         CHECK(sb_audio_start_triangle(g_engine.audio, 440));
         CHECK(sb_audio_set_triangle_pitch(g_engine.audio, 660));
+        CHECK(sb_audio_set_triangle_volume(g_engine.audio, 0));
+        CHECK(sb_audio_set_triangle_pan(g_engine.audio, 1));
+        CHECK(!sb_audio_set_triangle_volume(g_engine.audio, 2));
+        CHECK(!sb_audio_set_triangle_pan(g_engine.audio, -2));
         CHECK(!sb_audio_set_triangle_pitch(g_engine.audio, 1000));
         sb_audio_note_off_triangle(g_engine.audio);
         sb_audio_stop_triangle(g_engine.audio);
@@ -117,6 +121,8 @@ int main(int argc, char **argv) {
     CHECK(!sb_audio_set_triangle_pitch(NULL, 440));
     CHECK(!sb_audio_triangle_active(NULL));
     sb_audio_stop_triangle(NULL);
+    CHECK(!sb_audio_set_triangle_volume(NULL, .5));
+    CHECK(!sb_audio_set_triangle_pan(NULL, 0));
     sb_audio_destroy(NULL);
     puts("Audio host lifecycle checks passed");
     return 0;

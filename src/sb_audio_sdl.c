@@ -132,3 +132,18 @@ void sb_audio_note_off_triangle(sb_audio_t *audio) {
     sb_audio_triangle_note_off(&audio->triangle);
     SDL_UnlockAudioDevice(audio->device);
 }
+
+bool sb_audio_set_triangle_volume(sb_audio_t *audio, double volume) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = sb_audio_triangle_volume(&audio->triangle, volume);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+bool sb_audio_set_triangle_pan(sb_audio_t *audio, double pan) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = sb_audio_triangle_pan(&audio->triangle, pan);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}

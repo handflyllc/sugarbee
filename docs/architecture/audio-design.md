@@ -432,3 +432,26 @@ user confirmed all 45 tests, clean ADSR/retrigger and sine output, gameplay
 checks, and Exit to system status 0. This validates the bounded native ADSR
 integration on desktop and Pi. Pitch remains limited to 220–660 Hz, volume/pan
 fixed, and Lua deferred.
+
+## Native volume and pan checkpoint
+
+The single triangle now has native volume 0–1 (default 0.5) and equal-power pan
+-1–1 (default zero). The fixed quiet testing attenuation of 0.05 remains separate.
+Left/right gains are cosine/sine of `(pan+1)*pi/4`, with exact endpoint silence
+and equal center gains. This replaces the prototype's full signal in both
+channels; the standalone sine diagnostic is unchanged.
+
+Active volume/pan targets ramp independently over 480 frames (10 ms) from their
+current values. Pan gains are derived from the interpolated pan, retaining
+constant squared gain sum through the transition. New targets restart from the
+current value; repeated identical targets do not prolong ramps. Idle controls
+apply immediately; idle restart retains targets. Active retrigger preserves the
+ramps. Volume zero mutes without pausing waveform or ADSR progression.
+
+Whole scalar requests reject invalid/nonfinite values unchanged. Native controls
+use SDL device locking; no Lua API or additional voice is added. See
+[automated checks and listening instructions](../../tests/audio-pan.md). Desktop
+automated checks pass (47 tests). The user confirmed correct pan direction,
+mostly smooth volume changes, silent mute, and normal exit on desktop. Pi
+validation remains pending; perfectly smooth transitions are not claimed. Full-range
+aliasing control and final multi-voice headroom remain future work.
