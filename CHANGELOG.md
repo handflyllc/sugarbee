@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added a standalone nine-voice triangle bank with fixed 1/9 synth headroom,
+  independent voice controls, and automated isolation/mixing tests. Normalized
+  synthesis is separate from the existing quiet diagnostic attenuation.
+  Bank SDL integration, listening tests, and Lua controls remain deferred.
+
 - Validated native volume/pan on Pi commit `aa4f408`: all 47 tests, listening,
   earlier tones, gameplay, and Exit to system status 0 passed. Recorded HDMI
   as the preferred Pi test output and degraded A/V output of undetermined cause.

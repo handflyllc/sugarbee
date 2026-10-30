@@ -97,7 +97,7 @@ void sb_audio_triangle_render(sb_audio_triangle_t *v, float *output, size_t fram
             double triangle = 1.0 - 4.0 * fabs(v->phase - 0.5);
             /* Use the interval's starting level, then advance for the next
                sample. Controls see exactly that next-sample boundary level. */
-            sample = (float)(0.05 * v->envelope.level * triangle);
+            sample = (float)(v->envelope.level * triangle);
             v->phase += v->frequency / SB_AUDIO_RATE;
             if (v->phase >= 1.0) v->phase -= 1.0;
             if (v->stopping) {

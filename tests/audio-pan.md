@@ -66,3 +66,8 @@ connection, wiring, or interference explanations are hypotheses, not diagnoses.
 HDMI is the preferred output for future Pi audio validation. A/V audio quality
 is not an acceptance requirement for the current milestone, and this observation
 does not add A/V troubleshooting to the implementation scope.
+
+The standalone bank checkpoint normalizes the underlying triangle renderer.
+The existing single-voice SDL diagnostic path applies the separate 0.05 gain,
+retaining this listening tool's quiet output. The new nine-voice bank is not
+connected to this tool; see [bank tests](audio-bank.md).

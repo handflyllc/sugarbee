@@ -21,9 +21,15 @@ static void audio_output(void *userdata, Uint8 *stream, int length) {
     if (audio->tone.active)
         sb_audio_tone_render(&audio->tone, (float *)stream,
                              (size_t)length / (2 * sizeof(float)));
-    else if (audio->triangle.active)
+    else if (audio->triangle.active) {
         sb_audio_triangle_render(&audio->triangle, (float *)stream,
                                  (size_t)length / (2 * sizeof(float)));
+        /* Existing single-voice diagnostics stay quiet. The standalone bank's
+           1/9 headroom is not connected to this backend in this checkpoint. */
+        float *samples = (float *)stream;
+        size_t count = ((size_t)length / (2 * sizeof(float))) * 2;
+        for (size_t i = 0; i < count; ++i) samples[i] *= 0.05f;
+    }
 }
 
 sb_audio_t *sb_audio_create(void) {

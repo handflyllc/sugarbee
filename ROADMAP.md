@@ -136,8 +136,11 @@ all 47 tests pass. The user confirmed correct desktop pan direction, mostly
 smooth volume changes, silent mute, and normal exit. On Pi commit `aa4f408`,
 the user confirmed all 47 tests, pan/volume, earlier tones, gameplay, and Exit
 to system status 0 passed. HDMI is the preferred future Pi test output; A/V
-audio quality is not an acceptance requirement for this milestone. The full synth,
-Lua controls, and WAV playback remain future checkpoints.
+audio quality is not an acceptance requirement for this milestone. A standalone nine-voice triangle bank now uses fixed 1/9 synth headroom,
+independent controls, and automated mixing/isolation checks. Diagnostic
+attenuation stays separate. Bank SDL integration and listening/Pi validation
+are the next checkpoint; full synthesis, Lua controls, and WAV remain future work.
+See [bank scope and tests](tests/audio-bank.md).
 
 Done when: each selected audio slice meets its agreed behavior and resource
 constraints with automated checks where appropriate and listening tests.

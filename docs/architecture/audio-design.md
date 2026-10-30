@@ -459,3 +459,19 @@ transitions are not claimed. HDMI is preferred for future Pi tests; degraded
 A/V output was observed with no established cause and is not an acceptance
 requirement for this milestone. See the [output observation](../../tests/audio-pan.md#pi-output-observation). Full-range
 aliasing control and final multi-voice headroom remain future work.
+
+## Standalone nine-voice bank checkpoint
+
+The pure C bank owns nine independent triangle voices, numbered 1–9. Each keeps
+its own ADSR, phase, pitch, volume, pan, and smoothing state. It sums normalized
+stereo voice output with double-precision accumulation and applies a fixed 1/9
+synth gain. Starting or stopping another voice does not change an existing
+voice's gain. Nine maximum-level coherent triangles remain bounded by ±1 per
+output channel; there is no clamp or active-count normalization here. Additional
+waveforms, filters, and WAV mixing will require reviewing that bound.
+
+Quiet diagnostic attenuation (0.05) is applied separately by the existing
+single-voice SDL diagnostic path. The bank itself has no diagnostic gain, SDL,
+Lua, allocation, or device ownership. Existing diagnostic loudness is preserved.
+The bank has not yet been connected to SDL or validated through listening/Pi
+checks. See [the native contract and automated checks](../../tests/audio-bank.md).
