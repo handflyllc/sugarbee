@@ -71,3 +71,8 @@ The standalone bank checkpoint normalizes the underlying triangle renderer.
 The existing single-voice SDL diagnostic path applies the separate 0.05 gain,
 retaining this listening tool's quiet output. The new nine-voice bank is not
 connected to this tool; see [bank tests](audio-bank.md).
+
+A later comparison using the same wired headphones on the development computer
+produced clean audio; speakers there also sounded clean. This points toward the
+Pi A/V output path as the source of the earlier degradation, without identifying
+its exact cause. HDMI remains the preferred Pi output.

@@ -1,7 +1,7 @@
 /* SDL2 audio foundation: fixed callback format, host lifetime, opt-in diagnostic tone. */
 #include "sb_audio.h"
 #include "sb_audio_tone.h"
-#include "sb_audio_triangle.h"
+#include "sb_audio_bank.h"
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +11,18 @@ struct sb_audio {
     SDL_AudioDeviceID device;
     sb_audio_tone_t tone;
     sb_audio_triangle_t triangle;
+    sb_audio_bank_t bank;
 };
+
+/* Caller holds the device lock, or is the callback itself. */
+static bool bank_active(const sb_audio_t *audio) {
+    for (unsigned voice = 1; voice <= SB_AUDIO_BANK_VOICES; ++voice)
+        if (sb_audio_bank_active(&audio->bank, voice)) return true;
+    return false;
+}
+
+static const float diagnostic_gain = 0.05f;
+static const float bank_diagnostic_gain = 0.790569415f; /* 0.25 * 10^(10/20): +10 dB. */
 
 static void audio_output(void *userdata, Uint8 *stream, int length) {
     sb_audio_t *audio = userdata;
@@ -21,14 +32,16 @@ static void audio_output(void *userdata, Uint8 *stream, int length) {
     if (audio->tone.active)
         sb_audio_tone_render(&audio->tone, (float *)stream,
                              (size_t)length / (2 * sizeof(float)));
-    else if (audio->triangle.active) {
-        sb_audio_triangle_render(&audio->triangle, (float *)stream,
-                                 (size_t)length / (2 * sizeof(float)));
-        /* Existing single-voice diagnostics stay quiet. The standalone bank's
-           1/9 headroom is not connected to this backend in this checkpoint. */
+    else if (audio->triangle.active || bank_active(audio)) {
+        size_t frames = (size_t)length / (2 * sizeof(float));
+        float gain = audio->triangle.active ? diagnostic_gain : bank_diagnostic_gain;
+        if (audio->triangle.active)
+            sb_audio_triangle_render(&audio->triangle, (float *)stream, frames);
+        else
+            (void)sb_audio_bank_render(&audio->bank, (float *)stream, frames);
+        /* Diagnostic loudness is independent of the bank's fixed 1/9 headroom. */
         float *samples = (float *)stream;
-        size_t count = ((size_t)length / (2 * sizeof(float))) * 2;
-        for (size_t i = 0; i < count; ++i) samples[i] *= 0.05f;
+        for (size_t i = 0; i < frames * 2; ++i) samples[i] *= gain;
     }
 }
 
@@ -78,7 +91,7 @@ void sb_audio_destroy(sb_audio_t *audio) {
 bool sb_audio_start_test_tone(sb_audio_t *audio) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
-    bool started = !audio->tone.active && !audio->triangle.active;
+    bool started = !audio->tone.active && !audio->triangle.active && !bank_active(audio);
     if (started) sb_audio_tone_start(&audio->tone);
     SDL_UnlockAudioDevice(audio->device);
     return started;
@@ -95,7 +108,7 @@ bool sb_audio_test_tone_active(sb_audio_t *audio) {
 bool sb_audio_start_triangle(sb_audio_t *audio, double frequency) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
-    bool started = !audio->tone.active && sb_audio_triangle_start(&audio->triangle, frequency);
+    bool started = !audio->tone.active && !bank_active(audio) && sb_audio_triangle_start(&audio->triangle, frequency);
     SDL_UnlockAudioDevice(audio->device);
     return started;
 }
@@ -150,6 +163,66 @@ bool sb_audio_set_triangle_pan(sb_audio_t *audio, double pan) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
     bool ok = sb_audio_triangle_pan(&audio->triangle, pan);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+
+bool sb_audio_voice_configure(sb_audio_t *audio, unsigned voice, double attack,
+                              double decay, double sustain, double release) {
+    if (!audio) return false;
+    sb_envelope_settings_t settings = {attack, decay, sustain, release};
+    SDL_LockAudioDevice(audio->device);
+    bool ok = sb_audio_bank_configure(&audio->bank, voice, &settings);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+bool sb_audio_voice_note_on(sb_audio_t *audio, unsigned voice, double frequency) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = !audio->tone.active && !audio->triangle.active &&
+              sb_audio_bank_note_on(&audio->bank, voice, frequency);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+bool sb_audio_voice_pitch(sb_audio_t *audio, unsigned voice, double frequency) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = sb_audio_bank_pitch(&audio->bank, voice, frequency);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+bool sb_audio_voice_volume(sb_audio_t *audio, unsigned voice, double volume) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = sb_audio_bank_volume(&audio->bank, voice, volume);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+bool sb_audio_voice_pan(sb_audio_t *audio, unsigned voice, double pan) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = sb_audio_bank_pan(&audio->bank, voice, pan);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+bool sb_audio_voice_note_off(sb_audio_t *audio, unsigned voice) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = sb_audio_bank_note_off(&audio->bank, voice);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+bool sb_audio_voice_stop(sb_audio_t *audio, unsigned voice) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = sb_audio_bank_stop(&audio->bank, voice);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+bool sb_audio_voice_active(sb_audio_t *audio, unsigned voice) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = sb_audio_bank_active(&audio->bank, voice);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }

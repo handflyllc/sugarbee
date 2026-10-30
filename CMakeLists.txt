@@ -92,6 +92,10 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sugarbee_audio PRIVATE sugarbee_synth PkgConfig::SDL2 m)
     sugarbee_warnings(sugarbee_audio)
 
+    add_executable(sbee-bank-test tools/sbee-bank-test.c)
+    target_link_libraries(sbee-bank-test PRIVATE sugarbee_audio PkgConfig::SDL2)
+    sugarbee_warnings(sbee-bank-test)
+
     add_executable(sbee-pan-test tools/sbee-pan-test.c)
     target_link_libraries(sbee-pan-test PRIVATE sugarbee_audio PkgConfig::SDL2)
     sugarbee_warnings(sbee-pan-test)
@@ -127,6 +131,15 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     target_link_libraries(test_console_host PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
     sugarbee_warnings(test_console_host)
     add_test(NAME console_host_controls COMMAND test_console_host)
+
+    add_executable(test_audio_bank_sdl tests/test_audio_bank_sdl.c src/sb_audio_tone.c)
+    target_include_directories(test_audio_bank_sdl PRIVATE "${PROJECT_SOURCE_DIR}/include")
+    target_link_libraries(test_audio_bank_sdl PRIVATE sugarbee_synth PkgConfig::SDL2 m)
+    sugarbee_warnings(test_audio_bank_sdl)
+    add_test(NAME audio_bank_sdl COMMAND test_audio_bank_sdl)
+    add_test(NAME audio_bank_output COMMAND sbee-bank-test)
+    set_tests_properties(audio_bank_sdl audio_bank_output PROPERTIES TIMEOUT 10
+        ENVIRONMENT "SDL_AUDIODRIVER=dummy")
 
     add_executable(test_audio_pan tests/test_audio_pan.c)
     target_link_libraries(test_audio_pan PRIVATE sugarbee_audio)

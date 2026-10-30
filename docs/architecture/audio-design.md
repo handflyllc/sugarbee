@@ -475,3 +475,19 @@ single-voice SDL diagnostic path. The bank itself has no diagnostic gain, SDL,
 Lua, allocation, or device ownership. Existing diagnostic loudness is preserved.
 The bank has not yet been connected to SDL or validated through listening/Pi
 checks. See [the native contract and automated checks](../../tests/audio-bank.md).
+
+## Native bank SDL checkpoint
+
+The bank now renders through the existing SDL device and callback. Per-slot
+native controls lock that device; the callback advances voices without
+allocation, logging, or Lua. The bank's fixed 1/9 headroom is retained, followed
+by separate approximately 0.791 bank diagnostic attenuation. Legacy diagnostics keep their existing
+loudness. Bank playback and the legacy sine/single-triangle diagnostics refuse
+conflicting note-on requests while the other path remains active.
+
+The [bank listening sequence and regression tests](../../tests/audio-bank.md)
+cover one, three, and nine voices, selective releases, short stops, and silence.
+Dummy-output tests do not establish listening quality or Pi performance.
+The user confirmed clean desktop listening at the final gain; all 50 automated
+tests pass. Pi validation remains pending. Normal host startup is silent;
+Lua controls and cartridge-owned audio cleanup are not part of this checkpoint.

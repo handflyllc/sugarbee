@@ -2,6 +2,16 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Compare exact binary header bytes in the packager smoke test, avoiding
+  newline handling during text reads.
+
+- Connected the nine-voice bank to SDL with locked native controls, fixed 1/9
+  mixer headroom, and separate quiet diagnostic attenuation. Added
+  `sbee-bank-test` (approximately 0.791 diagnostic gain for audibility), callback/control
+  regression checks, and a timed dummy-output
+  test. Desktop listening confirmed; Pi validation pending. Lua controls and
+  cartridge audio lifecycle remain deferred.
+
 - Added a standalone nine-voice triangle bank with fixed 1/9 synth headroom,
   independent voice controls, and automated isolation/mixing tests. Normalized
   synthesis is separate from the existing quiet diagnostic attenuation.
