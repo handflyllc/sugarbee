@@ -12,9 +12,9 @@ bool sb_audio_bank_configure(sb_audio_bank_t *bank, unsigned voice, const sb_env
 }
 bool sb_audio_bank_note_on(sb_audio_bank_t *bank, unsigned voice, double frequency) {
     sb_audio_triangle_t *v = voice_at(bank, voice);
-    if (!v || (v->active && bank->noise_voice[voice-1])) return false;
+    if (!v || (v->active && bank->kind[voice-1] != SB_AUDIO_VOICE_TRIANGLE)) return false;
     if (!sb_audio_triangle_start(v, frequency)) return false;
-    bank->noise_voice[voice-1] = false;
+    bank->kind[voice-1] = SB_AUDIO_VOICE_TRIANGLE;
     return true;
 }
 /* Fixed, distinct nonzero defaults; no clock or process-global random state. */
@@ -30,19 +30,33 @@ bool sb_audio_bank_seed(sb_audio_bank_t *bank, unsigned voice, uint32_t seed) {
 }
 bool sb_audio_bank_noise_on(sb_audio_bank_t *bank, unsigned voice) {
     sb_audio_triangle_t *v = voice_at(bank, voice);
-    if (!v || (v->active && !bank->noise_voice[voice-1])) return false;
+    if (!v || (v->active && bank->kind[voice-1] != SB_AUDIO_VOICE_NOISE)) return false;
     bool idle = !v->active;
     if (!sb_audio_voice_start(v)) return false;
     if (idle) {
         uint32_t seed = bank->seeds[voice-1];
         sb_audio_noise_reset(&bank->noise[voice-1], seed ? seed : default_seeds[voice-1]);
     }
-    bank->noise_voice[voice-1] = true;
+    bank->kind[voice-1] = SB_AUDIO_VOICE_NOISE;
+    return true;
+}
+bool sb_audio_bank_saw_on(sb_audio_bank_t *bank, unsigned voice, double frequency) {
+    sb_audio_triangle_t *v = voice_at(bank, voice);
+    if (!v || (v->active && bank->kind[voice-1] != SB_AUDIO_VOICE_SAW)) return false;
+    /* Validate the prospective oscillator before touching the live envelope. */
+    sb_audio_saw_t next = bank->saw[voice-1];
+    bool ok = v->active ? sb_audio_saw_pitch(&next, frequency) :
+                          sb_audio_saw_reset(&next, frequency);
+    if (!ok || !sb_audio_voice_start(v)) return false;
+    bank->saw[voice-1] = next;
+    bank->kind[voice-1] = SB_AUDIO_VOICE_SAW;
     return true;
 }
 bool sb_audio_bank_pitch(sb_audio_bank_t *bank, unsigned voice, double frequency) {
     sb_audio_triangle_t *v = voice_at(bank, voice);
-    if (!v || bank->noise_voice[voice-1]) return false;
+    if (!v || !v->active || bank->kind[voice-1] == SB_AUDIO_VOICE_NOISE) return false;
+    if (bank->kind[voice-1] == SB_AUDIO_VOICE_SAW)
+        return sb_audio_saw_pitch(&bank->saw[voice-1], frequency);
     return sb_audio_triangle_pitch(v, frequency);
 }
 bool sb_audio_bank_volume(sb_audio_bank_t *bank, unsigned voice, double volume) {
@@ -73,7 +87,8 @@ bool sb_audio_bank_render(sb_audio_bank_t *bank, float *output, size_t frames) {
         for (unsigned voice = 0; voice < SB_AUDIO_BANK_VOICES; ++voice) {
             float stereo[2];
             sb_audio_voice_render(&bank->voices[voice],
-                                  bank->noise_voice[voice] ? &bank->noise[voice] : NULL,
+                                  bank->kind[voice] == SB_AUDIO_VOICE_NOISE ? &bank->noise[voice] : NULL,
+                                  bank->kind[voice] == SB_AUDIO_VOICE_SAW ? &bank->saw[voice] : NULL,
                                   stereo, 1);
             left += stereo[0];
             right += stereo[1];

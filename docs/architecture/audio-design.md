@@ -12,9 +12,9 @@ not current limitations.
 | Area | Implemented now | Still pending |
 | --- | --- | --- |
 | Output | Host-owned SDL2 device, 48 kHz float stereo, silent fallback, clean close | Live failure detection/reconnection, measured end-to-end latency |
-| Voice bank | Nine explicit native slots, triangle or white noise, independent state | Saw bank integration, pulse, live cross-waveform transitions |
+| Voice bank | Nine explicit native slots, triangle, white noise, or saw, independent state | Pulse, live cross-waveform transitions |
 | Triangle | Direct waveform, 220–660 Hz, phase-preserving pitch/retrigger | Aliasing control and broader supported pitch range |
-| Saw | Standalone PolyBLEP oscillator, 220–660 Hz, reset/pitch/sample/spectral tests | Bank/SDL integration, listening, Pi validation, broader pitch |
+| Saw | PolyBLEP, 220–660 Hz, native bank/SDL integration and automated checks | Pi validation, broader pitch |
 | Noise | Deterministic per-sample white noise, distinct default seeds, repeatable idle starts | Rate-controlled/tonal noise remains deferred; no current noise frequency control |
 | Envelope | Linear ADSR, captured per note, current-level active retrigger | No additional envelope model planned for this checkpoint |
 | Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Filters, pulse width, group/master controls |
@@ -94,7 +94,9 @@ error-delivery and success-return semantics remain to be finalized.
 
 ## Current native voice lifecycle
 
-- Triangle and noise share linear ADSR, volume, pan, and short-stop behavior.
+- Triangle, noise, and saw share linear ADSR, volume, pan, and short-stop behavior.
+- Idle saw start begins at phase 0.5. Active saw retrigger and pitch-only edits
+  preserve phase, with the same envelope/retrigger rules as triangle.
 - Idle triangle start begins at phase 0.25. Active triangle note-on preserves
   phase and changes pitch. Pitch-only changes do not retrigger the envelope.
 - Active note-on attacks from the current envelope level to one over the full
@@ -112,7 +114,7 @@ error-delivery and success-return semantics remain to be finalized.
 - Note-off releases from the current level using captured release settings.
   Repeated note-off does not restart release. Stop overrides release with a
   480-frame fade; repeated stop/note-off cannot prolong that stop.
-- Idle slots can start either type. Active triangle/noise cross-type starts are
+- Idle slots can start any implemented type. Active cross-type starts are
   rejected. Noise has a separate frequency-free note-on and rejects pitch edits.
 - Bank reset cancels notes and restores defaults; it is cleanup, not a fade.
   Normal host startup remains silent; cartridges cannot request audio yet.
@@ -361,7 +363,7 @@ filter gain handling, and combined-output attenuation remain to be specified. A 
 
 ## Remaining implementation questions
 
-- Saw bank integration and listening validation; pulse oscillator/aliasing
+- Saw listening/Pi validation; pulse oscillator/aliasing
   method selection. Measure quality before expanding the bounded pitch ranges.
 - Smooth live waveform/pulse-width changes; current active cross-type changes
   are rejected. White noise versus any future rate-controlled noise API.
@@ -382,8 +384,8 @@ equal-power synth pan, fixed 1/9 current synth headroom, and noise seed rules.
 
 ## Agreed next sequence — checkpoint by checkpoint
 
-1. Standalone PolyBLEP saw and tests are implemented at 220–660 Hz. Next are
-   bank integration, listening, and Pi validation before any range expansion.
+1. PolyBLEP saw and bank/SDL integration are implemented at 220–660 Hz.
+   Desktop listening is confirmed; Pi validation precedes any range expansion.
 2. Pulse waveform/pulse width; smooth waveform transitions and broader pitch
    support through separately reviewed checkpoints.
 3. Per-voice low-pass/bypass, with resonance and gain bounds settled before use.
@@ -394,7 +396,7 @@ equal-power synth pan, fixed 1/9 current synth headroom, and noise seed rules.
 6. Bounded WAV playback as a separate milestone.
 
 Each stage needs its own scope/acceptance review; this sequence is not permission
-to implement all stages at once. The accepted first saw slice is standalone only;
+to implement all stages at once. Saw integration retains the bounded pitch range;
 PolyBLEP is alias-suppressed, not an alias-free promise.
 
 ## Deferred topics
@@ -637,3 +639,17 @@ against a raw ramp pass; the three measured frequencies show approximately
 16 dB less unwanted power without simply attenuating the fundamental.
 See [the exact tests and measurement limits](../../tests/audio-saw.md).
 Bank integration, listening, Pi validation, and broader pitch remain deferred.
+
+## Saw bank integration checkpoint
+
+The native bank/SDL path now supports saw alongside triangle and noise. Idle
+saw notes start at phase 0.5; active retrigger preserves phase and applies the
+shared current-level/full-duration ADSR attack. Pitch edits preserve phase and
+envelope. Type changes require an idle slot. Mute, release, and short stop keep
+phase advancing until idle. Fixed 1/9 headroom and diagnostic gain are unchanged.
+
+[Bank regression checks and the native listening sequence](../../tests/audio-saw.md#native-bank-and-sdl-integration)
+cover lifecycle, headroom, mixed rendering, controls, and teardown. All 56
+automated tests pass. The user confirmed clean desktop saw playback, correct
+stereo placement, and normal exit. Pi validation remains pending; Lua controls
+remain deferred.

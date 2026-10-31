@@ -147,7 +147,7 @@ int main(void) {
     }
     sb_audio_bank_reset(&bank);
     for (unsigned v = 1; v <= 9; ++v) {
-        CHECK(!bank.voices[v-1].active && !bank.noise_voice[v-1]);
+        CHECK(!bank.voices[v-1].active && bank.kind[v-1] == SB_AUDIO_VOICE_TRIANGLE);
         CHECK(sb_audio_bank_noise_on(&bank, v));
         CHECK(bank.noise[v-1].state == defaults[v-1]);
     }

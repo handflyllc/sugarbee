@@ -94,7 +94,7 @@ void sb_audio_triangle_stop(sb_audio_triangle_t *v) {
     v->stop_left = STOP_FRAMES;
 }
 void sb_audio_voice_render(sb_audio_triangle_t *v, sb_audio_noise_t *source,
-                           float *output, size_t frames) {
+                           sb_audio_saw_t *saw, float *output, size_t frames) {
     initialize_controls(v);
     for (size_t i = 0; i < frames; ++i) {
         float sample = 0;
@@ -103,6 +103,10 @@ void sb_audio_voice_render(sb_audio_triangle_t *v, sb_audio_noise_t *source,
             if (source) {
                 float raw;
                 (void)sb_audio_noise_render(source, &raw, 1);
+                waveform = raw;
+            } else if (saw) {
+                float raw = 0;
+                (void)sb_audio_saw_render(saw, &raw, 1);
                 waveform = raw;
             } else {
                 waveform = 1.0 - 4.0 * fabs(v->phase - 0.5);
@@ -134,5 +138,5 @@ void sb_audio_voice_render(sb_audio_triangle_t *v, sb_audio_noise_t *source,
 }
 
 void sb_audio_triangle_render(sb_audio_triangle_t *v, float *output, size_t frames) {
-    sb_audio_voice_render(v, NULL, output, frames);
+    sb_audio_voice_render(v, NULL, NULL, output, frames);
 }

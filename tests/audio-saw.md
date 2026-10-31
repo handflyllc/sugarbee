@@ -1,9 +1,9 @@
 # Standalone PolyBLEP saw
 
 This pure C component generates normalized mono saw samples at 48 kHz and
-accepts finite pitches from 220 through 660 Hz. It is not yet connected to the
-bank, SDL, or Lua, and has no envelope, volume, diagnostic gain, or listening
-executable. Existing playback is unchanged.
+accepts finite pitches from 220 through 660 Hz. The oscillator itself has no
+envelope, volume, or diagnostic gain. Native bank/SDL integration is described
+below; Lua controls remain deferred. Existing listening tools are unchanged.
 
 ## State and output contract
 
@@ -57,4 +57,52 @@ cmake --build /tmp/sugarbee-saw-standalone --target test_audio_saw
 ctest --test-dir /tmp/sugarbee-saw-standalone -R '^audio_saw$' --output-on-failure
 ```
 
-Bank integration, native listening, and Pi validation remain the next checkpoint.
+## Native bank and SDL integration
+
+`sb_audio_voice_saw_on(audio, voice, frequency)` starts or retriggers a saw in
+one of the nine native slots. Idle start resets the saw phase to 0.5; active
+saw retrigger preserves phase, changes pitch, and attacks from the current level
+over the full new attack duration. This also applies during release or short
+stop, which retrigger cancels. Pitch-only changes preserve phase and envelope.
+The supported range remains 220–660 Hz; no pitch glide is added.
+
+Triangle, noise, and saw share ADSR, volume/pan smoothing, mute, release, and
+10 ms stop behavior. Muted saw notes still advance phase, as do release and stop
+until idle. A fresh idle start replays the initial phase. Only idle slots can
+change waveform type; active cross-type starts fail unchanged. Whole-bank reset
+restores silent/default state. Legacy diagnostics refuse concurrent bank play.
+
+Mixing retains fixed 1/9 headroom. Nine coherent maximum-level saw voices are
+bounded without clipping; mixed triangle/noise/saw sources retain the same bound.
+SDL applies separate bank diagnostic gain 0.790569415, unchanged from the prior
+listening tests. Controls lock the device; no allocation, Lua call, or logging
+occurs in the callback. Cartridge-owned audio and Lua controls remain deferred.
+
+`audio_saw_bank` checks per-slot routing, replay, active/release/stop retrigger,
+pitch-only updates, invalid and cross-type requests, phase progression while
+muted, release/stop completion, all-nine headroom at left/center/right, mixed
+block partitioning, slot isolation, and reset silence. `audio_bank_sdl` adds
+saw controls, mixed callback samples, legacy exclusion, and active teardown.
+`audio_saw_output` runs the listening sequence under dummy SDL output with a
+15-second timeout. Passing it verifies execution, not audible quality.
+
+## Listening check
+
+```sh
+./build/sbee-saw-test
+```
+
+Lower output volume first: saw tones are brighter than triangle tones. The
+roughly five-second sequence announces:
+
+1. Left saw at 220 Hz, changing pitch to 440 Hz without retrigger.
+2. Release followed by a 660 Hz retrigger while moving to center.
+3. Short stop, then a fresh right-side 330 Hz note and release.
+4. Nine mixed triangle/noise/saw voices, ending in silence.
+
+Confirm correct pitch/stereo changes, clean transitions, no unexpected stuck
+notes or distortion, final silence, and normal exit. This is an audible check
+of bounded prototype behavior, not proof of alias-free synthesis. Also rerun
+the existing noise/bank/pan/triangle/sine tools and gameplay checks. Prefer HDMI
+on the Pi. The user confirmed clean desktop saw playback, correct stereo placement, and
+normal exit. All 56 automated tests pass. Pi validation remains pending.
