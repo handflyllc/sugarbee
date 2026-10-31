@@ -268,3 +268,19 @@ bool sb_audio_voice_pulse_width(sb_audio_t *audio, unsigned voice, double width)
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
+
+bool sb_audio_voice_waveform(sb_audio_t *audio, unsigned voice, sb_audio_voice_kind_t kind) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = sb_audio_bank_waveform(&audio->bank, voice, kind);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+bool sb_audio_voice_start_selected(sb_audio_t *audio, unsigned voice, double frequency) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = !audio->tone.active && !audio->triangle.active &&
+              sb_audio_bank_start_selected(&audio->bank, voice, frequency);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}

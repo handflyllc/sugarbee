@@ -35,6 +35,8 @@ void sb_audio_triangle_stop(sb_audio_triangle_t *voice);
 bool sb_audio_voice_start(sb_audio_triangle_t *voice);
 void sb_audio_voice_render(sb_audio_triangle_t *voice, sb_audio_noise_t *source,
                            sb_audio_saw_t *saw, sb_audio_pulse_t *pulse, float *output, size_t frames);
+/* Apply one mono sample through shared envelope/controls, advancing them once. */
+void sb_audio_voice_apply(sb_audio_triangle_t *voice, double waveform, float output[2]);
 /* Normalized waveform times envelope, volume, and pan; no diagnostic gain. */
 void sb_audio_triangle_render(sb_audio_triangle_t *voice, float *output, size_t frames);
 #endif

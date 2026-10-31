@@ -6,9 +6,8 @@
 #include "sb_audio_pulse.h"
 #define SB_AUDIO_BANK_VOICES 9u
 #define SB_AUDIO_SYNTH_GAIN (1.0 / SB_AUDIO_BANK_VOICES)
-typedef enum {
-    SB_AUDIO_VOICE_TRIANGLE = 0, SB_AUDIO_VOICE_NOISE, SB_AUDIO_VOICE_SAW, SB_AUDIO_VOICE_PULSE
-} sb_audio_voice_kind_t;
+#include "sb_audio_waveform.h"
+#define SB_AUDIO_SWITCH_FRAMES 480u
 typedef struct {
     sb_audio_triangle_t voices[SB_AUDIO_BANK_VOICES];
     sb_audio_noise_t noise[SB_AUDIO_BANK_VOICES];
@@ -17,6 +16,8 @@ typedef struct {
     sb_audio_pulse_t pulse[SB_AUDIO_BANK_VOICES];
     double widths[SB_AUDIO_BANK_VOICES]; /* Zero selects default .5. */
     sb_audio_voice_kind_t kind[SB_AUDIO_BANK_VOICES];
+    sb_audio_voice_kind_t destination[SB_AUDIO_BANK_VOICES];
+    unsigned switch_left[SB_AUDIO_BANK_VOICES];
 } sb_audio_bank_t;
 
 /* Zero initialization is valid and silent. Reset cancels all notes and restores
@@ -24,6 +25,14 @@ typedef struct {
 void sb_audio_bank_reset(sb_audio_bank_t *bank);
 /* Public native voice numbers are 1..9. Invalid requests return false without
  * mutation. Valid silent note-off/stop are harmless and return true. */
+/* Select triangle/saw/pulse without starting/retriggering a note. Idle selection
+ * is immediate. Active switches preserve phase/pitch and crossfade for 480 frames.
+ * Repeating the destination succeeds without restart; other busy requests fail.
+ * Active noise transitions and selecting noise are unsupported. */
+bool sb_audio_bank_waveform(sb_audio_bank_t *bank, unsigned voice, sb_audio_voice_kind_t kind);
+/* Start selected waveform. Retriggers during a fade retain both phases and its
+ * deadline; type-specific note-ons reject all starts during an active fade. */
+bool sb_audio_bank_start_selected(sb_audio_bank_t *bank, unsigned voice, double frequency);
 bool sb_audio_bank_configure(sb_audio_bank_t *bank, unsigned voice, const sb_envelope_settings_t *settings);
 bool sb_audio_bank_note_on(sb_audio_bank_t *bank, unsigned voice, double frequency);
 /* Noise has no pitch. Idle start resets to configured/default seed; active

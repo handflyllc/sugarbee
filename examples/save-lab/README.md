@@ -58,3 +58,8 @@ The user confirmed all six desktop checks passed. On the Pi at `525e215`, all
 save, reload, pause/resume, relaunch without saving, repack persistence, saved
 zero, and confirmed Exit to system returning status 0. These results do not
 include actual power-loss testing.
+
+On Raspberry Pi OS Lite 64-bit at `51cbc8b`, the user confirmed explicit save
+and reload, relaunch persistence after unsaved edits, persistence through
+repacking, and confirmed Exit to system status 0. All 61 automated tests passed.
+This validation does not include actual power-loss testing.

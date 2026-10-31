@@ -114,3 +114,7 @@ all 53 automated tests, the noise and earlier audio listening sequences, Pong
 and Save Lab gameplay/lifecycle checks, and Exit to system status 0. This
 validates the current native noise integration on desktop and Pi. Lua controls,
 cartridge-owned audio cleanup, and tonal noise variations remain deferred.
+
+Explicit triangle/saw/pulse selection is now available separately from the
+existing type-specific note-ons. See the [waveform switching contract](audio-waveform.md);
+noise transitions remain deferred.

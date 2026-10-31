@@ -5,6 +5,8 @@
 #define CHECK(e) do { if (!(e)) { fprintf(stderr, "Bank SDL line %d: %s\n", __LINE__, #e); return 1; } } while (0)
 static float output[2048], expected[2048];
 int main(void) {
+    CHECK(!sb_audio_voice_waveform(NULL, 1, SB_AUDIO_VOICE_SAW));
+    CHECK(!sb_audio_voice_start_selected(NULL, 1, 440));
     CHECK(!sb_audio_voice_note_on(NULL, 1, 440));
     CHECK(!sb_audio_voice_noise_on(NULL, 1));
     CHECK(!sb_audio_voice_saw_on(NULL, 1, 440));
@@ -24,12 +26,14 @@ int main(void) {
     audio_output(audio, (Uint8 *)output, sizeof(output));
     for (unsigned i = 0; i < 2048; ++i) CHECK(output[i] == 0);
     CHECK(sb_audio_start_test_tone(audio));
+    CHECK(!sb_audio_voice_start_selected(audio, 1, 440));
     CHECK(!sb_audio_voice_note_on(audio, 1, 440));
     CHECK(!sb_audio_voice_noise_on(audio, 1));
     CHECK(!sb_audio_voice_saw_on(audio, 1, 440));
     CHECK(!sb_audio_voice_pulse_on(audio, 1, 440));
     audio->tone.active = false;
     CHECK(sb_audio_start_triangle(audio, 440));
+    CHECK(!sb_audio_voice_start_selected(audio, 1, 440));
     CHECK(!sb_audio_voice_note_on(audio, 9, 440));
     CHECK(!sb_audio_voice_noise_on(audio, 9));
     CHECK(!sb_audio_voice_saw_on(audio, 9, 440));
@@ -176,6 +180,32 @@ int main(void) {
     audio_output(audio, (Uint8 *)output, sizeof(output));
     CHECK(!sb_audio_voice_active(audio, 1));
     sb_audio_bank_reset(&audio->bank);
+    CHECK(sb_audio_voice_waveform(audio,1,SB_AUDIO_VOICE_SAW));
+    CHECK(!sb_audio_voice_active(audio,1));
+    CHECK(sb_audio_voice_start_selected(audio,1,330));
+    CHECK(sb_audio_voice_waveform(audio,1,SB_AUDIO_VOICE_PULSE));
+    memcpy(snapshot,&audio->bank,sizeof(snapshot));
+    CHECK(sb_audio_voice_waveform(audio,1,SB_AUDIO_VOICE_PULSE));
+    CHECK(!sb_audio_voice_waveform(audio,1,SB_AUDIO_VOICE_TRIANGLE));
+    CHECK(!sb_audio_voice_waveform(audio,1,SB_AUDIO_VOICE_SAW));
+    CHECK(!sb_audio_voice_waveform(audio,1,SB_AUDIO_VOICE_NOISE));
+    CHECK(!sb_audio_voice_waveform(audio,0,SB_AUDIO_VOICE_SAW));
+    CHECK(!sb_audio_voice_start_selected(audio,1,NAN));
+    CHECK(memcmp(snapshot,&audio->bank,sizeof(snapshot)) == 0);
+    CHECK(sb_audio_voice_start_selected(audio,1,440));
+    CHECK(audio->bank.switch_left[0] == 480);
+    CHECK(sb_audio_voice_pulse_width(audio,1,.25));
+    reference = audio->bank;
+    CHECK(sb_audio_bank_render(&reference,expected,1024));
+    audio_output(audio,(Uint8 *)output,sizeof(output));
+    for (unsigned i=0;i<2048;++i)
+        CHECK(fabsf(output[i]-expected[i]*0.790569415f) < 1e-8f);
+    CHECK(!audio->bank.switch_left[0] && audio->bank.kind[0] == SB_AUDIO_VOICE_PULSE);
+    CHECK(sb_audio_voice_waveform(audio,1,SB_AUDIO_VOICE_TRIANGLE));
+    CHECK(sb_audio_voice_stop(audio,1));
+    audio_output(audio,(Uint8 *)output,sizeof(output));
+    CHECK(!sb_audio_voice_active(audio,1) && !audio->bank.switch_left[0]);
+    sb_audio_bank_reset(&audio->bank);
     /* Destroy while nine mixed voices are active; no release wait needed. */
     for (unsigned v = 1; v <= 9; ++v) {
         if (v%4 == 0) CHECK(sb_audio_voice_pulse_on(audio, v, 440));
@@ -183,6 +213,7 @@ int main(void) {
         else if (v%3 == 1) CHECK(sb_audio_voice_noise_on(audio, v));
         else CHECK(sb_audio_voice_note_on(audio, v, 440));
     }
+    CHECK(sb_audio_voice_waveform(audio, 3, SB_AUDIO_VOICE_PULSE));
     SDL_PauseAudioDevice(audio->device, 0);
     sb_audio_destroy(audio);
     CHECK(SDL_WasInit(SDL_INIT_AUDIO) == 0);

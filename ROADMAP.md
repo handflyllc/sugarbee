@@ -169,11 +169,19 @@ settled/transition checks are implemented. Native bank/SDL integration and a
 listening tool are now implemented. All 61 automated tests pass and the user
 confirmed all desktop listening checks. Pi validation passed at `a397e26`: all
 61 tests, pulse/earlier tones, gameplay, and Exit to system status 0.
-The user also reports sluggish Pi controls; reproduction and cause are unresolved.
-Track this separately and compare input responsiveness under matched conditions
-before attributing it to audio or a particular change.
-Continue with smooth waveform
-transitions and broader pitch, filtering, then cartridge audio lifecycle and
+The user validated Raspberry Pi OS Lite 64-bit at `51cbc8b`: all 61 tests,
+responsive Pong/Pac-Man, clean sine/pulse audio with correct stereo placement,
+Save Lab persistence through relaunch/repacking, and Exit to system status 0.
+Keyboard and controller felt delayed in the desktop session but responsive in
+the TTY; the delay was not reproduced on Lite. The desktop-associated cause
+remains undiagnosed, and no measured latency or audio causality is claimed.
+Native triangle/saw/pulse waveform transitions are now implemented with phase
+preservation, 10 ms linear fades, and defined repeated-request behavior. All 63
+tests pass; the user confirmed clean desktop transitions, steady pitch, and
+normal exit. The user reported all Pi checks passed for `d35f182`: all 63 tests,
+waveform/earlier tones, responsive gameplay, and Exit to system status 0.
+Noise transitions and broader pitch
+remain separately scoped work, followed by filtering, cartridge audio lifecycle and
 minimal Lua controls. Each remains a separately scoped implementation and
 validation step; see the [audio sequence](docs/architecture/audio-design.md#agreed-next-sequence--checkpoint-by-checkpoint).
 

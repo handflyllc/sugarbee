@@ -165,6 +165,16 @@ playback, correct stereo placement, clean mixed voices, and normal exit. All 61
 automated tests passed. On Pi commit `a397e26`, the user confirmed all 61 tests,
 clean pulse/earlier tones, passing gameplay checks, and Exit to system status 0.
 
-Separate observation: controls feel more sluggish on the Pi. No reproducible
-case, measured latency, or cause is established. Passing the functional checklist
-does not resolve that observation or establish unchanged input latency.
+On Raspberry Pi OS Lite 64-bit at `51cbc8b`, the user reported all 61 tests
+passed, clean sine and pulse audio, correct stereo placement, and normal test
+exits. Pong and Pac-Man played without noticeable lag. Save Lab persisted
+through relaunch/repacking and Exit to system returned 0.
+
+Responsiveness follow-up: keyboard and controller felt delayed in the desktop
+session but responsive in the TTY. The delay was not reproduced on Lite. The
+exact desktop-associated cause remains undiagnosed; these are subjective checks,
+not latency measurements or evidence that audio caused the delay.
+
+Explicit triangle/saw/pulse selection is now available separately from the
+existing type-specific note-ons. See the [waveform switching contract](audio-waveform.md);
+noise transitions remain deferred.
