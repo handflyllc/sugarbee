@@ -56,8 +56,8 @@ bool sb_audio_triangle_configure(sb_audio_triangle_t *v, const sb_envelope_setti
     v->configured = true;
     return true;
 }
-bool sb_audio_triangle_start(sb_audio_triangle_t *v, double frequency) {
-    if (!v || !valid_pitch(frequency)) return false;
+bool sb_audio_voice_start(sb_audio_triangle_t *v) {
+    if (!v) return false;
     const sb_envelope_settings_t *s = v->configured ? &v->settings : &defaults;
     if (!sb_envelope_retrigger(&v->envelope, s)) return false;
     initialize_controls(v);
@@ -67,10 +67,14 @@ bool sb_audio_triangle_start(sb_audio_triangle_t *v, double frequency) {
         v->volume = v->volume_target; v->volume_left = 0;
         v->pan = v->pan_target; v->pan_left = 0;
     }
-    v->frequency = frequency;
     v->active = true;
     v->stopping = false; /* A new note also replaces an in-progress short stop. */
     v->stop_left = 0;
+    return true;
+}
+bool sb_audio_triangle_start(sb_audio_triangle_t *v, double frequency) {
+    if (!v || !valid_pitch(frequency) || !sb_audio_voice_start(v)) return false;
+    v->frequency = frequency;
     return true;
 }
 bool sb_audio_triangle_pitch(sb_audio_triangle_t *v, double frequency) {
@@ -89,17 +93,25 @@ void sb_audio_triangle_stop(sb_audio_triangle_t *v) {
     v->stop_start = v->envelope.level;
     v->stop_left = STOP_FRAMES;
 }
-void sb_audio_triangle_render(sb_audio_triangle_t *v, float *output, size_t frames) {
+void sb_audio_voice_render(sb_audio_triangle_t *v, sb_audio_noise_t *source,
+                           float *output, size_t frames) {
     initialize_controls(v);
     for (size_t i = 0; i < frames; ++i) {
         float sample = 0;
         if (v->active) {
-            double triangle = 1.0 - 4.0 * fabs(v->phase - 0.5);
+            double waveform;
+            if (source) {
+                float raw;
+                (void)sb_audio_noise_render(source, &raw, 1);
+                waveform = raw;
+            } else {
+                waveform = 1.0 - 4.0 * fabs(v->phase - 0.5);
+                v->phase += v->frequency / SB_AUDIO_RATE;
+                if (v->phase >= 1.0) v->phase -= 1.0;
+            }
             /* Use the interval's starting level, then advance for the next
                sample. Controls see exactly that next-sample boundary level. */
-            sample = (float)(v->envelope.level * triangle);
-            v->phase += v->frequency / SB_AUDIO_RATE;
-            if (v->phase >= 1.0) v->phase -= 1.0;
+            sample = (float)(v->envelope.level * waveform);
             if (v->stopping) {
                 --v->stop_left;
                 v->envelope.level = v->stop_start * v->stop_left / STOP_FRAMES;
@@ -119,4 +131,8 @@ void sb_audio_triangle_render(sb_audio_triangle_t *v, float *output, size_t fram
         advance_control(&v->volume, v->volume_from, v->volume_target, &v->volume_left);
         advance_control(&v->pan, v->pan_from, v->pan_target, &v->pan_left);
     }
+}
+
+void sb_audio_triangle_render(sb_audio_triangle_t *v, float *output, size_t frames) {
+    sb_audio_voice_render(v, NULL, output, frames);
 }

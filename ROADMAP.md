@@ -145,8 +145,11 @@ bank/earlier tones, gameplay, and Exit to system status 0.
 Full synthesis, Lua controls, and WAV remain future work.
 See [bank scope and tests](tests/audio-bank.md). A standalone deterministic
 white-noise source now has defined seed/reset behavior and automated checks;
-[noise bank integration and listening](tests/audio-noise.md) are deferred to the
-following checkpoint.
+[noise bank integration](tests/audio-noise.md) now includes fixed per-voice
+seeds, sequence-preserving active retrigger, automated checks, and a native
+listening tool. All 53 automated tests pass; the user confirmed clean desktop
+noise playback, correct stereo placement, and normal exit. Pi validation remains
+pending.
 
 Done when: each selected audio slice meets its agreed behavior and resource
 constraints with automated checks where appropriate and listening tests.

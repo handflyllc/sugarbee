@@ -226,3 +226,19 @@ bool sb_audio_voice_active(sb_audio_t *audio, unsigned voice) {
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
+
+bool sb_audio_voice_noise_on(sb_audio_t *audio, unsigned voice) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = !audio->tone.active && !audio->triangle.active &&
+              sb_audio_bank_noise_on(&audio->bank, voice);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+bool sb_audio_voice_seed(sb_audio_t *audio, unsigned voice, uint32_t seed) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = sb_audio_bank_seed(&audio->bank, voice, seed);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}

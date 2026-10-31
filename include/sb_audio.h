@@ -2,6 +2,7 @@
 #ifndef SB_AUDIO_H
 #define SB_AUDIO_H
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef struct sb_audio sb_audio_t;
 
@@ -50,6 +51,12 @@ bool sb_audio_set_triangle_pan(sb_audio_t *audio, double pan);
 bool sb_audio_voice_configure(sb_audio_t *audio, unsigned voice, double attack,
                               double decay, double sustain, double release);
 bool sb_audio_voice_note_on(sb_audio_t *audio, unsigned voice, double frequency);
+/* Noise-specific note-on and seed configuration. Zero seed restores the slot's
+ * distinct fixed default. Idle note-on restarts the seed; active retrigger keeps
+ * the sequence. Seed edits apply only on the next idle noise start. Triangle
+ * and noise cannot replace one another while active; noise rejects pitch. */
+bool sb_audio_voice_noise_on(sb_audio_t *audio, unsigned voice);
+bool sb_audio_voice_seed(sb_audio_t *audio, unsigned voice, uint32_t seed);
 bool sb_audio_voice_pitch(sb_audio_t *audio, unsigned voice, double frequency);
 bool sb_audio_voice_volume(sb_audio_t *audio, unsigned voice, double volume);
 bool sb_audio_voice_pan(sb_audio_t *audio, unsigned voice, double pan);

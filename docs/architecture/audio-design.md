@@ -506,3 +506,20 @@ See [the seed/reset contract and automated checks](../../tests/audio-noise.md).
 Per-voice seed and retrigger policy, bank integration, listening, and Pi
 validation remain future work. The statistical checks are regression checks,
 not a proof of ideal whiteness.
+
+## Noise bank integration checkpoint
+
+Native bank slots now support triangle or white noise, sharing ADSR, volume,
+pan, and stop behavior. Each slot has a distinct fixed default seed. Idle noise
+starts replay the configured seed; active retriggers preserve the sequence and
+attack from the current level over the full new attack duration. Seed edits
+wait for the next idle start. Muting, release, and short stop continue sequence
+advancement until idle. Bank reset restores defaults. Active cross-type changes
+and noise pitch updates are rejected; noise has its own frequency-free note-on.
+
+Fixed 1/9 headroom and separate bank diagnostic attenuation remain unchanged.
+[Regression tests and the native listening sequence](../../tests/audio-noise.md)
+cover seeds, retrigger, mixed playback, and cleanup. All 53 automated tests pass.
+The user confirmed clean desktop noise playback, correct stereo placement, and
+normal exit. Pi validation remains pending. Lua controls and cartridge-owned
+audio remain deferred.

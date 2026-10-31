@@ -2,6 +2,13 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Integrated white noise into native bank/SDL controls with per-voice seeds,
+  repeatable idle starts, sequence-preserving active retrigger, and shared
+  ADSR/volume/pan/stop behavior. Added regression checks and `sbee-noise-test`.
+  Desktop listening confirmed clean output, correct stereo placement, and normal
+  exit; all 53 tests pass. Pi validation pending. Fixed 1/9 headroom is unchanged;
+  Lua and cartridge audio lifecycle deferred.
+
 - Added a standalone deterministic mono white-noise source with explicit seed
   reset, bounded output, and sequence/reset/statistical regression tests.
   Bank integration and listening tests remain deferred.

@@ -1,7 +1,7 @@
 # Standalone white-noise source
 
-This checkpoint provides a pure C mono pseudo-random noise generator. It has no
-SDL, Lua, allocation, global random state, bank integration, or listening tool.
+The source is a pure C mono pseudo-random noise generator, with no SDL, Lua,
+allocation, or global random state. Native bank/SDL integration is described below.
 It is an audio source, not a cryptographic random generator.
 
 ## Sequence and reset contract
@@ -50,6 +50,59 @@ cmake --build /tmp/sugarbee-noise-standalone --target test_audio_noise
 ctest --test-dir /tmp/sugarbee-noise-standalone -R '^audio_noise$' --output-on-failure
 ```
 
-Bank integration, per-voice seed/retrigger policy, a native listening sequence,
-and Pi validation remain later checkpoints. Existing triangle and diagnostic
-playback behavior is unchanged.
+## Native bank integration
+
+Each of the nine slots can start a triangle or white-noise note. The native
+`sb_audio_voice_noise_on` call has no frequency argument. Noise rejects pitch
+updates. An idle slot may change type, but an active slot cannot switch between
+triangle and noise; conflicting requests fail unchanged. ADSR, volume/pan
+smoothing, mute, release, and the 10 ms short stop share the existing voice code.
+Triangle note-on and earlier listening tools retain their behavior.
+
+Every slot has a distinct fixed nonzero default noise seed, recorded in the
+bank source. `sb_audio_voice_seed` configures a uint32 seed; zero restores that
+slot's default (unlike the standalone source, where zero selects seed 1).
+Identical explicit seeds deliberately allow identical noise sequences. Distinct
+seeds avoid identical starts, but do not promise statistically independent streams.
+No clock or global random state is used.
+
+- Idle noise start resets to its configured seed, giving repeatable fresh notes.
+- Active retrigger preserves sequence and attacks from the current envelope
+  level over the full new attack duration, including during release/short stop.
+- Seed edits affect only the next idle noise start, never an active retrigger.
+- Release, short stop, and mute continue advancing once per active frame.
+  Once idle, the stream stops advancing.
+- Bank reset cancels notes and restores default seeds, settings, and controls.
+
+Mixed triangle/noise output retains fixed 1/9 headroom. Both source types are
+bounded, so their summed stereo output remains within ±1 under current controls.
+The SDL bank diagnostic gain remains separately approximately 0.791. Future
+filters or WAV mixing still require revisiting the overall output bound.
+
+`audio_noise_bank` checks replay, distinct defaults, pending seeds, active
+retrigger timing, mute/release/stop progression, isolation, mixed rendering,
+invalid/cross-type requests, reset, and nine coherent noise voices at full level.
+`audio_bank_sdl` checks native noise controls and mixed callback samples.
+`audio_noise_output` runs the listening tool with dummy SDL audio under a
+15-second external timeout. It checks execution, not audible quality.
+
+## Listening check
+
+```sh
+./build/sbee-noise-test
+```
+
+Lower output volume first: broadband noise may sound louder than the tone tests.
+The roughly six-second sequence announces two repeatable left noise bursts,
+a center noise retrigger during release followed by short stop, then left/right
+noise around a center triangle and finally all nine mixed voices. Each repeated
+burst restarts the same seed; exact frame timing is verified automatically,
+not promised by the tool's wall-clock delays.
+
+Confirm stereo placement, smooth envelope transitions, no unexpected stuck
+sounds or distortion, final silence, and normal exit. Also rerun the earlier
+bank/sine/triangle/pan tools and normal gameplay checks. Use HDMI for Pi testing.
+The user confirmed clean desktop noise playback, correct stereo placement, and
+normal exit. All 53 automated tests pass. Pi validation remains pending.
+Lua controls, cartridge audio
+lifecycle, and tonal/SID-style noise variations remain deferred.
