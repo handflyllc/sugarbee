@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added a standalone fixed-width PolyBLEP pulse at 48 kHz (220–660 Hz,
+  width 0.05–0.95), preserving conventional DC offset with no normalization.
+  Added reset, bounds, mean, and spectral regression checks. Live width changes
+  and bank integration remain deferred.
+
 - Validated native saw integration on Pi commit `f1982a9`: all 56 tests,
   saw/earlier tones, gameplay, and Exit to system status 0 passed.
 

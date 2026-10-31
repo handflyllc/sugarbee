@@ -33,7 +33,18 @@ if(BUILD_TESTING)
     set_tests_properties(audio_envelope PROPERTIES TIMEOUT 5)
 endif()
 
-# Independent saw oscillator; bank integration is a later checkpoint.
+# Standalone fixed-width pulse; integration and live width changes are deferred.
+add_library(sugarbee_pulse STATIC src/sb_audio_pulse.c)
+sugarbee_warnings(sugarbee_pulse)
+if(BUILD_TESTING)
+    add_executable(test_audio_pulse tests/test_audio_pulse.c)
+    target_link_libraries(test_audio_pulse PRIVATE sugarbee_pulse m)
+    sugarbee_warnings(test_audio_pulse)
+    add_test(NAME audio_pulse COMMAND test_audio_pulse)
+    set_tests_properties(audio_pulse PROPERTIES TIMEOUT 10)
+endif()
+
+# Independent saw oscillator, also used by the native bank.
 add_library(sugarbee_saw STATIC src/sb_audio_saw.c)
 sugarbee_warnings(sugarbee_saw)
 if(BUILD_TESTING)
