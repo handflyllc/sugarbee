@@ -2,6 +2,15 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added a standalone 48 kHz PolyBLEP saw (220–660 Hz) with defined reset,
+  phase-preserving pitch changes, bounded samples, and spectral alias-reduction
+  regression checks. Bank integration and listening remain deferred.
+
+- Reconciled audio design status, limits, lifecycle, and mixing with the validated
+  native triangle/noise implementation; separated target APIs and historical
+  checkpoint notes. Recorded the next audio sequence and two Pong collision
+  blips after the Synth Lab. No runtime behavior changed.
+
 - Recorded successful user-reported Pi validation for noise checkpoint
   `557b6ba`: all 53 tests, noise/earlier audio, gameplay, and Exit to system
   status 0, with no issues reported.

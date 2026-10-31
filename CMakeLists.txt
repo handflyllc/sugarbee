@@ -33,7 +33,18 @@ if(BUILD_TESTING)
     set_tests_properties(audio_envelope PROPERTIES TIMEOUT 5)
 endif()
 
-# Independent deterministic noise source; no host or synthesis integration yet.
+# Independent saw oscillator; bank integration is a later checkpoint.
+add_library(sugarbee_saw STATIC src/sb_audio_saw.c)
+sugarbee_warnings(sugarbee_saw)
+if(BUILD_TESTING)
+    add_executable(test_audio_saw tests/test_audio_saw.c)
+    target_link_libraries(test_audio_saw PRIVATE sugarbee_saw m)
+    sugarbee_warnings(test_audio_saw)
+    add_test(NAME audio_saw COMMAND test_audio_saw)
+    set_tests_properties(audio_saw PROPERTIES TIMEOUT 10)
+endif()
+
+# Independent deterministic noise source, also used by the native bank.
 add_library(sugarbee_noise STATIC src/sb_audio_noise.c)
 sugarbee_warnings(sugarbee_noise)
 if(BUILD_TESTING)
