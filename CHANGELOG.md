@@ -6,8 +6,10 @@
   10 ms linear crossfades, separate selected-waveform note-on, and bounded
   repeated-request behavior. Added timing/lifecycle/SDL regression checks and
   `sbee-waveform-test`. All 63 tests pass; desktop listening confirmed clean
-  transitions, steady pitch, and normal exit. Pi acceptance is pending; noise
-  transitions, broader pitch, and Lua controls remain deferred.
+  transitions, steady pitch, and normal exit. The user reported all Pi checks
+  passed for `d35f182`: all 63 tests, waveform/earlier tones, responsive gameplay,
+  and Exit to system status 0. Noise transitions, broader pitch, and Lua controls
+  remain deferred.
 
 - Recorded Raspberry Pi OS Lite 64-bit validation at `51cbc8b`: all 61 tests,
   responsive Pong/Pac-Man, clean sine/pulse audio and stereo placement, Save Lab

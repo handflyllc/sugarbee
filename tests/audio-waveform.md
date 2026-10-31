@@ -72,7 +72,10 @@ transition directions, then changes nine stereo-spread voices from triangle to
 saw to pulse and releases them. Listen for sustained pitch, expected timbre and
 loudness changes, no unexpected harsh clicks or distortion, and normal exit.
 All 63 automated tests pass. The user confirmed clean desktop waveform
-transitions, steady pitch, and normal exit. Pi acceptance remains pending.
+transitions, steady pitch, and normal exit. For the Pi checklist targeting
+`d35f182`, the user reported all checks passed: all 63 automated tests, clean
+waveform transitions with steady pitch and a clean nine-voice sequence, earlier
+sine/pulse tones, responsive Pong/Pac-Man, and Exit to system status 0.
 
 A pure build requires neither SDL nor Lua:
 

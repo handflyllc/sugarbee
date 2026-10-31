@@ -391,8 +391,8 @@ equal-power synth pan, fixed 1/9 current synth headroom, and noise seed rules.
 1. PolyBLEP saw and bank/SDL integration are implemented at 220–660 Hz.
    Desktop and Pi validation passed; broader range requires a separate checkpoint.
 2. Pulse bank/SDL and width controls are validated on desktop/Pi. Native
-   triangle/saw/pulse transitions are implemented and desktop listening passed;
-   Pi acceptance is pending. Noise transitions and broader pitch need separately reviewed checkpoints.
+   triangle/saw/pulse transitions are implemented and validated on desktop/Pi.
+   Noise transitions and broader pitch need separately reviewed checkpoints.
 3. Per-voice low-pass/bypass, with resonance and gain bounds settled before use.
 4. Cartridge audio lifecycle and minimal Lua controls for validated features.
 5. A small Synth Lab, then a narrow Pong Lab audio update: one short wall-hit
@@ -714,4 +714,6 @@ both sources; envelope completion cancels the fade and retains its destination.
 No noise transitions, extra headroom normalization, or Lua controls are added.
 See [waveform tests and listening procedure](../../tests/audio-waveform.md).
 All 63 automated tests pass. The user confirmed clean desktop transitions,
-steady pitch, and normal exit. Pi validation remains pending.
+steady pitch, and normal exit. For the Pi checklist targeting `d35f182`, the
+user reported all checks passed: all 63 tests, clean waveform and earlier tones,
+responsive Pong/Pac-Man, and Exit to system status 0.
