@@ -33,6 +33,17 @@ if(BUILD_TESTING)
     set_tests_properties(audio_envelope PROPERTIES TIMEOUT 5)
 endif()
 
+# Independent deterministic noise source; no host or synthesis integration yet.
+add_library(sugarbee_noise STATIC src/sb_audio_noise.c)
+sugarbee_warnings(sugarbee_noise)
+if(BUILD_TESTING)
+    add_executable(test_audio_noise tests/test_audio_noise.c)
+    target_link_libraries(test_audio_noise PRIVATE sugarbee_noise m)
+    sugarbee_warnings(test_audio_noise)
+    add_test(NAME audio_noise COMMAND test_audio_noise)
+    set_tests_properties(audio_noise PROPERTIES TIMEOUT 5)
+endif()
+
 # Pure-C voice rendering and nine-voice mixing, usable without the host.
 add_library(sugarbee_synth STATIC src/sb_audio_triangle.c src/sb_audio_bank.c)
 target_link_libraries(sugarbee_synth PRIVATE sugarbee_envelope m)

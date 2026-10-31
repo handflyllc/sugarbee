@@ -2,6 +2,10 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added a standalone deterministic mono white-noise source with explicit seed
+  reset, bounded output, and sequence/reset/statistical regression tests.
+  Bank integration and listening tests remain deferred.
+
 - Validated the native nine-voice bank on Pi commit `d71e42d`: all 50 tests,
   bank/earlier tones, gameplay, and Exit to system status 0 passed. Recorded
   initial Bluetooth success and HDMI audio loss after a port change as output

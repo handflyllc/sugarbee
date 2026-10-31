@@ -143,7 +143,10 @@ and a native listening sequence. Desktop listening is confirmed and all 50
 automated tests pass. Pi validation passed at `d71e42d`: all 50 tests, clean
 bank/earlier tones, gameplay, and Exit to system status 0.
 Full synthesis, Lua controls, and WAV remain future work.
-See [bank scope and tests](tests/audio-bank.md).
+See [bank scope and tests](tests/audio-bank.md). A standalone deterministic
+white-noise source now has defined seed/reset behavior and automated checks;
+[noise bank integration and listening](tests/audio-noise.md) are deferred to the
+following checkpoint.
 
 Done when: each selected audio slice meets its agreed behavior and resource
 constraints with automated checks where appropriate and listening tests.
