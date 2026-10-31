@@ -6,6 +6,8 @@
 static float output[2048], expected[2048];
 int main(void) {
     CHECK(!sb_audio_voice_note_on(NULL, 1, 440));
+    CHECK(!sb_audio_voice_noise_on(NULL, 1));
+    CHECK(!sb_audio_voice_seed(NULL, 1, 42));
     CHECK(!sb_audio_voice_configure(NULL, 1, 0, 0, 1, 0));
     CHECK(!sb_audio_voice_pitch(NULL, 1, 440));
     CHECK(!sb_audio_voice_volume(NULL, 1, 1));
@@ -20,9 +22,11 @@ int main(void) {
     for (unsigned i = 0; i < 2048; ++i) CHECK(output[i] == 0);
     CHECK(sb_audio_start_test_tone(audio));
     CHECK(!sb_audio_voice_note_on(audio, 1, 440));
+    CHECK(!sb_audio_voice_noise_on(audio, 1));
     audio->tone.active = false;
     CHECK(sb_audio_start_triangle(audio, 440));
     CHECK(!sb_audio_voice_note_on(audio, 9, 440));
+    CHECK(!sb_audio_voice_noise_on(audio, 9));
     audio->triangle = (sb_audio_triangle_t){0};
     const unsigned counts[] = {1, 3, 9};
     for (unsigned group = 0; group < 3; ++group) {
@@ -77,8 +81,37 @@ int main(void) {
     for (unsigned i = 0; i < 2048; ++i) CHECK(output[i] == 0);
     CHECK(sb_audio_start_test_tone(audio));
     audio->tone.active = false;
-    /* Destroy while nine sustained voices are active; no release wait needed. */
-    for (unsigned v = 1; v <= 9; ++v) CHECK(sb_audio_voice_note_on(audio, v, 440));
+    sb_audio_bank_reset(&audio->bank);
+    CHECK(sb_audio_voice_seed(audio, 1, 123456789));
+    CHECK(sb_audio_voice_configure(audio, 1, 0, 0, 1, .01));
+    CHECK(sb_audio_voice_noise_on(audio, 1));
+    CHECK(sb_audio_voice_note_on(audio, 2, 440));
+    sb_audio_bank_t reference = audio->bank;
+    CHECK(sb_audio_bank_render(&reference, expected, 1024));
+    audio_output(audio, (Uint8 *)output, sizeof(output));
+    for (unsigned i = 0; i < 2048; ++i)
+        CHECK(fabsf(output[i]-expected[i]*0.790569415f) < 1e-8f);
+    CHECK(!sb_audio_start_test_tone(audio) && !sb_audio_start_triangle(audio, 440));
+    CHECK(!sb_audio_voice_note_on(audio, 1, 440));
+    CHECK(!sb_audio_voice_noise_on(audio, 2));
+    CHECK(!sb_audio_voice_pitch(audio, 1, 440));
+    CHECK(!sb_audio_voice_noise_on(audio, 10));
+    CHECK(!sb_audio_voice_seed(audio, 0, 42));
+    uint32_t current = audio->bank.noise[0].state;
+    CHECK(sb_audio_voice_seed(audio, 1, 42));
+    CHECK(sb_audio_voice_noise_on(audio, 1));
+    CHECK(audio->bank.noise[0].state == current);
+    CHECK(sb_audio_voice_note_off(audio, 1));
+    audio_output(audio, (Uint8 *)output, sizeof(output));
+    CHECK(!sb_audio_voice_active(audio, 1) && sb_audio_voice_active(audio, 2));
+    CHECK(sb_audio_voice_noise_on(audio, 1));
+    CHECK(audio->bank.noise[0].state == 42);
+    sb_audio_bank_reset(&audio->bank);
+    /* Destroy while nine mixed voices are active; no release wait needed. */
+    for (unsigned v = 1; v <= 9; ++v) {
+        if (v%2) CHECK(sb_audio_voice_noise_on(audio, v));
+        else CHECK(sb_audio_voice_note_on(audio, v, 440));
+    }
     SDL_PauseAudioDevice(audio->device, 0);
     sb_audio_destroy(audio);
     CHECK(SDL_WasInit(SDL_INIT_AUDIO) == 0);

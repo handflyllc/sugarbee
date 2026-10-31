@@ -143,6 +143,6 @@ The launcher displays its 64-cartridge capacity, additional eligible cartridges 
   logging are future discussion items, not implemented features.
 
 See the [manual checklist](../../tests/launcher/README.md). The automated suite
-includes forty-one native tests and, when Lua 5.4 is available, the Save Lab
+includes forty-four native tests and, when Lua 5.4 is available, the Save Lab
 behavior test and eight cartridge smoke
 tests using a stand-in API. It does not automate the launcher interaction flow.

@@ -493,3 +493,34 @@ tests pass. On Pi commit `d71e42d`, all 50 tests, bank/earlier tones, gameplay,
 and Exit to system status 0 passed. See the [output observations](../../tests/audio-bank.md#pi-validation-and-output-observations)
 for preliminary Bluetooth success and HDMI port-change behavior. Normal host startup is silent;
 Lua controls and cartridge-owned audio cleanup are not part of this checkpoint.
+
+## Standalone white-noise checkpoint
+
+A pure C mono noise source now advances a private xorshift32 state once per
+sample. Seeded resets reproduce the exact sequence; zero seed/zero initialization
+select default seed 1. Upper 24 bits map to symmetric values strictly inside
+[-1, +1]. It has no diagnostic attenuation, envelope, bank/SDL integration, or
+Lua API. Buffer partitioning does not change the output sequence.
+
+See [the seed/reset contract and automated checks](../../tests/audio-noise.md).
+Per-voice seed and retrigger policy, bank integration, listening, and Pi
+validation remain future work. The statistical checks are regression checks,
+not a proof of ideal whiteness.
+
+## Noise bank integration checkpoint
+
+Native bank slots now support triangle or white noise, sharing ADSR, volume,
+pan, and stop behavior. Each slot has a distinct fixed default seed. Idle noise
+starts replay the configured seed; active retriggers preserve the sequence and
+attack from the current level over the full new attack duration. Seed edits
+wait for the next idle start. Muting, release, and short stop continue sequence
+advancement until idle. Bank reset restores defaults. Active cross-type changes
+and noise pitch updates are rejected; noise has its own frequency-free note-on.
+
+Fixed 1/9 headroom and separate bank diagnostic attenuation remain unchanged.
+[Regression tests and the native listening sequence](../../tests/audio-noise.md)
+cover seeds, retrigger, mixed playback, and cleanup. All 53 automated tests pass.
+The user confirmed clean desktop noise playback, correct stereo placement, and
+normal exit. The user reported that the Pi checklist for `557b6ba` passed
+without issues: all 53 tests, noise/earlier audio, gameplay, and Exit to system
+status 0. Lua controls and cartridge-owned audio remain deferred.

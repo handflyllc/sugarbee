@@ -1,4 +1,4 @@
-/* Internal native triangle bank: no SDL, Lua, allocation, or device ownership. */
+/* Internal native triangle/noise bank: no SDL, Lua, allocation, or device ownership. */
 #ifndef SB_AUDIO_BANK_H
 #define SB_AUDIO_BANK_H
 #include "sb_audio_triangle.h"
@@ -6,6 +6,9 @@
 #define SB_AUDIO_SYNTH_GAIN (1.0 / SB_AUDIO_BANK_VOICES)
 typedef struct {
     sb_audio_triangle_t voices[SB_AUDIO_BANK_VOICES];
+    sb_audio_noise_t noise[SB_AUDIO_BANK_VOICES];
+    uint32_t seeds[SB_AUDIO_BANK_VOICES]; /* Zero selects the slot's fixed default. */
+    bool noise_voice[SB_AUDIO_BANK_VOICES];
 } sb_audio_bank_t;
 
 /* Zero initialization is valid and silent. Reset cancels all notes and restores
@@ -15,6 +18,11 @@ void sb_audio_bank_reset(sb_audio_bank_t *bank);
  * mutation. Valid silent note-off/stop are harmless and return true. */
 bool sb_audio_bank_configure(sb_audio_bank_t *bank, unsigned voice, const sb_envelope_settings_t *settings);
 bool sb_audio_bank_note_on(sb_audio_bank_t *bank, unsigned voice, double frequency);
+/* Noise has no pitch. Idle start resets to configured/default seed; active
+ * noise retrigger preserves sequence. Active cross-type starts are rejected.
+ * Seed edits affect the next idle noise start only; zero restores slot default. */
+bool sb_audio_bank_noise_on(sb_audio_bank_t *bank, unsigned voice);
+bool sb_audio_bank_seed(sb_audio_bank_t *bank, unsigned voice, uint32_t seed);
 bool sb_audio_bank_pitch(sb_audio_bank_t *bank, unsigned voice, double frequency);
 bool sb_audio_bank_volume(sb_audio_bank_t *bank, unsigned voice, double volume);
 bool sb_audio_bank_pan(sb_audio_bank_t *bank, unsigned voice, double pan);

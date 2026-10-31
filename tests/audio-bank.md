@@ -109,3 +109,10 @@ change. For repeatable validation, connect the intended display/input before
 booting and keep that connection stable. Live output switching and reconnection
 recovery have not been validated. HDMI remains the preferred Pi test output;
 these observations do not add an audio-device switching feature to this scope.
+
+## Noise extension
+
+Bank slots now also support noise through a separate native note-on call. See
+[noise seed/retrigger rules and listening checks](audio-noise.md#native-bank-integration).
+The original triangle listening sequence remains unchanged. The current bound
+also holds for mixed triangle/noise voices; filtering and WAV mixing are deferred.
