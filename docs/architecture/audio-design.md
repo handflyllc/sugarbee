@@ -15,7 +15,7 @@ not current limitations.
 | Voice bank | Nine explicit native slots, triangle, white noise, or saw, independent state | Pulse, live cross-waveform transitions |
 | Triangle | Direct waveform, 220–660 Hz, phase-preserving pitch/retrigger | Aliasing control and broader supported pitch range |
 | Saw | PolyBLEP, 220–660 Hz, native bank/SDL integration and automated checks | Broader pitch |
-| Pulse | Standalone PolyBLEP, 220–660 Hz, fixed width 0.05–0.95, default 0.5 | Live width changes, DC integration policy, bank/SDL, listening/Pi |
+| Pulse | Standalone PolyBLEP, 220–660 Hz, width 0.05–0.95, default 0.5, 10 ms ramps | DC conditioning, bank/SDL, listening/Pi |
 | Noise | Deterministic per-sample white noise, distinct default seeds, repeatable idle starts | Rate-controlled/tonal noise remains deferred; no current noise frequency control |
 | Envelope | Linear ADSR, captured per note, current-level active retrigger | No additional envelope model planned for this checkpoint |
 | Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Filters, pulse width, group/master controls |
@@ -163,8 +163,8 @@ features still to be added. Current native restrictions above remain in force.
 | Filter cutoff | 2000 Hz |
 | Filter resonance | 0.0 |
 
-Pulse width is implemented only in the standalone fixed-width oscillator;
-live width controls, bank integration, and filter fields remain unimplemented. Retain pulse width while other waveforms are selected and retain filter settings
+Pulse width and 10 ms live ramps are implemented only in the standalone oscillator;
+bank integration and filter fields remain unimplemented. Retain pulse width while other waveforms are selected and retain filter settings
 while bypassed. Sustain and voice volume use 0–1 values; pan uses -1 (left)
 through 0 (center) to 1 (right). Envelope times are in seconds.
 
@@ -183,7 +183,7 @@ Envelope, volume, and pan already apply to noise; filtering is still future work
 | Triangle pitch | 220–660 Hz | 20–20,000 Hz, strictly below half the sample rate; requires aliasing work |
 | White noise | New value every sample at 48 kHz; no pitch argument | Rate-controlled noise deferred; original 20–20,000 Hz change-rate proposal is not implemented |
 | Noise seed | uint32; zero selects a distinct fixed default per bank slot | Lua seed exposure undecided |
-| Pulse width | Standalone only: 0.05–0.95, held fixed until reset | Live changes and bank controls pending |
+| Pulse width | Standalone only: 0.05–0.95, 10 ms live ramps | DC conditioning and bank controls pending |
 | Attack, decay, release | 0–10 seconds each | Same |
 | Sustain and voice volume | 0–1 | Same |
 | Pan | -1–1, equal-power stereo | Same |
@@ -365,9 +365,9 @@ filter gain handling, and combined-output attenuation remain to be specified. A 
 
 ## Remaining implementation questions
 
-- Pulse live width changes and DC handling before bank integration. Fixed-width
+- Pulse DC conditioning before bank integration. Standalone live-width
   PolyBLEP is implemented; saw is validated on desktop/Pi within its range. Measure quality before expanding the bounded pitch ranges.
-- Smooth live waveform/pulse-width changes; current active cross-type changes
+- Smooth live waveform changes and integrate pulse-width controls; current active cross-type changes
   are rejected. White noise versus any future rate-controlled noise API.
 - Filter mathematics, resonance mapping, stability, smoothing, and gain bounds.
 - Lua result/error contracts, configuration atomicity, and noise call/seed shape.
@@ -657,14 +657,19 @@ stereo placement, and normal exit. On Pi commit `f1982a9`, the user confirmed
 all 56 tests, clean saw/earlier tones, successful gameplay, and Exit to system
 status 0. Broader pitch and Lua controls remain deferred.
 
-## Standalone fixed-width pulse checkpoint
+## Standalone pulse checkpoints
 
 A pure C PolyBLEP pulse now runs at 48 kHz with pitch 220–660 Hz and width
 0.05–0.95 (default 0.5). Reset begins at the corrected rising edge; pitch changes
-preserve phase and width. Width is fixed until reset. Output stays within ±1
+preserve phase and width. Live width edits ramp over 480 samples (10 ms),
+retargeting from the current width without resetting phase. Output stays within ±1
 without clipping or normalization; its expected DC average is `2*width - 1`.
-That offset is deliberate at this stage and must be reviewed before integration.
+That offset is deliberate at this stage. The agreed next checkpoint adds explicit
+conditioning: `0.5 * (raw - (2*current_smoothed_width - 1))`. This fixed gain
+halves square amplitude and removes the settled expected mean, without promising
+zero mean over short transition windows. Conditioning is not implemented yet.
 
 [Pulse tests and measured limits](../../tests/audio-pulse.md) cover reset,
-bounds, DC mean, and AC alias suppression against an uncorrected pulse. Live
-width changes, bank integration, listening, and Pi validation remain deferred.
+bounds, DC mean, static alias suppression, exact width ramps, moving-edge
+correction, and comparison against an oversampled PWM reference. Bank
+integration, listening, and Pi validation remain deferred.

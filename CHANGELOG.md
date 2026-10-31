@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added standalone pulse-width controls with 10 ms linear ramps, phase-preserving
+  retargeting, and moving-edge PolyBLEP correction. Added timing, bounds, and
+  oversampled-reference regression checks. Raw DC remains intentional; explicit
+  conditioning and bank integration are separate future checkpoints.
+
 - Added a standalone fixed-width PolyBLEP pulse at 48 kHz (220–660 Hz,
   width 0.05–0.95), preserving conventional DC offset with no normalization.
   Added reset, bounds, mean, and spectral regression checks. Live width changes

@@ -33,10 +33,15 @@ if(BUILD_TESTING)
     set_tests_properties(audio_envelope PROPERTIES TIMEOUT 5)
 endif()
 
-# Standalone fixed-width pulse; integration and live width changes are deferred.
+# Standalone pulse with width smoothing; bank integration remains deferred.
 add_library(sugarbee_pulse STATIC src/sb_audio_pulse.c)
 sugarbee_warnings(sugarbee_pulse)
 if(BUILD_TESTING)
+    add_executable(test_audio_pulse_width tests/test_audio_pulse_width.c)
+    target_link_libraries(test_audio_pulse_width PRIVATE sugarbee_pulse m)
+    sugarbee_warnings(test_audio_pulse_width)
+    add_test(NAME audio_pulse_width COMMAND test_audio_pulse_width)
+    set_tests_properties(audio_pulse_width PROPERTIES TIMEOUT 10)
     add_executable(test_audio_pulse tests/test_audio_pulse.c)
     target_link_libraries(test_audio_pulse PRIVATE sugarbee_pulse m)
     sugarbee_warnings(test_audio_pulse)
