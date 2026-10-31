@@ -46,7 +46,7 @@ int main(void) {
     unsigned char snapshot[sizeof(bank)];
     memcpy(snapshot, &bank, sizeof(bank));
     CHECK(!sb_audio_bank_note_on(&bank, 1, 440));
-    CHECK(!sb_audio_bank_pitch(&bank, 1, 440));
+    CHECK(!sb_audio_bank_pitch(&bank, 1, NAN));
     CHECK(!sb_audio_bank_noise_on(&bank, 0));
     CHECK(!sb_audio_bank_noise_on(&bank, 10));
     CHECK(!sb_audio_bank_seed(&bank, 0, 1));

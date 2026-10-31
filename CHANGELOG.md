@@ -2,6 +2,16 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Extended native waveform switching to noise, with fresh-entry seeds,
+  stream-preserving retrigger, retained pitch (default 440 Hz), normal oscillator
+  phase on return, and a frequency-free selected-noise start. Active noise pitch
+  edits now store return pitch without changing noise sound. Added regression
+  checks and `sbee-noise-switch-test`. The user confirmed clear tone/noise
+  distinction in the revised one/three/nine-voice comparison; the voice limit
+  is unchanged. Pi validation at `29d63ff` passed all 65 tests, noise transitions
+  and earlier tones, gameplay checks, and Exit to system status 0.
+  Lua controls remain deferred.
+
 - Added native phase-preserving triangle/saw/pulse waveform selection with
   10 ms linear crossfades, separate selected-waveform note-on, and bounded
   repeated-request behavior. Added timing/lifecycle/SDL regression checks and

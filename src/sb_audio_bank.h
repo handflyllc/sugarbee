@@ -14,6 +14,7 @@ typedef struct {
     uint32_t seeds[SB_AUDIO_BANK_VOICES]; /* Zero selects the slot's fixed default. */
     sb_audio_saw_t saw[SB_AUDIO_BANK_VOICES];
     sb_audio_pulse_t pulse[SB_AUDIO_BANK_VOICES];
+    double retained_pitch[SB_AUDIO_BANK_VOICES]; /* Zero selects default 440 Hz. */
     double widths[SB_AUDIO_BANK_VOICES]; /* Zero selects default .5. */
     sb_audio_voice_kind_t kind[SB_AUDIO_BANK_VOICES];
     sb_audio_voice_kind_t destination[SB_AUDIO_BANK_VOICES];
@@ -25,19 +26,24 @@ typedef struct {
 void sb_audio_bank_reset(sb_audio_bank_t *bank);
 /* Public native voice numbers are 1..9. Invalid requests return false without
  * mutation. Valid silent note-off/stop are harmless and return true. */
-/* Select triangle/saw/pulse without starting/retriggering a note. Idle selection
- * is immediate. Active switches preserve phase/pitch and crossfade for 480 frames.
+/* Select triangle/saw/pulse/noise without starting/retriggering a note. Idle selection
+ * is immediate. Active switches crossfade for 480 frames; pitched-to-pitched
+ * preserves phase. Entering noise restarts the configured/default seed; leaving
+ * noise starts the destination at its normal phase and retained pitch (440 default).
  * Repeating the destination succeeds without restart; other busy requests fail.
- * Active noise transitions and selecting noise are unsupported. */
+ * Seed edits affect only the next fresh noise start, never the current stream. */
 bool sb_audio_bank_waveform(sb_audio_bank_t *bank, unsigned voice, sb_audio_voice_kind_t kind);
-/* Start selected waveform. Retriggers during a fade retain both phases and its
+/* Start selected pitched waveform (effective destination during a fade). Retriggers during a fade retain both phases and its
  * deadline; type-specific note-ons reject all starts during an active fade. */
 bool sb_audio_bank_start_selected(sb_audio_bank_t *bank, unsigned voice, double frequency);
+/* Noise-only selected start; no frequency argument. Active retrigger preserves
+ * sequence/fade deadline. Rejects a selected pitched destination unchanged. */
+bool sb_audio_bank_start_selected_noise(sb_audio_bank_t *bank, unsigned voice);
 bool sb_audio_bank_configure(sb_audio_bank_t *bank, unsigned voice, const sb_envelope_settings_t *settings);
 bool sb_audio_bank_note_on(sb_audio_bank_t *bank, unsigned voice, double frequency);
 /* Noise has no pitch. Idle start resets to configured/default seed; active
  * noise retrigger preserves sequence. Active cross-type starts are rejected.
- * Seed edits affect the next idle noise start only; zero restores slot default. */
+ * Seed edits affect the next fresh noise start/transition; zero restores slot default. */
 bool sb_audio_bank_noise_on(sb_audio_bank_t *bank, unsigned voice);
 /* Saw starts at phase .5 when idle; active saw retrigger preserves phase.
  * Same 220..660 Hz range, ADSR/control semantics, and cross-type rejection. */
@@ -49,6 +55,8 @@ bool sb_audio_bank_saw_on(sb_audio_bank_t *bank, unsigned voice, double frequenc
 bool sb_audio_bank_pulse_on(sb_audio_bank_t *bank, unsigned voice, double frequency);
 bool sb_audio_bank_pulse_width(sb_audio_bank_t *bank, unsigned voice, double width);
 bool sb_audio_bank_seed(sb_audio_bank_t *bank, unsigned voice, uint32_t seed);
+/* Active voices only, finite 220..660 Hz. Updates retained pitch and any audible
+ * pitched source; during steady noise only the retained frequency changes. */
 bool sb_audio_bank_pitch(sb_audio_bank_t *bank, unsigned voice, double frequency);
 bool sb_audio_bank_volume(sb_audio_bank_t *bank, unsigned voice, double volume);
 bool sb_audio_bank_pan(sb_audio_bank_t *bank, unsigned voice, double pan);

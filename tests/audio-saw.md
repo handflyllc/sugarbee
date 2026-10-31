@@ -116,4 +116,4 @@ Broader pitch, live waveform transitions, and Lua controls remain deferred.
 
 Explicit triangle/saw/pulse selection is now available separately from the
 existing type-specific note-ons. See the [waveform switching contract](audio-waveform.md);
-noise transitions remain deferred.
+noise transitions are covered in [noise transition checks](audio-noise-switch.md).

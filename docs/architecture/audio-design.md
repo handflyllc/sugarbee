@@ -12,7 +12,7 @@ not current limitations.
 | Area | Implemented now | Still pending |
 | --- | --- | --- |
 | Output | Host-owned SDL2 device, 48 kHz float stereo, silent fallback, clean close | Live failure detection/reconnection, measured end-to-end latency |
-| Voice bank | Nine explicit native slots, triangle, white noise, saw, or pulse, independent state; 10 ms triangle/saw/pulse transitions | Noise transitions |
+| Voice bank | Nine explicit native slots, triangle, white noise, saw, or pulse, independent state; 10 ms transitions including noise | Broader pitch and Lua integration |
 | Triangle | Direct waveform, 220–660 Hz, phase-preserving pitch/retrigger | Aliasing control and broader supported pitch range |
 | Saw | PolyBLEP, 220–660 Hz, native bank/SDL integration and automated checks | Broader pitch |
 | Pulse | Bank/SDL PolyBLEP, 220–660 Hz, width 0.05–0.95, default 0.5, 10 ms ramps, explicit DC conditioning | Broader pitch |
@@ -107,7 +107,7 @@ error-delivery and success-return semantics remain to be finalized.
   the current note's envelope. Zero-duration stages are immediate, so arbitrary
   envelope settings are not guaranteed click-free.
 - Idle noise start resets to its configured seed. Active noise retrigger keeps
-  its sequence; seed edits apply only on the next idle noise start. Seed zero
+  its sequence; seed edits apply on the next fresh noise start or transition. Seed zero
   selects the slot's distinct fixed default. Muting, release, and short stop
   keep advancing the sequence until idle. See [seed rules](../../tests/audio-noise.md#native-bank-integration).
 - Volume and pan targets smooth over 480 frames (10 ms); idle edits apply
@@ -139,7 +139,9 @@ features still to be added. Current native restrictions above remain in force.
 - Waveform and pulse-width changes also affect the current sound without
   retriggering its envelope. Smooth pulse-width changes and use a brief waveform
   transition to reduce clicks. Native triangle/saw/pulse selection now uses the
-  10 ms phase-preserving contract documented below; noise transitions are deferred.
+  10 ms phase-preserving contract documented below. Noise transitions instead
+  restart the seed on entry and use normal oscillator phase with retained pitch
+  on return.
 - Overlapping synthesized notes require separate explicit voices.
 - `note_off` starts release from the current envelope level. Repeating it during
   release does not restart the fade.
@@ -369,7 +371,7 @@ filter gain handling, and combined-output attenuation remain to be specified. A 
 
 - Native pulse bank/SDL integration with explicit DC conditioning is validated
   on desktop/Pi. Measure quality before expanding pitch ranges.
-- Noise waveform transitions; native triangle/saw/pulse switching is implemented.
+- Native switching including noise is validated on desktop/Pi.
   White noise versus any future rate-controlled noise API.
 - Filter mathematics, resonance mapping, stability, smoothing, and gain bounds.
 - Lua result/error contracts, configuration atomicity, and noise call/seed shape.
@@ -392,7 +394,9 @@ equal-power synth pan, fixed 1/9 current synth headroom, and noise seed rules.
    Desktop and Pi validation passed; broader range requires a separate checkpoint.
 2. Pulse bank/SDL and width controls are validated on desktop/Pi. Native
    triangle/saw/pulse transitions are implemented and validated on desktop/Pi.
-   Noise transitions and broader pitch need separately reviewed checkpoints.
+   Noise transitions are implemented; the revised desktop comparison is clearly
+   distinguishable. Pi validation passed at `29d63ff`.
+   Broader pitch needs a separately reviewed checkpoint.
 3. Per-voice low-pass/bypass, with resonance and gain bounds settled before use.
 4. Cartridge audio lifecycle and minimal Lua controls for validated features.
 5. A small Synth Lab, then a narrow Pong Lab audio update: one short wall-hit
@@ -717,3 +721,19 @@ All 63 automated tests pass. The user confirmed clean desktop transitions,
 steady pitch, and normal exit. For the Pi checklist targeting `d35f182`, the
 user reported all checks passed: all 63 tests, clean waveform and earlier tones,
 responsive Pong/Pac-Man, and Exit to system status 0.
+
+## Native noise-transition checkpoint
+
+Noise now participates in the same 10 ms transition and repeated-request rules.
+Entry resets the configured/default seed; seed edits and active retrigger do not
+reset audible noise. Returning to triangle/saw/pulse uses normal starting phase
+and retained pitch (440 Hz if never set). Active pitch edits during steady noise
+update only the stored return frequency; they update audible pitched sources
+while fading. Selected-noise start takes no frequency, whereas selected-pitched
+start requires one; each uses the destination to validate calls during a fade.
+See [noise-transition behavior and checks](../../tests/audio-noise-switch.md).
+The user confirmed clear tone/noise distinction in the revised one/three/nine-voice
+desktop comparison using 440 Hz triangle. The nine-voice limit is unchanged;
+On Pi commit `29d63ff`, the user confirmed all 65 tests passed, clean noise
+transitions and earlier tones, gameplay checks, and Exit to system status 0.
+Lua remains deferred.

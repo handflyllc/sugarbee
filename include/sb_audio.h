@@ -49,19 +49,23 @@ bool sb_audio_set_triangle_pan(sb_audio_t *audio, double pan);
  * legacy diagnostics likewise refuse active bank voices. All calls lock the
  * device, are control-thread only, and return false for NULL/invalid requests.
  * Valid idle note-off/stop succeed harmlessly. No Lua API yet. */
-/* Triangle/saw/pulse selection, separate from note-on. Active selection fades
+/* Triangle/saw/pulse/noise selection, separate from note-on. Active selection fades
  * 10 ms without restarting envelope; same destination is a no-op, other busy
- * requests fail. Idle selection stays silent. Noise transitions are deferred. */
+ * requests fail. Idle selection stays silent. Entering noise starts a fresh seed;
+ * leaving noise uses retained pitch (default 440) and normal destination phase. */
 bool sb_audio_voice_waveform(sb_audio_t *audio, unsigned voice, sb_audio_voice_kind_t kind);
 /* Start/retrigger selected pitched waveform, preserving any active fade. */
 bool sb_audio_voice_start_selected(sb_audio_t *audio, unsigned voice, double frequency);
+/* Start/retrigger selected noise without a frequency; preserves active sequence
+ * and fade deadline. The effective destination must be noise. */
+bool sb_audio_voice_start_selected_noise(sb_audio_t *audio, unsigned voice);
 bool sb_audio_voice_configure(sb_audio_t *audio, unsigned voice, double attack,
                               double decay, double sustain, double release);
 bool sb_audio_voice_note_on(sb_audio_t *audio, unsigned voice, double frequency);
 /* Noise-specific note-on and seed configuration. Zero seed restores the slot's
  * distinct fixed default. Idle note-on restarts the seed; active retrigger keeps
- * the sequence. Seed edits apply only on the next idle noise start. Triangle
- * and noise cannot replace one another while active; noise rejects pitch. */
+ * the sequence. Seed edits apply on the next fresh noise start/transition.
+ * Type-specific note-ons reject active cross-type starts and all active fades. */
 /* Saw uses the same 220..660 Hz limits. Idle start resets phase to .5;
  * active saw retrigger/pitch changes preserve phase. Active type changes fail. */
 bool sb_audio_voice_saw_on(sb_audio_t *audio, unsigned voice, double frequency);
@@ -72,6 +76,8 @@ bool sb_audio_voice_pulse_on(sb_audio_t *audio, unsigned voice, double frequency
 bool sb_audio_voice_pulse_width(sb_audio_t *audio, unsigned voice, double width);
 bool sb_audio_voice_noise_on(sb_audio_t *audio, unsigned voice);
 bool sb_audio_voice_seed(sb_audio_t *audio, unsigned voice, uint32_t seed);
+/* Active voices: finite 220..660 Hz. On steady noise updates retained pitch
+ * without changing its sound; during fades updates any audible pitched source. */
 bool sb_audio_voice_pitch(sb_audio_t *audio, unsigned voice, double frequency);
 bool sb_audio_voice_volume(sb_audio_t *audio, unsigned voice, double volume);
 bool sb_audio_voice_pan(sb_audio_t *audio, unsigned voice, double pan);
