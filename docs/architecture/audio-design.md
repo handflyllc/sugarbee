@@ -14,7 +14,7 @@ not current limitations.
 | Output | Host-owned SDL2 device, 48 kHz float stereo, silent fallback, clean close | Live failure detection/reconnection, measured end-to-end latency |
 | Voice bank | Nine explicit native slots, triangle, white noise, or saw, independent state | Pulse, live cross-waveform transitions |
 | Triangle | Direct waveform, 220–660 Hz, phase-preserving pitch/retrigger | Aliasing control and broader supported pitch range |
-| Saw | PolyBLEP, 220–660 Hz, native bank/SDL integration and automated checks | Pi validation, broader pitch |
+| Saw | PolyBLEP, 220–660 Hz, native bank/SDL integration and automated checks | Broader pitch |
 | Noise | Deterministic per-sample white noise, distinct default seeds, repeatable idle starts | Rate-controlled/tonal noise remains deferred; no current noise frequency control |
 | Envelope | Linear ADSR, captured per note, current-level active retrigger | No additional envelope model planned for this checkpoint |
 | Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Filters, pulse width, group/master controls |
@@ -28,11 +28,11 @@ listening audibility. Legacy single-triangle and sine diagnostics retain their
 triangle/noise mixing stays within ±1 under supported controls; there is no
 final clamp or clipping counter yet. Filters and WAV mixing need new bounds.
 
-The user reported successful Pi validation of the noise checklist at `557b6ba`:
-all 53 automated tests, native noise and earlier audio sequences, gameplay, and
-Exit to system status 0. Desktop validation also passed. This does not establish
-compatibility with every audio device or live output switching. See
-[noise validation](../../tests/audio-noise.md#pi-validation) and
+The user confirmed successful Pi validation at `f1982a9`: all 56 automated
+tests, clean native saw and earlier audio sequences, gameplay, and Exit to system
+status 0. Desktop validation also passed. This does not establish compatibility
+with every audio device or live output switching. See
+[saw validation](../../tests/audio-saw.md#pi-validation) and
 [Pi output observations](../../tests/audio-bank.md#pi-validation-and-output-observations).
 
 ## Purpose and scope
@@ -363,8 +363,8 @@ filter gain handling, and combined-output attenuation remain to be specified. A 
 
 ## Remaining implementation questions
 
-- Saw listening/Pi validation; pulse oscillator/aliasing
-  method selection. Measure quality before expanding the bounded pitch ranges.
+- Pulse oscillator/aliasing method selection. Saw is validated on desktop/Pi
+  within its current range. Measure quality before expanding the bounded pitch ranges.
 - Smooth live waveform/pulse-width changes; current active cross-type changes
   are rejected. White noise versus any future rate-controlled noise API.
 - Filter mathematics, resonance mapping, stability, smoothing, and gain bounds.
@@ -385,7 +385,7 @@ equal-power synth pan, fixed 1/9 current synth headroom, and noise seed rules.
 ## Agreed next sequence — checkpoint by checkpoint
 
 1. PolyBLEP saw and bank/SDL integration are implemented at 220–660 Hz.
-   Desktop listening is confirmed; Pi validation precedes any range expansion.
+   Desktop and Pi validation passed; broader range requires a separate checkpoint.
 2. Pulse waveform/pulse width; smooth waveform transitions and broader pitch
    support through separately reviewed checkpoints.
 3. Per-voice low-pass/bypass, with resonance and gain bounds settled before use.
@@ -651,5 +651,6 @@ phase advancing until idle. Fixed 1/9 headroom and diagnostic gain are unchanged
 [Bank regression checks and the native listening sequence](../../tests/audio-saw.md#native-bank-and-sdl-integration)
 cover lifecycle, headroom, mixed rendering, controls, and teardown. All 56
 automated tests pass. The user confirmed clean desktop saw playback, correct
-stereo placement, and normal exit. Pi validation remains pending; Lua controls
-remain deferred.
+stereo placement, and normal exit. On Pi commit `f1982a9`, the user confirmed
+all 56 tests, clean saw/earlier tones, successful gameplay, and Exit to system
+status 0. Broader pitch and Lua controls remain deferred.

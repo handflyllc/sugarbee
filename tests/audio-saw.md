@@ -105,4 +105,11 @@ notes or distortion, final silence, and normal exit. This is an audible check
 of bounded prototype behavior, not proof of alias-free synthesis. Also rerun
 the existing noise/bank/pan/triangle/sine tools and gameplay checks. Prefer HDMI
 on the Pi. The user confirmed clean desktop saw playback, correct stereo placement, and
-normal exit. All 56 automated tests pass. Pi validation remains pending.
+normal exit. All 56 automated tests pass. Pi validation is recorded below.
+
+## Pi validation
+
+On Pi commit `f1982a9`, the user confirmed all 56 automated tests, clean saw
+and earlier diagnostic tones, successful gameplay checks, and Exit to system
+status 0. This validates the bounded native saw integration on desktop and Pi.
+Broader pitch, live waveform transitions, and Lua controls remain deferred.

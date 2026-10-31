@@ -161,7 +161,9 @@ Do not treat the entire audio design as a single implementation step.
 The design is reconciled against implemented behavior. A standalone PolyBLEP
 saw at 220–660 Hz now has sample/spectral checks, native bank/SDL integration,
 and a listening tool. All 56 tests pass; the user confirmed clean desktop saw
-playback, correct stereo placement, and normal exit. Pi validation is next. Continue with pulse/width, smooth waveform
+playback, correct stereo placement, and normal exit. Pi validation passed at
+`f1982a9`: all 56 tests, saw/earlier tones, gameplay, and Exit to system status 0.
+Continue with pulse/width, smooth waveform
 transitions and broader pitch, filtering, then cartridge audio lifecycle and
 minimal Lua controls. Each remains a separately scoped implementation and
 validation step; see the [audio sequence](docs/architecture/audio-design.md#agreed-next-sequence--checkpoint-by-checkpoint).

@@ -2,11 +2,14 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Validated native saw integration on Pi commit `f1982a9`: all 56 tests,
+  saw/earlier tones, gameplay, and Exit to system status 0 passed.
+
 - Integrated PolyBLEP saw into native bank/SDL controls with phase-preserving
   pitch/retrigger, shared ADSR/volume/pan/stop behavior, and fixed 1/9 headroom.
   Added mixed-voice regression checks and `sbee-saw-test`. All 56 tests pass;
   desktop listening confirmed clean playback, correct stereo placement, and
-  normal exit. Pi validation pending; Lua remains deferred.
+  normal exit. Pi validation also passed; Lua remains deferred.
 
 - Added a standalone 48 kHz PolyBLEP saw (220–660 Hz) with defined reset,
   phase-preserving pitch changes, bounded samples, and spectral alias-reduction
