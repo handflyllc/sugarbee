@@ -15,7 +15,7 @@ not current limitations.
 | Voice bank | Nine explicit native slots, triangle, white noise, or saw, independent state | Pulse, live cross-waveform transitions |
 | Triangle | Direct waveform, 220–660 Hz, phase-preserving pitch/retrigger | Aliasing control and broader supported pitch range |
 | Saw | PolyBLEP, 220–660 Hz, native bank/SDL integration and automated checks | Broader pitch |
-| Pulse | Standalone PolyBLEP, 220–660 Hz, width 0.05–0.95, default 0.5, 10 ms ramps | DC conditioning, bank/SDL, listening/Pi |
+| Pulse | Standalone PolyBLEP, 220–660 Hz, width 0.05–0.95, default 0.5, 10 ms ramps, explicit DC conditioning | Bank/SDL, listening/Pi |
 | Noise | Deterministic per-sample white noise, distinct default seeds, repeatable idle starts | Rate-controlled/tonal noise remains deferred; no current noise frequency control |
 | Envelope | Linear ADSR, captured per note, current-level active retrigger | No additional envelope model planned for this checkpoint |
 | Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Filters, pulse width, group/master controls |
@@ -183,7 +183,7 @@ Envelope, volume, and pan already apply to noise; filtering is still future work
 | Triangle pitch | 220–660 Hz | 20–20,000 Hz, strictly below half the sample rate; requires aliasing work |
 | White noise | New value every sample at 48 kHz; no pitch argument | Rate-controlled noise deferred; original 20–20,000 Hz change-rate proposal is not implemented |
 | Noise seed | uint32; zero selects a distinct fixed default per bank slot | Lua seed exposure undecided |
-| Pulse width | Standalone only: 0.05–0.95, 10 ms live ramps | DC conditioning and bank controls pending |
+| Pulse width | Standalone only: 0.05–0.95, 10 ms live ramps | Bank controls pending |
 | Attack, decay, release | 0–10 seconds each | Same |
 | Sustain and voice volume | 0–1 | Same |
 | Pan | -1–1, equal-power stereo | Same |
@@ -365,7 +365,7 @@ filter gain handling, and combined-output attenuation remain to be specified. A 
 
 ## Remaining implementation questions
 
-- Pulse DC conditioning before bank integration. Standalone live-width
+- Pulse bank integration with explicit DC conditioning. Standalone live-width
   PolyBLEP is implemented; saw is validated on desktop/Pi within its range. Measure quality before expanding the bounded pitch ranges.
 - Smooth live waveform changes and integrate pulse-width controls; current active cross-type changes
   are rejected. White noise versus any future rate-controlled noise API.
@@ -662,14 +662,17 @@ status 0. Broader pitch and Lua controls remain deferred.
 A pure C PolyBLEP pulse now runs at 48 kHz with pitch 220–660 Hz and width
 0.05–0.95 (default 0.5). Reset begins at the corrected rising edge; pitch changes
 preserve phase and width. Live width edits ramp over 480 samples (10 ms),
-retargeting from the current width without resetting phase. Output stays within ±1
+retargeting from the current width without resetting phase. Raw output stays within ±1
 without clipping or normalization; its expected DC average is `2*width - 1`.
-That offset is deliberate at this stage. The agreed next checkpoint adds explicit
-conditioning: `0.5 * (raw - (2*current_smoothed_width - 1))`. This fixed gain
+That offset remains available in raw output. A separate conditioned renderer
+applies `0.5 * (raw - (2*current_smoothed_width - 1))`. This fixed gain
 halves square amplitude and removes the settled expected mean, without promising
-zero mean over short transition windows. Conditioning is not implemented yet.
+zero mean over short transition windows. Conditioning uses the current sample
+width before ramp advancement, with output
+bounded to ±0.95. Both render variants advance identical state; there is no
+DC-blocking filter or live mode crossfade.
 
 [Pulse tests and measured limits](../../tests/audio-pulse.md) cover reset,
-bounds, DC mean, static alias suppression, exact width ramps, moving-edge
-correction, and comparison against an oversampled PWM reference. Bank
+bounds, raw and conditioned DC means, transition conditioning, static alias
+suppression, exact width ramps, moving-edge correction, and comparison against an oversampled PWM reference. Bank
 integration, listening, and Pi validation remain deferred.

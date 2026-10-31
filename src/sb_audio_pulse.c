@@ -53,7 +53,7 @@ static double rising_residual(double phase, double previous, double next) {
     }
     return 0;
 }
-bool sb_audio_pulse_render(sb_audio_pulse_t *pulse, float *output, size_t samples) {
+static bool render(sb_audio_pulse_t *pulse, float *output, size_t samples, bool conditioned) {
     if (!valid_state(pulse) || (!output && samples) || samples > SIZE_MAX/sizeof(float))
         return false;
     double step = pulse->frequency/SB_AUDIO_PULSE_RATE;
@@ -77,6 +77,8 @@ bool sb_audio_pulse_render(sb_audio_pulse_t *pulse, float *output, size_t sample
         double value = pulse->phase < pulse->width ? 1.0 : -1.0;
         value += rising_residual(pulse->phase, pulse->previous_step, step);
         value -= rising_residual(falling_phase, pulse->previous_falling_step, falling_step);
+        /* Use the width of this sample, before advancing the ramp. */
+        if (conditioned) value = .5 * (value - (2*pulse->width - 1));
         output[i] = (float)value;
         pulse->phase += step;
         if (pulse->phase >= 1) pulse->phase -= 1;
@@ -86,4 +88,11 @@ bool sb_audio_pulse_render(sb_audio_pulse_t *pulse, float *output, size_t sample
         pulse->previous_falling_step = falling_step;
     }
     return true;
+}
+
+bool sb_audio_pulse_render(sb_audio_pulse_t *pulse, float *output, size_t samples) {
+    return render(pulse, output, samples, false);
+}
+bool sb_audio_pulse_render_conditioned(sb_audio_pulse_t *pulse, float *output, size_t samples) {
+    return render(pulse, output, samples, true);
 }

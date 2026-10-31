@@ -164,8 +164,8 @@ and a listening tool. All 56 tests pass; the user confirmed clean desktop saw
 playback, correct stereo placement, and normal exit. Pi validation passed at
 `f1982a9`: all 56 tests, saw/earlier tones, gameplay, and Exit to system status 0.
 A standalone PolyBLEP pulse now has reset/bounds/DC/spectral checks and 10 ms
-live-width ramps with moving-edge correction. Explicit DC conditioning is the
-next checkpoint, followed separately by bank integration and listening.
+live-width ramps with moving-edge correction. Explicit DC conditioning and its
+settled/transition checks are implemented. Bank integration and listening are next.
 Continue with smooth waveform
 transitions and broader pitch, filtering, then cartridge audio lifecycle and
 minimal Lua controls. Each remains a separately scoped implementation and

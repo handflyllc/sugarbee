@@ -1,4 +1,4 @@
-/* Standalone PolyBLEP pulse with smoothed width. No envelope, gain, or DC removal. */
+/* Standalone PolyBLEP pulse with smoothed width. Explicit raw or DC-conditioned output; no envelope. */
 #ifndef SB_AUDIO_PULSE_H
 #define SB_AUDIO_PULSE_H
 #include <stdbool.h>
@@ -33,4 +33,12 @@ bool sb_audio_pulse_width(sb_audio_pulse_t *pulse, double width);
  * Invalid arguments/state or overflowing counts leave state/output unchanged.
  * Caller owns synchronization and buffer capacity; output cannot overlap state. */
 bool sb_audio_pulse_render(sb_audio_pulse_t *pulse, float *output, size_t samples);
+/* Same rendering/state contract as raw output, with explicit conditioning:
+ * 0.5 * (raw - (2*current_width - 1)), using this sample's smoothed width.
+ * Removes the settled expected DC; short transition windows need not average
+ * zero. Fixed gain halves square amplitude; no loudness normalization or clamp.
+ * Current width bounds give output within +/-0.95. Both render variants advance
+ * the same state; use copies to compare the same samples, not consecutive calls.
+ * Reset's first conditioned sample is 0.5-width, not necessarily zero. */
+bool sb_audio_pulse_render_conditioned(sb_audio_pulse_t *pulse, float *output, size_t samples);
 #endif

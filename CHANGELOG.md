@@ -2,6 +2,11 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added explicit standalone pulse DC conditioning using current smoothed width
+  and fixed half gain, preserving raw output. Added settled-mean, transition,
+  bounded-output, reset, and render-partition checks. Bank/SDL integration and
+  listening remain deferred.
+
 - Added standalone pulse-width controls with 10 ms linear ramps, phase-preserving
   retargeting, and moving-edge PolyBLEP correction. Added timing, bounds, and
   oversampled-reference regression checks. Raw DC remains intentional; explicit

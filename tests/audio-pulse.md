@@ -5,7 +5,7 @@ pulse width 0.05–0.95. Width is the high fraction of each cycle. The default
 width constant is 0.5 (square wave). Reset supplies the initial width. Live edits ramp over 480 samples (10 ms);
 there is no bank/SDL integration or listening executable.
 
-## State and signal contract
+## Raw state and signal contract
 
 Reset starts at the rising edge, phase zero, where the corrected first sample
 is zero. Zero-initialized storage is unconfigured and requires reset. Pitch edits
@@ -31,9 +31,9 @@ The expected cycle average is `2*width - 1`:
 | 0.95 | +0.90 |
 
 The nonzero average is intentional for this standalone conventional pulse.
-It consumes signal headroom without representing an audible pitch. DC handling
-must be reviewed before bank integration, including envelope/width transitions
-and any filtering. Do not assume a future filter or the output device removes it.
+It consumes signal headroom without representing an audible pitch. The explicit
+conditioned renderer below removes the settled expected offset. Do not assume
+a future filter or the output device removes it.
 
 Method reference: [PolyBLEP pulse overview](https://www.orastron.com/algorithms/bw_osc_pulse).
 No external runtime library is introduced. Aliasing is suppressed, not eliminated.
@@ -62,11 +62,11 @@ Build independently of the SDL/Lua host:
 
 ```sh
 cmake -S . -B /tmp/sugarbee-pulse-standalone -DSUGARBEE_BUILD_HOST=OFF -DSUGARBEE_BUILD_PACKER=OFF
-cmake --build /tmp/sugarbee-pulse-standalone --target test_audio_pulse test_audio_pulse_width
+cmake --build /tmp/sugarbee-pulse-standalone --target test_audio_pulse test_audio_pulse_width test_audio_pulse_dc
 ctest --test-dir /tmp/sugarbee-pulse-standalone -R '^audio_pulse' --output-on-failure
 ```
 
-DC handling for integration, native bank/SDL controls,
+Native bank/SDL controls,
 listening, and Pi validation remain later checkpoints. Lua remains deferred.
 
 ## Live width checkpoint
@@ -94,11 +94,29 @@ than raw output; the test requires at least 3 dB and checks carrier preservation
 Finite oversampling and selected bins make this a regression metric, not proof
 of alias-free output or every modulation trajectory.
 
-## Agreed next checkpoint: DC conditioning (not implemented)
+## Explicit DC conditioning
 
-Keep this oscillator's raw output and add explicit conditioning before bank
-integration: `0.5 * (raw - (2*current_smoothed_width - 1))`. This subtracts the
+`sb_audio_pulse_render()` retains raw output. The separate
+`sb_audio_pulse_render_conditioned()` applies
+`0.5 * (raw - (2*current_smoothed_width - 1))`. This subtracts the
 settled expected DC value with fixed gain to retain bounded output. It halves
 square-wave amplitude (about 6 dB); there is no automatic loudness normalization.
-It does not promise zero average over short transition windows. Conditioning,
-its transition tests, bank integration, and listening remain separate work.
+It does not promise zero average over short transition windows. Bank integration
+and listening remain separate work.
+
+Conditioning uses the width for the sample being rendered, before advancing the
+ramp, rather than the target or next width. Current raw and width bounds imply
+conditioned output within ±0.95, without clipping. The raw square's ±1 plateaus
+become ±0.5; narrow pulses retain their natural level differences. Reset has no
+fade: its first conditioned sample is `0.5-width`, and may be nonzero.
+
+Both render entry points advance the same oscillator state identically. Use
+copies to compare raw and conditioned versions of the same samples. There is no
+DC-blocking filter state, allocation, envelope, or live output-mode crossfade.
+Do not alternate render modes expecting a click-free transition.
+
+`audio_pulse_dc` checks coherent settled means across five widths and three
+pitches, raw-output preservation, square amplitude, same-sample conditioning
+during full ramps and reversals, bounds, render partition independence, reset
+replay, and invalid/zero-length requests. It does not require zero average over
+short transition windows or claim audible validation.
