@@ -5,8 +5,10 @@
 - Integrated conditioned pulse into the nine-voice native bank and SDL controls,
   including retained width, live ramps, phase-preserving retrigger, shared ADSR,
   and fixed headroom. Added bank/SDL checks and `sbee-pulse-test`. All 61 tests
-  pass and the user confirmed all desktop listening checks. Pi acceptance is
-  pending; Lua remains deferred.
+  pass and the user confirmed all desktop listening checks. Pi validation at
+  `a397e26` passed all 61 tests, pulse/earlier tones, gameplay, and Exit to system
+  status 0. Sluggish Pi controls were separately reported; cause and reproduction
+  remain unresolved. Lua remains deferred.
 
 - Added explicit standalone pulse DC conditioning using current smoothed width
   and fixed half gain, preserving raw output. Added settled-mean, transition,

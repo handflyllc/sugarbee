@@ -66,8 +66,8 @@ cmake --build /tmp/sugarbee-pulse-standalone --target test_audio_pulse test_audi
 ctest --test-dir /tmp/sugarbee-pulse-standalone -R '^audio_pulse' --output-on-failure
 ```
 
-Native bank/SDL controls are now implemented. Desktop listening passed; Pi acceptance remains
-pending and Lua remains deferred.
+Native bank/SDL controls are now implemented. Desktop and Pi validation passed;
+Lua remains deferred.
 
 ## Live width checkpoint
 
@@ -162,4 +162,9 @@ triangle/noise/saw/pulse. Width changes intentionally alter timbre and loudness.
 Check for unexpected clicks/distortion, correct placement, and normal exit.
 The user confirmed all desktop listening checks: clean pitch/width/retrigger
 playback, correct stereo placement, clean mixed voices, and normal exit. All 61
-automated tests passed. Pi validation remains pending.
+automated tests passed. On Pi commit `a397e26`, the user confirmed all 61 tests,
+clean pulse/earlier tones, passing gameplay checks, and Exit to system status 0.
+
+Separate observation: controls feel more sluggish on the Pi. No reproducible
+case, measured latency, or cause is established. Passing the functional checklist
+does not resolve that observation or establish unchanged input latency.
