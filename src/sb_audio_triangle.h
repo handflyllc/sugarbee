@@ -6,6 +6,7 @@
 #include "sb_audio_envelope.h"
 #include "sb_audio_noise.h"
 #include "sb_audio_saw.h"
+#include "sb_audio_pulse.h"
 
 typedef struct {
     double phase, frequency, stop_start;
@@ -29,11 +30,11 @@ bool sb_audio_triangle_start(sb_audio_triangle_t *voice, double frequency);
 bool sb_audio_triangle_pitch(sb_audio_triangle_t *voice, double frequency);
 void sb_audio_triangle_stop(sb_audio_triangle_t *voice);
 /* Shared envelope/control lifecycle for the bank's sources. Source pointers
- * are mutually exclusive; both NULL select triangle. Caller supplies valid
+ * are mutually exclusive; all NULL select triangle. Caller supplies valid
  * configured source state. Noise has no oscillator pitch. */
 bool sb_audio_voice_start(sb_audio_triangle_t *voice);
 void sb_audio_voice_render(sb_audio_triangle_t *voice, sb_audio_noise_t *source,
-                           sb_audio_saw_t *saw, float *output, size_t frames);
+                           sb_audio_saw_t *saw, sb_audio_pulse_t *pulse, float *output, size_t frames);
 /* Normalized waveform times envelope, volume, and pan; no diagnostic gain. */
 void sb_audio_triangle_render(sb_audio_triangle_t *voice, float *output, size_t frames);
 #endif

@@ -1,5 +1,6 @@
 #include "sb_audio_bank.h"
 #include <stdint.h>
+#include <math.h>
 
 static sb_audio_triangle_t *voice_at(sb_audio_bank_t *bank, unsigned voice) {
     return bank && voice >= 1 && voice <= SB_AUDIO_BANK_VOICES ? &bank->voices[voice-1] : NULL;
@@ -52,9 +53,31 @@ bool sb_audio_bank_saw_on(sb_audio_bank_t *bank, unsigned voice, double frequenc
     bank->kind[voice-1] = SB_AUDIO_VOICE_SAW;
     return true;
 }
+bool sb_audio_bank_pulse_on(sb_audio_bank_t *bank, unsigned voice, double frequency) {
+    sb_audio_triangle_t *v = voice_at(bank, voice);
+    if (!v || (v->active && bank->kind[voice-1] != SB_AUDIO_VOICE_PULSE)) return false;
+    sb_audio_pulse_t next = bank->pulse[voice-1];
+    double width = bank->widths[voice-1];
+    bool ok = v->active ? sb_audio_pulse_pitch(&next, frequency) :
+        sb_audio_pulse_reset(&next, frequency, width ? width : SB_AUDIO_PULSE_DEFAULT_WIDTH);
+    if (!ok || !sb_audio_voice_start(v)) return false;
+    bank->pulse[voice-1] = next;
+    bank->kind[voice-1] = SB_AUDIO_VOICE_PULSE;
+    return true;
+}
+bool sb_audio_bank_pulse_width(sb_audio_bank_t *bank, unsigned voice, double width) {
+    sb_audio_triangle_t *v = voice_at(bank, voice);
+    if (!v || !isfinite(width) || width < .05 || width > .95) return false;
+    if (v->active && bank->kind[voice-1] == SB_AUDIO_VOICE_PULSE &&
+        !sb_audio_pulse_width(&bank->pulse[voice-1], width)) return false;
+    bank->widths[voice-1] = width;
+    return true;
+}
 bool sb_audio_bank_pitch(sb_audio_bank_t *bank, unsigned voice, double frequency) {
     sb_audio_triangle_t *v = voice_at(bank, voice);
     if (!v || !v->active || bank->kind[voice-1] == SB_AUDIO_VOICE_NOISE) return false;
+    if (bank->kind[voice-1] == SB_AUDIO_VOICE_PULSE)
+        return sb_audio_pulse_pitch(&bank->pulse[voice-1], frequency);
     if (bank->kind[voice-1] == SB_AUDIO_VOICE_SAW)
         return sb_audio_saw_pitch(&bank->saw[voice-1], frequency);
     return sb_audio_triangle_pitch(v, frequency);
@@ -89,6 +112,7 @@ bool sb_audio_bank_render(sb_audio_bank_t *bank, float *output, size_t frames) {
             sb_audio_voice_render(&bank->voices[voice],
                                   bank->kind[voice] == SB_AUDIO_VOICE_NOISE ? &bank->noise[voice] : NULL,
                                   bank->kind[voice] == SB_AUDIO_VOICE_SAW ? &bank->saw[voice] : NULL,
+                                  bank->kind[voice] == SB_AUDIO_VOICE_PULSE ? &bank->pulse[voice] : NULL,
                                   stereo, 1);
             left += stereo[0];
             right += stereo[1];

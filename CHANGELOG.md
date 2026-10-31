@@ -2,6 +2,29 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Integrated conditioned pulse into the nine-voice native bank and SDL controls,
+  including retained width, live ramps, phase-preserving retrigger, shared ADSR,
+  and fixed headroom. Added bank/SDL checks and `sbee-pulse-test`. All 61 tests
+  pass and the user confirmed all desktop listening checks. Pi validation at
+  `a397e26` passed all 61 tests, pulse/earlier tones, gameplay, and Exit to system
+  status 0. Sluggish Pi controls were separately reported; cause and reproduction
+  remain unresolved. Lua remains deferred.
+
+- Added explicit standalone pulse DC conditioning using current smoothed width
+  and fixed half gain, preserving raw output. Added settled-mean, transition,
+  bounded-output, reset, and render-partition checks. Bank/SDL integration and
+  listening remain deferred.
+
+- Added standalone pulse-width controls with 10 ms linear ramps, phase-preserving
+  retargeting, and moving-edge PolyBLEP correction. Added timing, bounds, and
+  oversampled-reference regression checks. Raw DC remains intentional; explicit
+  conditioning and bank integration are separate future checkpoints.
+
+- Added a standalone fixed-width PolyBLEP pulse at 48 kHz (220–660 Hz,
+  width 0.05–0.95), preserving conventional DC offset with no normalization.
+  Added reset, bounds, mean, and spectral regression checks. Live width changes
+  and bank integration remain deferred.
+
 - Validated native saw integration on Pi commit `f1982a9`: all 56 tests,
   saw/earlier tones, gameplay, and Exit to system status 0 passed.
 
