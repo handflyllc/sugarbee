@@ -180,8 +180,11 @@ preservation, 10 ms linear fades, and defined repeated-request behavior. All 63
 tests pass; the user confirmed clean desktop transitions, steady pitch, and
 normal exit. The user reported all Pi checks passed for `d35f182`: all 63 tests,
 waveform/earlier tones, responsive gameplay, and Exit to system status 0.
-Noise transitions and broader pitch
-remain separately scoped work, followed by filtering, cartridge audio lifecycle and
+Noise transitions are now implemented with fresh-entry seed behavior, retained
+pitch, and a frequency-free selected-noise start. The user confirmed clear
+tone/noise distinction in the revised one/three/nine-voice desktop listening
+comparison; the voice limit is unchanged. Pi validation is pending. Broader pitch remains the next separately scoped work,
+followed by filtering, cartridge audio lifecycle and
 minimal Lua controls. Each remains a separately scoped implementation and
 validation step; see the [audio sequence](docs/architecture/audio-design.md#agreed-next-sequence--checkpoint-by-checkpoint).
 

@@ -31,7 +31,7 @@ int main(void) {
     CHECK(!sb_audio_bank_waveform(&b, 0, SB_AUDIO_VOICE_SAW));
     CHECK(!sb_audio_bank_waveform(&b, 10, SB_AUDIO_VOICE_SAW));
     CHECK(!sb_audio_bank_waveform(&b, 1, (sb_audio_voice_kind_t)99));
-    CHECK(!sb_audio_bank_waveform(&b, 1, SB_AUDIO_VOICE_NOISE));
+    CHECK(sb_audio_bank_waveform(&b, 1, SB_AUDIO_VOICE_NOISE));
     CHECK(!sb_audio_bank_start_selected(NULL, 1, 440));
     /* All six directions and both pitch extremes; idle selection stays silent.
      * Verify first/middle/last blend samples, exact deadline and continued phase. */
@@ -123,8 +123,8 @@ int main(void) {
     CHECK(!b.switch_left[0] && b.kind[0] == SB_AUDIO_VOICE_TRIANGLE);
     CHECK(sb_audio_bank_noise_on(&b,1));
     snapshot = b;
-    CHECK(!sb_audio_bank_waveform(&b,1,SB_AUDIO_VOICE_SAW));
-    CHECK(memcmp(&b,&snapshot,sizeof b) == 0);
+    CHECK(sb_audio_bank_waveform(&b,1,SB_AUDIO_VOICE_SAW));
+    CHECK(b.switch_left[0] == 480 && b.saw[0].phase == .5);
     /* Nine simultaneous transitions, partition independence and bounded mix. */
     sb_audio_bank_reset(&b);
     for (unsigned v=1; v<=9; ++v) {

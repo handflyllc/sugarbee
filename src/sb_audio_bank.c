@@ -16,6 +16,7 @@ bool sb_audio_bank_note_on(sb_audio_bank_t *bank, unsigned voice, double frequen
     if (!v || bank->switch_left[voice-1] || (v->active && bank->kind[voice-1] != SB_AUDIO_VOICE_TRIANGLE)) return false;
     if (!sb_audio_triangle_start(v, frequency)) return false;
     bank->kind[voice-1] = SB_AUDIO_VOICE_TRIANGLE;
+    bank->retained_pitch[voice-1] = frequency;
     return true;
 }
 /* Fixed, distinct nonzero defaults; no clock or process-global random state. */
@@ -24,6 +25,10 @@ static const uint32_t default_seeds[SB_AUDIO_BANK_VOICES] = {
     UINT32_C(0x03707344), UINT32_C(0xa4093822), UINT32_C(0x299f31d0),
     UINT32_C(0x082efa98), UINT32_C(0xec4e6c89), UINT32_C(0x452821e6)
 };
+static void fresh_noise(sb_audio_bank_t *bank, unsigned slot) {
+    uint32_t seed = bank->seeds[slot];
+    sb_audio_noise_reset(&bank->noise[slot], seed ? seed : default_seeds[slot]);
+}
 bool sb_audio_bank_seed(sb_audio_bank_t *bank, unsigned voice, uint32_t seed) {
     if (!voice_at(bank, voice)) return false;
     bank->seeds[voice-1] = seed;
@@ -34,10 +39,7 @@ bool sb_audio_bank_noise_on(sb_audio_bank_t *bank, unsigned voice) {
     if (!v || bank->switch_left[voice-1] || (v->active && bank->kind[voice-1] != SB_AUDIO_VOICE_NOISE)) return false;
     bool idle = !v->active;
     if (!sb_audio_voice_start(v)) return false;
-    if (idle) {
-        uint32_t seed = bank->seeds[voice-1];
-        sb_audio_noise_reset(&bank->noise[voice-1], seed ? seed : default_seeds[voice-1]);
-    }
+    if (idle) fresh_noise(bank, voice-1);
     bank->kind[voice-1] = SB_AUDIO_VOICE_NOISE;
     return true;
 }
@@ -51,6 +53,7 @@ bool sb_audio_bank_saw_on(sb_audio_bank_t *bank, unsigned voice, double frequenc
     if (!ok || !sb_audio_voice_start(v)) return false;
     bank->saw[voice-1] = next;
     bank->kind[voice-1] = SB_AUDIO_VOICE_SAW;
+    bank->retained_pitch[voice-1] = frequency;
     return true;
 }
 bool sb_audio_bank_pulse_on(sb_audio_bank_t *bank, unsigned voice, double frequency) {
@@ -63,6 +66,7 @@ bool sb_audio_bank_pulse_on(sb_audio_bank_t *bank, unsigned voice, double freque
     if (!ok || !sb_audio_voice_start(v)) return false;
     bank->pulse[voice-1] = next;
     bank->kind[voice-1] = SB_AUDIO_VOICE_PULSE;
+    bank->retained_pitch[voice-1] = frequency;
     return true;
 }
 bool sb_audio_bank_pulse_width(sb_audio_bank_t *bank, unsigned voice, double width) {
@@ -83,32 +87,36 @@ static double source_phase(const sb_audio_bank_t *bank, unsigned slot) {
     return bank->voices[slot].phase;
 }
 static double source_pitch(const sb_audio_bank_t *bank, unsigned slot) {
+    if (bank->kind[slot] == SB_AUDIO_VOICE_NOISE)
+        return bank->retained_pitch[slot] ? bank->retained_pitch[slot] : 440;
     if (bank->kind[slot] == SB_AUDIO_VOICE_SAW) return bank->saw[slot].frequency;
     if (bank->kind[slot] == SB_AUDIO_VOICE_PULSE) return bank->pulse[slot].frequency;
     return bank->voices[slot].frequency;
 }
 bool sb_audio_bank_waveform(sb_audio_bank_t *bank, unsigned voice, sb_audio_voice_kind_t kind) {
     sb_audio_triangle_t *v = voice_at(bank, voice);
-    if (!v || !pitched(kind)) return false;
+    if (!v || (!pitched(kind) && kind != SB_AUDIO_VOICE_NOISE)) return false;
     unsigned slot = voice-1;
     if (bank->switch_left[slot]) return kind == bank->destination[slot];
     if (!v->active) { bank->kind[slot] = kind; return true; }
-    if (!pitched(bank->kind[slot])) return false;
     if (kind == bank->kind[slot]) return true;
+    bool from_noise = bank->kind[slot] == SB_AUDIO_VOICE_NOISE;
     double phase = source_phase(bank, slot), frequency = source_pitch(bank, slot);
-    if (kind == SB_AUDIO_VOICE_SAW) {
+    if (kind == SB_AUDIO_VOICE_NOISE) {
+        fresh_noise(bank, slot);
+    } else if (kind == SB_AUDIO_VOICE_SAW) {
         sb_audio_saw_t next;
         if (!sb_audio_saw_reset(&next, frequency)) return false;
-        next.phase = phase;
+        if (!from_noise) next.phase = phase;
         bank->saw[slot] = next;
     } else if (kind == SB_AUDIO_VOICE_PULSE) {
         sb_audio_pulse_t next;
         double width = bank->widths[slot];
         if (!sb_audio_pulse_reset(&next, frequency, width ? width : .5)) return false;
-        next.phase = phase;
+        if (!from_noise) next.phase = phase;
         bank->pulse[slot] = next;
     } else {
-        v->phase = phase;
+        v->phase = from_noise ? .25 : phase;
         v->frequency = frequency;
     }
     bank->destination[slot] = kind;
@@ -118,20 +126,24 @@ bool sb_audio_bank_waveform(sb_audio_bank_t *bank, unsigned voice, sb_audio_voic
 static void set_source_pitch(sb_audio_bank_t *bank, unsigned slot, sb_audio_voice_kind_t kind, double frequency) {
     if (kind == SB_AUDIO_VOICE_SAW) (void)sb_audio_saw_pitch(&bank->saw[slot], frequency);
     else if (kind == SB_AUDIO_VOICE_PULSE) (void)sb_audio_pulse_pitch(&bank->pulse[slot], frequency);
-    else bank->voices[slot].frequency = frequency;
+    else if (kind == SB_AUDIO_VOICE_TRIANGLE) bank->voices[slot].frequency = frequency;
 }
 bool sb_audio_bank_pitch(sb_audio_bank_t *bank, unsigned voice, double frequency) {
     sb_audio_triangle_t *v = voice_at(bank, voice);
-    if (!v || !v->active || !pitched(bank->kind[voice-1]) ||
+    if (!v || !v->active ||
         !isfinite(frequency) || frequency < 220 || frequency > 660) return false;
     unsigned slot = voice-1;
+    bank->retained_pitch[slot] = frequency;
     set_source_pitch(bank, slot, bank->kind[slot], frequency);
     if (bank->switch_left[slot]) set_source_pitch(bank, slot, bank->destination[slot], frequency);
     return true;
 }
 bool sb_audio_bank_start_selected(sb_audio_bank_t *bank, unsigned voice, double frequency) {
     sb_audio_triangle_t *v = voice_at(bank, voice);
-    if (!v || !pitched(bank->kind[voice-1])) return false;
+    if (!v) return false;
+    sb_audio_voice_kind_t selected = bank->switch_left[voice-1] ?
+        bank->destination[voice-1] : bank->kind[voice-1];
+    if (!pitched(selected)) return false;
     if (bank->switch_left[voice-1]) {
         if (!isfinite(frequency) || frequency < 220 || frequency > 660) return false;
         if (!sb_audio_voice_start(v)) return false;
@@ -140,6 +152,15 @@ bool sb_audio_bank_start_selected(sb_audio_bank_t *bank, unsigned voice, double 
     if (bank->kind[voice-1] == SB_AUDIO_VOICE_SAW) return sb_audio_bank_saw_on(bank, voice, frequency);
     if (bank->kind[voice-1] == SB_AUDIO_VOICE_PULSE) return sb_audio_bank_pulse_on(bank, voice, frequency);
     return sb_audio_bank_note_on(bank, voice, frequency);
+}
+bool sb_audio_bank_start_selected_noise(sb_audio_bank_t *bank, unsigned voice) {
+    sb_audio_triangle_t *v = voice_at(bank, voice);
+    if (!v) return false;
+    sb_audio_voice_kind_t selected = bank->switch_left[voice-1] ?
+        bank->destination[voice-1] : bank->kind[voice-1];
+    if (selected != SB_AUDIO_VOICE_NOISE) return false;
+    if (bank->switch_left[voice-1]) return sb_audio_voice_start(v);
+    return sb_audio_bank_noise_on(bank, voice);
 }
 bool sb_audio_bank_volume(sb_audio_bank_t *bank, unsigned voice, double volume) {
     return sb_audio_triangle_volume(voice_at(bank, voice), volume);

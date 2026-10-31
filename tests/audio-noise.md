@@ -52,10 +52,11 @@ ctest --test-dir /tmp/sugarbee-noise-standalone -R '^audio_noise$' --output-on-f
 
 ## Native bank integration
 
-Each of the nine slots can start a triangle or white-noise note. The native
-`sb_audio_voice_noise_on` call has no frequency argument. Noise rejects pitch
-updates. An idle slot may change type, but an active slot cannot switch between
-triangle and noise; conflicting requests fail unchanged. ADSR, volume/pan
+Each of the nine slots supports triangle, saw, pulse, or white noise. The native
+`sb_audio_voice_noise_on` call has no frequency argument. Active noise pitch edits
+retain a frequency for the next pitched transition without changing noise sound.
+Type-specific note-ons reject active cross-type starts; explicit waveform
+selection now supports noise transitions. ADSR, volume/pan
 smoothing, mute, release, and the 10 ms short stop share the existing voice code.
 Triangle note-on and earlier listening tools retain their behavior.
 
@@ -69,7 +70,8 @@ No clock or global random state is used.
 - Idle noise start resets to its configured seed, giving repeatable fresh notes.
 - Active retrigger preserves sequence and attacks from the current envelope
   level over the full new attack duration, including during release/short stop.
-- Seed edits affect only the next idle noise start, never an active retrigger.
+- Seed edits affect only the next fresh noise start or transition into noise,
+  never an active retrigger.
 - Release, short stop, and mute continue advancing once per active frame.
   Once idle, the stream stops advancing.
 - Bank reset cancels notes and restores default seeds, settings, and controls.
@@ -117,4 +119,4 @@ cartridge-owned audio cleanup, and tonal noise variations remain deferred.
 
 Explicit triangle/saw/pulse selection is now available separately from the
 existing type-specific note-ons. See the [waveform switching contract](audio-waveform.md);
-noise transitions remain deferred.
+noise transitions are covered in [noise transition checks](audio-noise-switch.md).

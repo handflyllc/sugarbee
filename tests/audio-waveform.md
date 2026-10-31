@@ -1,8 +1,9 @@
 # Native waveform switching
 
-This checkpoint adds explicit triangle/saw/pulse selection to the nine-voice
-bank and locked SDL controls. Pitch remains 220–660 Hz. Noise transitions, broader
-pitch, Lua controls, and cartridge-owned audio lifecycle are deferred.
+Explicit triangle/saw/pulse/noise selection is available in the nine-voice bank
+and locked SDL controls. Pitched sources remain limited to 220–660 Hz. Broader
+pitch, Lua controls, and cartridge-owned audio lifecycle are deferred. Noise
+seed/retained-pitch rules and tests are detailed in [noise transitions](audio-noise-switch.md).
 
 ## Selection and note-on
 
@@ -16,15 +17,17 @@ pitch, Lua controls, and cartridge-owned audio lifecycle are deferred.
   cross-type starts. During any fade they reject all starts. Use start-selected
   to retrigger the selected destination during a fade; it preserves both phases
   and the deadline, captures the new ADSR, and updates both oscillators' pitch.
-- Selecting noise is unsupported. Switching away from an active noise voice is
-  also rejected. An idle former noise slot can select a pitched waveform.
+- `sb_audio_bank_start_selected_noise` / `sb_audio_voice_start_selected_noise`
+  start or retrigger a selected noise destination without a frequency argument.
+  Pitched selected-start rejects noise destinations and noise selected-start
+  rejects pitched destinations, including during a fade.
 - Invalid indices, enum values, and unsupported/busy requests return false
   without changing state. SDL wrappers also return false when audio is unavailable.
 
 ## Phase and fade contract
 
-The incoming oscillator begins at the outgoing oscillator's normalized cycle
-phase and current pitch. Both advance at the same pitch throughout the fade.
+For pitched-to-pitched transitions, the incoming oscillator begins at the
+outgoing oscillator's normalized cycle phase and current pitch. Both advance at the same pitch throughout the fade.
 Phase preservation means cycle position, not equal waveform values. Entering
 pulse applies its stored width immediately and initializes its edge history for
 that pitch; subsequent width changes use the existing 10 ms ramp. Outgoing pulse
@@ -45,7 +48,9 @@ This is not a claim of click-free output under every combination of controls.
 | Other destination during fade, including outgoing waveform | Failure, no change or queue |
 | New destination after completion | New 480-frame fade |
 
-Pitch edits affect both sources without resetting phase. Release and stop remain
+Pitch edits affect audible pitched sources without resetting phase and retain
+the frequency for returning from noise; steady noise sound is unchanged.
+Release and stop remain
 available; if the envelope ends before the fade, the fade is discarded and its
 destination retained for the next note. Zero-length release does this immediately.
 Muted voices still advance. Bank reset cancels everything. Rendering zero frames
