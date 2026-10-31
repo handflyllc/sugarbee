@@ -12,7 +12,7 @@ not current limitations.
 | Area | Implemented now | Still pending |
 | --- | --- | --- |
 | Output | Host-owned SDL2 device, 48 kHz float stereo, silent fallback, clean close | Live failure detection/reconnection, measured end-to-end latency |
-| Voice bank | Nine explicit native slots, triangle, white noise, saw, or pulse, independent state; 10 ms transitions including noise | Pi acceptance for noise transitions |
+| Voice bank | Nine explicit native slots, triangle, white noise, saw, or pulse, independent state; 10 ms transitions including noise | Broader pitch and Lua integration |
 | Triangle | Direct waveform, 220–660 Hz, phase-preserving pitch/retrigger | Aliasing control and broader supported pitch range |
 | Saw | PolyBLEP, 220–660 Hz, native bank/SDL integration and automated checks | Broader pitch |
 | Pulse | Bank/SDL PolyBLEP, 220–660 Hz, width 0.05–0.95, default 0.5, 10 ms ramps, explicit DC conditioning | Broader pitch |
@@ -371,7 +371,7 @@ filter gain handling, and combined-output attenuation remain to be specified. A 
 
 - Native pulse bank/SDL integration with explicit DC conditioning is validated
   on desktop/Pi. Measure quality before expanding pitch ranges.
-- Noise-transition Pi acceptance; native switching is implemented.
+- Native switching including noise is validated on desktop/Pi.
   White noise versus any future rate-controlled noise API.
 - Filter mathematics, resonance mapping, stability, smoothing, and gain bounds.
 - Lua result/error contracts, configuration atomicity, and noise call/seed shape.
@@ -395,7 +395,7 @@ equal-power synth pan, fixed 1/9 current synth headroom, and noise seed rules.
 2. Pulse bank/SDL and width controls are validated on desktop/Pi. Native
    triangle/saw/pulse transitions are implemented and validated on desktop/Pi.
    Noise transitions are implemented; the revised desktop comparison is clearly
-   distinguishable. Pi acceptance is pending.
+   distinguishable. Pi validation passed at `29d63ff`.
    Broader pitch needs a separately reviewed checkpoint.
 3. Per-voice low-pass/bypass, with resonance and gain bounds settled before use.
 4. Cartridge audio lifecycle and minimal Lua controls for validated features.
@@ -734,4 +734,6 @@ start requires one; each uses the destination to validate calls during a fade.
 See [noise-transition behavior and checks](../../tests/audio-noise-switch.md).
 The user confirmed clear tone/noise distinction in the revised one/three/nine-voice
 desktop comparison using 440 Hz triangle. The nine-voice limit is unchanged;
-Pi validation remains pending. Lua remains deferred.
+On Pi commit `29d63ff`, the user confirmed all 65 tests passed, clean noise
+transitions and earlier tones, gameplay checks, and Exit to system status 0.
+Lua remains deferred.

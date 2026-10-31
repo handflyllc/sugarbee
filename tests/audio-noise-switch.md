@@ -79,7 +79,9 @@ revised one/three/nine-voice tone/noise comparison is clearly distinguishable.
 This supports mix density as an explanation for the earlier observation without
 establishing a measured cause. The nine-voice limit remains unchanged. All 65
 automated tests passed before the listening-test adjustment; its updated
-completion test also passed. Pi validation remains pending.
+completion test also passed. On Pi commit `29d63ff`, the user confirmed all 65
+tests passed, clean noise transitions and earlier tones, passing gameplay checks,
+and Exit to system status 0.
 
 Standalone bank build (no SDL/Lua host):
 

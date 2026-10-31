@@ -183,7 +183,9 @@ waveform/earlier tones, responsive gameplay, and Exit to system status 0.
 Noise transitions are now implemented with fresh-entry seed behavior, retained
 pitch, and a frequency-free selected-noise start. The user confirmed clear
 tone/noise distinction in the revised one/three/nine-voice desktop listening
-comparison; the voice limit is unchanged. Pi validation is pending. Broader pitch remains the next separately scoped work,
+comparison; the voice limit is unchanged. Pi validation passed at `29d63ff`: all
+65 tests, clean noise transitions/earlier tones, gameplay checks, and Exit to
+system status 0. Broader pitch remains the next separately scoped discussion,
 followed by filtering, cartridge audio lifecycle and
 minimal Lua controls. Each remains a separately scoped implementation and
 validation step; see the [audio sequence](docs/architecture/audio-design.md#agreed-next-sequence--checkpoint-by-checkpoint).

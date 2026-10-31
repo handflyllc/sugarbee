@@ -8,7 +8,8 @@
   edits now store return pitch without changing noise sound. Added regression
   checks and `sbee-noise-switch-test`. The user confirmed clear tone/noise
   distinction in the revised one/three/nine-voice comparison; the voice limit
-  is unchanged. Pi acceptance is pending.
+  is unchanged. Pi validation at `29d63ff` passed all 65 tests, noise transitions
+  and earlier tones, gameplay checks, and Exit to system status 0.
   Lua controls remain deferred.
 
 - Added native phase-preserving triangle/saw/pulse waveform selection with
