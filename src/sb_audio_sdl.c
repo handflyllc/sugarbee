@@ -242,3 +242,12 @@ bool sb_audio_voice_seed(sb_audio_t *audio, unsigned voice, uint32_t seed) {
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
+
+bool sb_audio_voice_saw_on(sb_audio_t *audio, unsigned voice, double frequency) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = !audio->tone.active && !audio->triangle.active &&
+              sb_audio_bank_saw_on(&audio->bank, voice, frequency);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}

@@ -96,7 +96,7 @@ including repack persistence and Exit to system returning status 0.
 This completes the agreed bounded save milestone. Actual power-loss testing
 remains deferred; these checks do not establish hardware durability guarantees.
 
-### 4. Begin audio implementation — silent foundation started
+### 4. Audio implementation — native triangle/noise validated
 
 Audio is the next major creative milestone after the bounded reliability and
 minimal-save phases. A custom console OS image is not a prerequisite.
@@ -155,6 +155,23 @@ and earlier audio, gameplay, and Exit to system status 0.
 Done when: each selected audio slice meets its agreed behavior and resource
 constraints with automated checks where appropriate and listening tests.
 Do not treat the entire audio design as a single implementation step.
+
+### Next audio checkpoints
+
+The design is reconciled against implemented behavior. A standalone PolyBLEP
+saw at 220–660 Hz now has sample/spectral checks, native bank/SDL integration,
+and a listening tool. All 56 tests pass; the user confirmed clean desktop saw
+playback, correct stereo placement, and normal exit. Pi validation passed at
+`f1982a9`: all 56 tests, saw/earlier tones, gameplay, and Exit to system status 0.
+Continue with pulse/width, smooth waveform
+transitions and broader pitch, filtering, then cartridge audio lifecycle and
+minimal Lua controls. Each remains a separately scoped implementation and
+validation step; see the [audio sequence](docs/architecture/audio-design.md#agreed-next-sequence--checkpoint-by-checkpoint).
+
+After a small Synth Lab, add two short Pong sounds: one on a wall hit and a
+different one on paddle reflection. Preserve gameplay; use this narrow exercise
+to validate the audio API in an existing cartridge. Bounded WAV playback follows
+as a separate milestone. No composition format or music-authoring system is added.
 
 ## Labs alongside engine work
 

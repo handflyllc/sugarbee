@@ -33,7 +33,18 @@ if(BUILD_TESTING)
     set_tests_properties(audio_envelope PROPERTIES TIMEOUT 5)
 endif()
 
-# Independent deterministic noise source; no host or synthesis integration yet.
+# Independent saw oscillator; bank integration is a later checkpoint.
+add_library(sugarbee_saw STATIC src/sb_audio_saw.c)
+sugarbee_warnings(sugarbee_saw)
+if(BUILD_TESTING)
+    add_executable(test_audio_saw tests/test_audio_saw.c)
+    target_link_libraries(test_audio_saw PRIVATE sugarbee_saw m)
+    sugarbee_warnings(test_audio_saw)
+    add_test(NAME audio_saw COMMAND test_audio_saw)
+    set_tests_properties(audio_saw PROPERTIES TIMEOUT 10)
+endif()
+
+# Independent deterministic noise source, also used by the native bank.
 add_library(sugarbee_noise STATIC src/sb_audio_noise.c)
 sugarbee_warnings(sugarbee_noise)
 if(BUILD_TESTING)
@@ -46,9 +57,14 @@ endif()
 
 # Pure-C voice rendering and nine-voice mixing, usable without the host.
 add_library(sugarbee_synth STATIC src/sb_audio_triangle.c src/sb_audio_bank.c)
-target_link_libraries(sugarbee_synth PRIVATE sugarbee_envelope sugarbee_noise m)
+target_link_libraries(sugarbee_synth PRIVATE sugarbee_envelope sugarbee_noise sugarbee_saw m)
 sugarbee_warnings(sugarbee_synth)
 if(BUILD_TESTING)
+    add_executable(test_audio_saw_bank tests/test_audio_saw_bank.c)
+    target_link_libraries(test_audio_saw_bank PRIVATE sugarbee_synth)
+    sugarbee_warnings(test_audio_saw_bank)
+    add_test(NAME audio_saw_bank COMMAND test_audio_saw_bank)
+    set_tests_properties(audio_saw_bank PROPERTIES TIMEOUT 5)
     add_executable(test_audio_noise_bank tests/test_audio_noise_bank.c)
     target_link_libraries(test_audio_noise_bank PRIVATE sugarbee_synth)
     sugarbee_warnings(test_audio_noise_bank)
@@ -108,6 +124,10 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sugarbee_audio PRIVATE sugarbee_synth PkgConfig::SDL2 m)
     sugarbee_warnings(sugarbee_audio)
 
+    add_executable(sbee-saw-test tools/sbee-saw-test.c)
+    target_link_libraries(sbee-saw-test PRIVATE sugarbee_audio PkgConfig::SDL2)
+    sugarbee_warnings(sbee-saw-test)
+
     add_executable(sbee-noise-test tools/sbee-noise-test.c)
     target_link_libraries(sbee-noise-test PRIVATE sugarbee_audio PkgConfig::SDL2)
     sugarbee_warnings(sbee-noise-test)
@@ -157,6 +177,9 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     target_link_libraries(test_audio_bank_sdl PRIVATE sugarbee_synth PkgConfig::SDL2 m)
     sugarbee_warnings(test_audio_bank_sdl)
     add_test(NAME audio_bank_sdl COMMAND test_audio_bank_sdl)
+    add_test(NAME audio_saw_output COMMAND sbee-saw-test)
+    set_tests_properties(audio_saw_output PROPERTIES TIMEOUT 15
+        ENVIRONMENT "SDL_AUDIODRIVER=dummy")
     add_test(NAME audio_noise_output COMMAND sbee-noise-test)
     set_tests_properties(audio_noise_output PROPERTIES TIMEOUT 15
         ENVIRONMENT "SDL_AUDIODRIVER=dummy")

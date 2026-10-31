@@ -116,3 +116,9 @@ Bank slots now also support noise through a separate native note-on call. See
 [noise seed/retrigger rules and listening checks](audio-noise.md#native-bank-integration).
 The original triangle listening sequence remains unchanged. The current bound
 also holds for mixed triangle/noise voices; filtering and WAV mixing are deferred.
+
+## Saw extension
+
+Native slots now also support the bounded PolyBLEP saw, with idle-only type
+changes. See [saw lifecycle and listening checks](audio-saw.md#native-bank-and-sdl-integration).
+All three source types share envelope/control behavior and fixed 1/9 headroom.

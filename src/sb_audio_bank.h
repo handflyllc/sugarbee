@@ -1,14 +1,19 @@
-/* Internal native triangle/noise bank: no SDL, Lua, allocation, or device ownership. */
+/* Internal native triangle/noise/saw bank: no SDL, Lua, allocation, or device ownership. */
 #ifndef SB_AUDIO_BANK_H
 #define SB_AUDIO_BANK_H
 #include "sb_audio_triangle.h"
+#include "sb_audio_saw.h"
 #define SB_AUDIO_BANK_VOICES 9u
 #define SB_AUDIO_SYNTH_GAIN (1.0 / SB_AUDIO_BANK_VOICES)
+typedef enum {
+    SB_AUDIO_VOICE_TRIANGLE = 0, SB_AUDIO_VOICE_NOISE, SB_AUDIO_VOICE_SAW
+} sb_audio_voice_kind_t;
 typedef struct {
     sb_audio_triangle_t voices[SB_AUDIO_BANK_VOICES];
     sb_audio_noise_t noise[SB_AUDIO_BANK_VOICES];
     uint32_t seeds[SB_AUDIO_BANK_VOICES]; /* Zero selects the slot's fixed default. */
-    bool noise_voice[SB_AUDIO_BANK_VOICES];
+    sb_audio_saw_t saw[SB_AUDIO_BANK_VOICES];
+    sb_audio_voice_kind_t kind[SB_AUDIO_BANK_VOICES];
 } sb_audio_bank_t;
 
 /* Zero initialization is valid and silent. Reset cancels all notes and restores
@@ -22,6 +27,9 @@ bool sb_audio_bank_note_on(sb_audio_bank_t *bank, unsigned voice, double frequen
  * noise retrigger preserves sequence. Active cross-type starts are rejected.
  * Seed edits affect the next idle noise start only; zero restores slot default. */
 bool sb_audio_bank_noise_on(sb_audio_bank_t *bank, unsigned voice);
+/* Saw starts at phase .5 when idle; active saw retrigger preserves phase.
+ * Same 220..660 Hz range, ADSR/control semantics, and cross-type rejection. */
+bool sb_audio_bank_saw_on(sb_audio_bank_t *bank, unsigned voice, double frequency);
 bool sb_audio_bank_seed(sb_audio_bank_t *bank, unsigned voice, uint32_t seed);
 bool sb_audio_bank_pitch(sb_audio_bank_t *bank, unsigned voice, double frequency);
 bool sb_audio_bank_volume(sb_audio_bank_t *bank, unsigned voice, double volume);

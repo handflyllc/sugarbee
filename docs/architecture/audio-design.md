@@ -1,13 +1,39 @@
 # SugarBee audio — settled initial design
 
-Status: initial scope and behavioral design settled on 2026-10-18.
-The SDL2 output foundation and opt-in native diagnostic tone are implemented.
-Synthesis, WAV playback, and
-the illustrated Lua API are not implemented. This is a design checkpoint,
-not an available API reference or a claim of measured hardware performance.
-Names and signatures remain illustrative until implementation review. The
-remaining engineering details below must be resolved before an implementation
-is considered complete; they do not expand the agreed scope.
+Status reconciled with the implementation on 2026-10-31. The initial design was
+settled on 2026-10-18; implementation decisions below refine that design.
+This document separates the current native implementation from the planned Lua
+API and remaining synthesis/WAV work. Illustrative Lua calls are not available
+APIs. Historical checkpoint notes at the end describe their state at the time,
+not current limitations.
+
+## Current implementation
+
+| Area | Implemented now | Still pending |
+| --- | --- | --- |
+| Output | Host-owned SDL2 device, 48 kHz float stereo, silent fallback, clean close | Live failure detection/reconnection, measured end-to-end latency |
+| Voice bank | Nine explicit native slots, triangle, white noise, or saw, independent state | Pulse, live cross-waveform transitions |
+| Triangle | Direct waveform, 220–660 Hz, phase-preserving pitch/retrigger | Aliasing control and broader supported pitch range |
+| Saw | PolyBLEP, 220–660 Hz, native bank/SDL integration and automated checks | Broader pitch |
+| Noise | Deterministic per-sample white noise, distinct default seeds, repeatable idle starts | Rate-controlled/tonal noise remains deferred; no current noise frequency control |
+| Envelope | Linear ADSR, captured per note, current-level active retrigger | No additional envelope model planned for this checkpoint |
+| Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Filters, pulse width, group/master controls |
+| Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
+| Integration | Locked native controls and separate listening executables | Lua audio API, cartridge-owned audio cleanup and pause/error policy |
+| WAV | Design only | Decoder, bounded asset storage, playback voices, Lua controls |
+
+Current bank diagnostic attenuation is separately 0.790569415, chosen for
+listening audibility. Legacy single-triangle and sine diagnostics retain their
+0.05 level. These are test levels, not a finalized master-volume API. Current
+triangle/noise mixing stays within ±1 under supported controls; there is no
+final clamp or clipping counter yet. Filters and WAV mixing need new bounds.
+
+The user confirmed successful Pi validation at `f1982a9`: all 56 automated
+tests, clean native saw and earlier audio sequences, gameplay, and Exit to system
+status 0. Desktop validation also passed. This does not establish compatibility
+with every audio device or live output switching. See
+[saw validation](../../tests/audio-saw.md#pi-validation) and
+[Pi output observations](../../tests/audio-bank.md#pi-validation-and-output-observations).
 
 ## Purpose and scope
 
@@ -16,7 +42,7 @@ The SID is an inspiration, not an emulation or file-compatibility target.
 SugarBee is not intended to become a DAW or a music composition editor.
 External tools may eventually author compositions targeting SugarBee.
 
-## Agreed synthesis model
+## Target synthesis model
 
 - Initially provide exactly nine explicitly addressed synth voices.
 - Each voice has independent waveform, envelope, filter, volume, and stereo pan.
@@ -27,7 +53,7 @@ External tools may eventually author compositions targeting SugarBee.
 - Evaluate twelve or more voices later through performance and listening tests,
   including Raspberry Pi 4 testing. No expanded capacity is promised.
 
-## Working Lua API shape
+## Planned Lua API shape — not implemented
 
 Use a dedicated synthesis namespace, numbered voices 1 through 9, and table-based
 configuration. Voice numbers are independent of input-player slots and sample
@@ -66,12 +92,44 @@ and problem. Configuration changes do not implicitly start or retrigger a note.
 Out-of-range values are rejected rather than silently clamped. Exact synth
 error-delivery and success-return semantics remain to be finalized.
 
-## Voice lifecycle
+## Current native voice lifecycle
+
+- Triangle, noise, and saw share linear ADSR, volume, pan, and short-stop behavior.
+- Idle saw start begins at phase 0.5. Active saw retrigger and pitch-only edits
+  preserve phase, with the same envelope/retrigger rules as triangle.
+- Idle triangle start begins at phase 0.25. Active triangle note-on preserves
+  phase and changes pitch. Pitch-only changes do not retrigger the envelope.
+- Active note-on attacks from the current envelope level to one over the full
+  newly captured attack duration, including during release or short stop. It
+  cancels a pending stop; an attack from level one holds for that duration.
+- Each note captures its ADSR settings. Configuration edits alone do not alter
+  the current note's envelope. Zero-duration stages are immediate, so arbitrary
+  envelope settings are not guaranteed click-free.
+- Idle noise start resets to its configured seed. Active noise retrigger keeps
+  its sequence; seed edits apply only on the next idle noise start. Seed zero
+  selects the slot's distinct fixed default. Muting, release, and short stop
+  keep advancing the sequence until idle. See [seed rules](../../tests/audio-noise.md#native-bank-integration).
+- Volume and pan targets smooth over 480 frames (10 ms); idle edits apply
+  immediately. Retrigger retains active control ramps; mute does not stop time.
+- Note-off releases from the current level using captured release settings.
+  Repeated note-off does not restart release. Stop overrides release with a
+  480-frame fade; repeated stop/note-off cannot prolong that stop.
+- Idle slots can start any implemented type. Active cross-type starts are
+  rejected. Noise has a separate frequency-free note-on and rejects pitch edits.
+- Bank reset cancels notes and restores defaults; it is cleanup, not a fade.
+  Normal host startup remains silent; cartridges cannot request audio yet.
+
+## Target voice lifecycle — remaining API work
+
+These Lua-facing behaviors include already implemented native foundations and
+features still to be added. Current native restrictions above remain in force.
+
 
 - Every voice starts silent with predictable settings.
 - `note_on` starts the requested frequency in hertz. On an already sounding voice,
-  it replaces the pitch and retriggers the envelope. The precise retrigger
-  transition and smoothing remain implementation decisions.
+  it replaces the pitch and retriggers the envelope using the current-level,
+  full-attack-duration rule implemented natively. The Lua noise call shape
+  must be reconciled with the current frequency-free white-noise operation.
 - `set_pitch` changes frequency without retriggering the envelope.
 - Each `note_on` captures attack, decay, sustain, and release settings for that
   note, including its later release. Envelope configuration edits apply to the
@@ -88,7 +146,7 @@ error-delivery and success-return semantics remain to be finalized.
 - Releasing or stopping an already silent voice is harmless. Neither operation
   erases its configuration.
 
-## Agreed starting settings
+## Target starting settings
 
 | Setting | Default |
 | --- | --- |
@@ -104,41 +162,45 @@ error-delivery and success-return semantics remain to be finalized.
 | Filter cutoff | 2000 Hz |
 | Filter resonance | 0.0 |
 
-Retain pulse width while other waveforms are selected and retain filter settings
+Pulse width and filter fields are not implemented yet. Retain pulse width while other waveforms are selected and retain filter settings
 while bypassed. Sustain and voice volume use 0–1 values; pan uses -1 (left)
 through 0 (center) to 1 (right). Envelope times are in seconds.
 
-The initial waveforms are triangle, saw, pulse, and noise. For noise, frequency
-controls the rate of random-value changes, not a musical pitch. Envelopes,
-filtering, volume, and pan apply as for other waveforms. The random generator,
-noise-value distribution, and scheduling details remain implementation choices.
+The target waveform set is triangle, saw, pulse, and noise. The original design
+assigned noise frequency to the rate of random-value changes. The accepted first
+noise implementation instead generates a new white-noise value every audio
+sample and has no frequency parameter. Rate-controlled or tonal noise is a
+separate deferred discussion, not a missing control to expose automatically.
+Envelope, volume, and pan already apply to noise; filtering is still future work.
 
-## Agreed parameter limits
+## Current and target parameter limits
 
-| Parameter | Accepted range |
-| --- | --- |
-| Synth voice number | Integers 1–9 |
-| Pitch / noise change rate | 20–20,000 Hz, also strictly below half the internal sample rate |
-| Pulse width | 0.05–0.95 |
-| Attack, decay, release | 0–10 seconds each |
-| Sustain and voice volume | 0–1 |
-| Pan | -1–1 |
-| Filter cutoff | 20–20,000 Hz, also strictly below half the internal sample rate |
-| Resonance | 0–1; mapping to the filter remains to be specified |
+| Parameter | Current native implementation | Target / deferred design |
+| --- | --- | --- |
+| Synth voice number | Integers 1–9 | Same |
+| Triangle pitch | 220–660 Hz | 20–20,000 Hz, strictly below half the sample rate; requires aliasing work |
+| White noise | New value every sample at 48 kHz; no pitch argument | Rate-controlled noise deferred; original 20–20,000 Hz change-rate proposal is not implemented |
+| Noise seed | uint32; zero selects a distinct fixed default per bank slot | Lua seed exposure undecided |
+| Pulse width | Not implemented | 0.05–0.95 |
+| Attack, decay, release | 0–10 seconds each | Same |
+| Sustain and voice volume | 0–1 | Same |
+| Pan | -1–1, equal-power stereo | Same |
+| Filter cutoff | Not implemented | 20–20,000 Hz, strictly below half the sample rate |
+| Resonance | Not implemented | 0–1; mapping and stability limits unresolved |
 
 Reject non-finite values (NaN and infinity), invalid voice indices, and values
 outside these ranges. Controls accept fractional values, not only tenths;
 precision follows the implementation's floating-point representation.
-Zero envelope duration means an immediate stage transition; click-reduction
-behavior must be reconciled with that meaning during implementation. The
+Zero envelope duration is implemented as an immediate stage transition; this
+deliberately does not promise click-free arbitrary settings. The
 10-second limit applies to transitions, not total note duration.
 
-Longer ambience can use WAV loops; externally authored scores remain deferred.
+The planned WAV path will support longer ambience through whole-sound loops; externally authored scores remain deferred.
 The foundation uses a 48,000 Hz internal sample rate. Any additional numerical
 stability margin for the filter must be specified and tested before publishing
 a concrete synthesis API contract.
 
-## Filtering
+## Filtering — not implemented
 
 Provide an independent filter per voice, initially low-pass and bypass.
 The conceptual signal path is oscillator → filter → envelope and volume → pan
@@ -147,7 +209,7 @@ Filter implementation and exact smoothing behavior remain open.
 High-pass, band-pass, automatic filter envelopes, and modulation routing are
 future discussion topics rather than initial requirements.
 
-## Sample playback
+## Sample playback — not implemented
 
 Use eight WAV playback voices, separate from the nine synth voices. These are
 initial budgets to validate on hardware, not measured Pi performance claims.
@@ -235,6 +297,17 @@ versus streaming rather than assuming every track fits the initial budget.
 
 ## Audio availability and cartridge lifecycle
 
+Implemented now: startup failure permits silent gameplay with one diagnostic;
+the host retains the device across cartridge sessions and closes it after
+eligible Lua shutdown on host exit. Native control calls return false when
+audio is unavailable. Device access is serialized with SDL locking. There is
+no Lua audio query, WAV loading, or cartridge-generated audio yet.
+
+The remainder of this section is the target contract. Cartridge-owned voice
+cleanup and audio behavior on pause/resume/Guru must be implemented and tested
+before Lua audio is exposed.
+
+
 Unavailable audio allows silent gameplay and produces one explanatory diagnostic.
 Expose availability to Lua; the query name remains undecided. Asset loading still
 validates and prepares sounds, and synth configuration remains usable.
@@ -251,7 +324,12 @@ Then stop voices and release assets in native teardown; do not wait for sounds
 started by that callback to finish. Fade completion and device teardown ordering
 must be implemented without an unbounded wait.
 
-## Agreed mixing policy
+## Target mixing policy
+
+Implemented subset: floating-point mixing, per-voice volume and equal-power pan,
+fixed 1/9 synth headroom, and separate diagnostic gain. Group/master controls,
+WAV mixing, final clamp, and clipping diagnostics below remain unimplemented.
+
 
 - Mix using floating-point accumulation.
 - Provide per-voice volume, synth and sample group volumes, and master volume.
@@ -280,25 +358,46 @@ sugarbee.audio.set_master_volume(0.7)
 ```
 
 Fixed headroom does not guarantee that arbitrary resonant signals cannot exceed
-the output range. Panning law, filter gain handling, and final attenuation
-remain to be specified. A more sophisticated limiter is deferred.
+the output range. Synth equal-power panning is implemented; WAV pan/balance,
+filter gain handling, and combined-output attenuation remain to be specified. A more sophisticated limiter is deferred.
 
 ## Remaining implementation questions
 
-- Measure hardware compatibility and latency for the initial SDL2 backend and
-  buffer choice described below.
-- Thread-safe communication between Lua/game updates and audio processing.
-- Detecting an active audio-device failure and transitioning to unavailable audio.
-- Implementing the agreed resource ownership and teardown rules.
-- Filter mathematics, resonance mapping, aliasing control, internal sample rate,
-  panning law, smoothing durations, envelope curves, and retrigger transitions.
-- Exact error/result contracts, including success results for synth calls,
-  unknown versus ended playback handles, validation/refusal precedence,
-  load-budget reason strings, and control changes during a stop fade.
-- Public names for availability and clipping diagnostics, and their reset rules.
-- Bounded source/temporary memory during decoding and conversion; verify the
-  existing cartridge-reader limits before selecting the internal asset format.
-- Tests for synthesis, bounds, mixing, lifecycle, and real hardware output.
+- Pulse oscillator/aliasing method selection. Saw is validated on desktop/Pi
+  within its current range. Measure quality before expanding the bounded pitch ranges.
+- Smooth live waveform/pulse-width changes; current active cross-type changes
+  are rejected. White noise versus any future rate-controlled noise API.
+- Filter mathematics, resonance mapping, stability, smoothing, and gain bounds.
+- Lua result/error contracts, configuration atomicity, and noise call/seed shape.
+  Native controls already synchronize with the callback through SDL device locks.
+- Cartridge voice ownership, pause/resume, Guru recovery, and bounded teardown.
+- Group/master controls, WAV balance, combined headroom, final clamp, and clipping
+  diagnostic access/reset rules.
+- WAV decoding, asset/playback handles, validation/refusal precedence, stopping
+  controls, and bounded source/temporary memory compatible with asset limits.
+- Live audio-device failure handling; reconnection remains deferred. Measure
+  latency and Pi performance for each added slice rather than assuming them.
+
+Implemented decisions are no longer open: 48 kHz internal output, linear ADSR,
+per-note capture, current-level retrigger, 10 ms stop and volume/pan ramps,
+equal-power synth pan, fixed 1/9 current synth headroom, and noise seed rules.
+
+## Agreed next sequence — checkpoint by checkpoint
+
+1. PolyBLEP saw and bank/SDL integration are implemented at 220–660 Hz.
+   Desktop and Pi validation passed; broader range requires a separate checkpoint.
+2. Pulse waveform/pulse width; smooth waveform transitions and broader pitch
+   support through separately reviewed checkpoints.
+3. Per-voice low-pass/bypass, with resonance and gain bounds settled before use.
+4. Cartridge audio lifecycle and minimal Lua controls for validated features.
+5. A small Synth Lab, then a narrow Pong Lab audio update: one short wall-hit
+   blip and a distinguishable paddle-reflection blip. Keep gameplay unchanged;
+   this is an API-use/acceptance exercise, not a soundtrack or game redesign.
+6. Bounded WAV playback as a separate milestone.
+
+Each stage needs its own scope/acceptance review; this sequence is not permission
+to implement all stages at once. Saw integration retains the bounded pitch range;
+PolyBLEP is alias-suppressed, not an alias-free promise.
 
 ## Deferred topics
 
@@ -308,6 +407,12 @@ remain to be specified. A more sophisticated limiter is deferred.
 - MIDI and possible instrument-provider plugins are distant exploratory topics.
   A built-in general-purpose instrument bank is not a requirement.
 - Higher synth voice counts and more advanced synthesis features.
+
+## Historical checkpoint record
+
+The following dated or named checkpoints preserve the sequence of decisions and
+validation. Statements such as "not implemented" or "future work" describe
+that checkpoint only. Use the current summary above for present capabilities.
 
 ## Hiatus checkpoint — 2026-10-18
 
@@ -524,3 +629,28 @@ The user confirmed clean desktop noise playback, correct stereo placement, and
 normal exit. The user reported that the Pi checklist for `557b6ba` passed
 without issues: all 53 tests, noise/earlier audio, gameplay, and Exit to system
 status 0. Lua controls and cartridge-owned audio remain deferred.
+
+## Standalone saw checkpoint
+
+A pure C PolyBLEP saw now supports 220–660 Hz at 48 kHz. Reset starts at the
+rising zero crossing; pitch edits preserve phase. There is no envelope or gain
+inside the oscillator. Sample/boundary tests and a coherent spectral comparison
+against a raw ramp pass; the three measured frequencies show approximately
+16 dB less unwanted power without simply attenuating the fundamental.
+See [the exact tests and measurement limits](../../tests/audio-saw.md).
+Bank integration, listening, Pi validation, and broader pitch remain deferred.
+
+## Saw bank integration checkpoint
+
+The native bank/SDL path now supports saw alongside triangle and noise. Idle
+saw notes start at phase 0.5; active retrigger preserves phase and applies the
+shared current-level/full-duration ADSR attack. Pitch edits preserve phase and
+envelope. Type changes require an idle slot. Mute, release, and short stop keep
+phase advancing until idle. Fixed 1/9 headroom and diagnostic gain are unchanged.
+
+[Bank regression checks and the native listening sequence](../../tests/audio-saw.md#native-bank-and-sdl-integration)
+cover lifecycle, headroom, mixed rendering, controls, and teardown. All 56
+automated tests pass. The user confirmed clean desktop saw playback, correct
+stereo placement, and normal exit. On Pi commit `f1982a9`, the user confirmed
+all 56 tests, clean saw/earlier tones, successful gameplay, and Exit to system
+status 0. Broader pitch and Lua controls remain deferred.
