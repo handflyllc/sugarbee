@@ -2,11 +2,15 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Recorded successful user-reported Pi validation for noise checkpoint
+  `557b6ba`: all 53 tests, noise/earlier audio, gameplay, and Exit to system
+  status 0, with no issues reported.
+
 - Integrated white noise into native bank/SDL controls with per-voice seeds,
   repeatable idle starts, sequence-preserving active retrigger, and shared
   ADSR/volume/pan/stop behavior. Added regression checks and `sbee-noise-test`.
   Desktop listening confirmed clean output, correct stereo placement, and normal
-  exit; all 53 tests pass. Pi validation pending. Fixed 1/9 headroom is unchanged;
+  exit; all 53 tests pass. Pi validation also passed. Fixed 1/9 headroom is unchanged;
   Lua and cartridge audio lifecycle deferred.
 
 - Added a standalone deterministic mono white-noise source with explicit seed

@@ -103,6 +103,14 @@ Confirm stereo placement, smooth envelope transitions, no unexpected stuck
 sounds or distortion, final silence, and normal exit. Also rerun the earlier
 bank/sine/triangle/pan tools and normal gameplay checks. Use HDMI for Pi testing.
 The user confirmed clean desktop noise playback, correct stereo placement, and
-normal exit. All 53 automated tests pass. Pi validation remains pending.
+normal exit. All 53 automated tests pass. Pi validation is recorded below.
 Lua controls, cartridge audio
 lifecycle, and tonal/SID-style noise variations remain deferred.
+
+## Pi validation
+
+The user reported that the Pi checklist for `557b6ba` passed with no issues:
+all 53 automated tests, the noise and earlier audio listening sequences, Pong
+and Save Lab gameplay/lifecycle checks, and Exit to system status 0. This
+validates the current native noise integration on desktop and Pi. Lua controls,
+cartridge-owned audio cleanup, and tonal noise variations remain deferred.

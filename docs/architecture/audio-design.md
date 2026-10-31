@@ -521,5 +521,6 @@ Fixed 1/9 headroom and separate bank diagnostic attenuation remain unchanged.
 [Regression tests and the native listening sequence](../../tests/audio-noise.md)
 cover seeds, retrigger, mixed playback, and cleanup. All 53 automated tests pass.
 The user confirmed clean desktop noise playback, correct stereo placement, and
-normal exit. Pi validation remains pending. Lua controls and cartridge-owned
-audio remain deferred.
+normal exit. The user reported that the Pi checklist for `557b6ba` passed
+without issues: all 53 tests, noise/earlier audio, gameplay, and Exit to system
+status 0. Lua controls and cartridge-owned audio remain deferred.
