@@ -113,3 +113,7 @@ On Pi commit `f1982a9`, the user confirmed all 56 automated tests, clean saw
 and earlier diagnostic tones, successful gameplay checks, and Exit to system
 status 0. This validates the bounded native saw integration on desktop and Pi.
 Broader pitch, live waveform transitions, and Lua controls remain deferred.
+
+Explicit triangle/saw/pulse selection is now available separately from the
+existing type-specific note-ons. See the [waveform switching contract](audio-waveform.md);
+noise transitions remain deferred.

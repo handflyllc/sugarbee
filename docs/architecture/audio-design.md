@@ -12,7 +12,7 @@ not current limitations.
 | Area | Implemented now | Still pending |
 | --- | --- | --- |
 | Output | Host-owned SDL2 device, 48 kHz float stereo, silent fallback, clean close | Live failure detection/reconnection, measured end-to-end latency |
-| Voice bank | Nine explicit native slots, triangle, white noise, saw, or pulse, independent state | Live cross-waveform transitions |
+| Voice bank | Nine explicit native slots, triangle, white noise, saw, or pulse, independent state; 10 ms triangle/saw/pulse transitions | Noise transitions |
 | Triangle | Direct waveform, 220–660 Hz, phase-preserving pitch/retrigger | Aliasing control and broader supported pitch range |
 | Saw | PolyBLEP, 220–660 Hz, native bank/SDL integration and automated checks | Broader pitch |
 | Pulse | Bank/SDL PolyBLEP, 220–660 Hz, width 0.05–0.95, default 0.5, 10 ms ramps, explicit DC conditioning | Broader pitch |
@@ -138,7 +138,8 @@ features still to be added. Current native restrictions above remain in force.
 - Pitch, volume, pan, and filter changes affect the current sound.
 - Waveform and pulse-width changes also affect the current sound without
   retriggering its envelope. Smooth pulse-width changes and use a brief waveform
-  transition to reduce clicks; transition details remain implementation work.
+  transition to reduce clicks. Native triangle/saw/pulse selection now uses the
+  10 ms phase-preserving contract documented below; noise transitions are deferred.
 - Overlapping synthesized notes require separate explicit voices.
 - `note_off` starts release from the current envelope level. Repeating it during
   release does not restart the fade.
@@ -368,8 +369,8 @@ filter gain handling, and combined-output attenuation remain to be specified. A 
 
 - Native pulse bank/SDL integration with explicit DC conditioning is validated
   on desktop/Pi. Measure quality before expanding pitch ranges.
-- Smooth live waveform changes; current active cross-type changes
-  are rejected. White noise versus any future rate-controlled noise API.
+- Noise waveform transitions; native triangle/saw/pulse switching is implemented.
+  White noise versus any future rate-controlled noise API.
 - Filter mathematics, resonance mapping, stability, smoothing, and gain bounds.
 - Lua result/error contracts, configuration atomicity, and noise call/seed shape.
   Native controls already synchronize with the callback through SDL device locks.
@@ -389,8 +390,9 @@ equal-power synth pan, fixed 1/9 current synth headroom, and noise seed rules.
 
 1. PolyBLEP saw and bank/SDL integration are implemented at 220–660 Hz.
    Desktop and Pi validation passed; broader range requires a separate checkpoint.
-2. Pulse bank/SDL and width controls are implemented and validated on desktop/Pi. Smooth waveform transitions and broader pitch support follow
-   through separately reviewed checkpoints.
+2. Pulse bank/SDL and width controls are validated on desktop/Pi. Native
+   triangle/saw/pulse transitions are implemented and desktop listening passed;
+   Pi acceptance is pending. Noise transitions and broader pitch need separately reviewed checkpoints.
 3. Per-voice low-pass/bypass, with resonance and gain bounds settled before use.
 4. Cartridge audio lifecycle and minimal Lua controls for validated features.
 5. A small Synth Lab, then a narrow Pong Lab audio update: one short wall-hit
@@ -699,3 +701,17 @@ Pong/Pac-Man, Save Lab persistence through relaunch/repacking, and Exit to syste
 status 0. Keyboard and controller had felt delayed in the desktop session but
 responsive in the TTY; the delay was not reproduced on Lite. Its exact cause
 remains undiagnosed. No latency measurement or causal link to audio is claimed.
+
+## Native waveform-switch checkpoint
+
+Triangle/saw/pulse selection is separate from note-on. Idle selection is silent;
+active selection aligns normalized phase and pitch and blends for 480 frames
+before shared ADSR/volume/pan. Repeating the destination does not restart a fade;
+other requests during it fail without mutation or queuing. A selected-waveform
+start supports retrigger during the fade, preserving phases and deadline.
+Existing type-specific note-ons reject starts during fades. Pitch changes affect
+both sources; envelope completion cancels the fade and retains its destination.
+No noise transitions, extra headroom normalization, or Lua controls are added.
+See [waveform tests and listening procedure](../../tests/audio-waveform.md).
+All 63 automated tests pass. The user confirmed clean desktop transitions,
+steady pitch, and normal exit. Pi validation remains pending.

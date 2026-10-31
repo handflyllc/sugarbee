@@ -175,8 +175,11 @@ Save Lab persistence through relaunch/repacking, and Exit to system status 0.
 Keyboard and controller felt delayed in the desktop session but responsive in
 the TTY; the delay was not reproduced on Lite. The desktop-associated cause
 remains undiagnosed, and no measured latency or audio causality is claimed.
-Continue with smooth waveform
-transitions and broader pitch, filtering, then cartridge audio lifecycle and
+Native triangle/saw/pulse waveform transitions are now implemented with phase
+preservation, 10 ms linear fades, and defined repeated-request behavior. All 63
+tests pass; the user confirmed clean desktop transitions, steady pitch, and
+normal exit. Pi validation is pending. Noise transitions and broader pitch
+remain separately scoped work, followed by filtering, cartridge audio lifecycle and
 minimal Lua controls. Each remains a separately scoped implementation and
 validation step; see the [audio sequence](docs/architecture/audio-design.md#agreed-next-sequence--checkpoint-by-checkpoint).
 

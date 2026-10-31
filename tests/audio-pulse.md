@@ -174,3 +174,7 @@ Responsiveness follow-up: keyboard and controller felt delayed in the desktop
 session but responsive in the TTY. The delay was not reproduced on Lite. The
 exact desktop-associated cause remains undiagnosed; these are subjective checks,
 not latency measurements or evidence that audio caused the delay.
+
+Explicit triangle/saw/pulse selection is now available separately from the
+existing type-specific note-ons. See the [waveform switching contract](audio-waveform.md);
+noise transitions remain deferred.

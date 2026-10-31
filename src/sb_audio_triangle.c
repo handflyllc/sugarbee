@@ -93,13 +93,39 @@ void sb_audio_triangle_stop(sb_audio_triangle_t *v) {
     v->stop_start = v->envelope.level;
     v->stop_left = STOP_FRAMES;
 }
+void sb_audio_voice_apply(sb_audio_triangle_t *v, double waveform, float output[2]) {
+    initialize_controls(v);
+    float sample = 0;
+    if (v->active) {
+        /* Use the interval's starting level, then advance for the next
+           sample. Controls see exactly that next-sample boundary level. */
+        sample = (float)(v->envelope.level * waveform);
+        if (v->stopping) {
+            --v->stop_left;
+            v->envelope.level = v->stop_start * v->stop_left / STOP_FRAMES;
+            if (v->stop_left == 0) {
+                sb_envelope_reset(&v->envelope);
+                v->active = v->stopping = false;
+            }
+        } else {
+            sb_envelope_advance(&v->envelope);
+            v->active = v->envelope.stage != SB_ENVELOPE_IDLE;
+        }
+    }
+    double left, right;
+    pan_gains(v->pan, &left, &right);
+    output[0] = (float)(sample * v->volume * left);
+    output[1] = (float)(sample * v->volume * right);
+    advance_control(&v->volume, v->volume_from, v->volume_target, &v->volume_left);
+    advance_control(&v->pan, v->pan_from, v->pan_target, &v->pan_left);
+}
+
 void sb_audio_voice_render(sb_audio_triangle_t *v, sb_audio_noise_t *source,
                            sb_audio_saw_t *saw, sb_audio_pulse_t *pulse, float *output, size_t frames) {
     initialize_controls(v);
     for (size_t i = 0; i < frames; ++i) {
-        float sample = 0;
+        double waveform = 0;
         if (v->active) {
-            double waveform;
             if (source) {
                 float raw;
                 (void)sb_audio_noise_render(source, &raw, 1);
@@ -117,27 +143,8 @@ void sb_audio_voice_render(sb_audio_triangle_t *v, sb_audio_noise_t *source,
                 v->phase += v->frequency / SB_AUDIO_RATE;
                 if (v->phase >= 1.0) v->phase -= 1.0;
             }
-            /* Use the interval's starting level, then advance for the next
-               sample. Controls see exactly that next-sample boundary level. */
-            sample = (float)(v->envelope.level * waveform);
-            if (v->stopping) {
-                --v->stop_left;
-                v->envelope.level = v->stop_start * v->stop_left / STOP_FRAMES;
-                if (v->stop_left == 0) {
-                    sb_envelope_reset(&v->envelope);
-                    v->active = v->stopping = false;
-                }
-            } else {
-                sb_envelope_advance(&v->envelope);
-                v->active = v->envelope.stage != SB_ENVELOPE_IDLE;
-            }
         }
-        double left, right;
-        pan_gains(v->pan, &left, &right);
-        output[2*i] = (float)(sample * v->volume * left);
-        output[2*i+1] = (float)(sample * v->volume * right);
-        advance_control(&v->volume, v->volume_from, v->volume_target, &v->volume_left);
-        advance_control(&v->pan, v->pan_from, v->pan_target, &v->pan_left);
+        sb_audio_voice_apply(v, waveform, output+2*i);
     }
 }
 

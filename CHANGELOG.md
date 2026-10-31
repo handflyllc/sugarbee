@@ -2,6 +2,13 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added native phase-preserving triangle/saw/pulse waveform selection with
+  10 ms linear crossfades, separate selected-waveform note-on, and bounded
+  repeated-request behavior. Added timing/lifecycle/SDL regression checks and
+  `sbee-waveform-test`. All 63 tests pass; desktop listening confirmed clean
+  transitions, steady pitch, and normal exit. Pi acceptance is pending; noise
+  transitions, broader pitch, and Lua controls remain deferred.
+
 - Recorded Raspberry Pi OS Lite 64-bit validation at `51cbc8b`: all 61 tests,
   responsive Pong/Pac-Man, clean sine/pulse audio and stereo placement, Save Lab
   persistence through relaunch/repacking, and Exit to system status 0. The
