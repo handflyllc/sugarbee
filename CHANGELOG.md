@@ -2,13 +2,19 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Recorded Raspberry Pi OS Lite 64-bit validation at `51cbc8b`: all 61 tests,
+  responsive Pong/Pac-Man, clean sine/pulse audio and stereo placement, Save Lab
+  persistence through relaunch/repacking, and Exit to system status 0. The
+  desktop-associated control delay was not reproduced on Lite; cause remains
+  undiagnosed, with no measured latency or audio causality established.
+
 - Integrated conditioned pulse into the nine-voice native bank and SDL controls,
   including retained width, live ramps, phase-preserving retrigger, shared ADSR,
   and fixed headroom. Added bank/SDL checks and `sbee-pulse-test`. All 61 tests
   pass and the user confirmed all desktop listening checks. Pi validation at
   `a397e26` passed all 61 tests, pulse/earlier tones, gameplay, and Exit to system
-  status 0. Sluggish Pi controls were separately reported; cause and reproduction
-  remain unresolved. Lua remains deferred.
+  status 0. The separately reported desktop-associated control delay is tracked
+  in the Lite validation entry above. Lua remains deferred.
 
 - Added explicit standalone pulse DC conditioning using current smoothed width
   and fixed half gain, preserving raw output. Added settled-mean, transition,

@@ -693,6 +693,9 @@ normal exit. On Pi commit `a397e26`, the user confirmed all 61 tests, clean
 pulse/earlier tones, gameplay checks, and Exit to system status 0. Lua and
 cartridge-owned audio lifecycle remain later work.
 
-The user separately reported sluggish Pi controls. Reproduction, measured
-latency, and cause remain unresolved; these functional checks do not establish
-unchanged responsiveness or a causal link to audio.
+Raspberry Pi OS Lite 64-bit validation at `51cbc8b` passed all 61 tests, clean
+sine/pulse audio with correct stereo placement and normal exits, responsive
+Pong/Pac-Man, Save Lab persistence through relaunch/repacking, and Exit to system
+status 0. Keyboard and controller had felt delayed in the desktop session but
+responsive in the TTY; the delay was not reproduced on Lite. Its exact cause
+remains undiagnosed. No latency measurement or causal link to audio is claimed.
