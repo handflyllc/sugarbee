@@ -58,6 +58,11 @@ bool sb_audio_voice_note_on(sb_audio_t *audio, unsigned voice, double frequency)
 /* Saw uses the same 220..660 Hz limits. Idle start resets phase to .5;
  * active saw retrigger/pitch changes preserve phase. Active type changes fail. */
 bool sb_audio_voice_saw_on(sb_audio_t *audio, unsigned voice, double frequency);
+/* DC-conditioned pulse, 220..660 Hz. Idle start resets phase to zero and uses
+ * stored width (default .5); active retrigger preserves phase/width ramp.
+ * Width 0.05..0.95 ramps 10 ms on active pulse; otherwise stored for next start. */
+bool sb_audio_voice_pulse_on(sb_audio_t *audio, unsigned voice, double frequency);
+bool sb_audio_voice_pulse_width(sb_audio_t *audio, unsigned voice, double width);
 bool sb_audio_voice_noise_on(sb_audio_t *audio, unsigned voice);
 bool sb_audio_voice_seed(sb_audio_t *audio, unsigned voice, uint32_t seed);
 bool sb_audio_voice_pitch(sb_audio_t *audio, unsigned voice, double frequency);

@@ -2,6 +2,12 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Integrated conditioned pulse into the nine-voice native bank and SDL controls,
+  including retained width, live ramps, phase-preserving retrigger, shared ADSR,
+  and fixed headroom. Added bank/SDL checks and `sbee-pulse-test`. All 61 tests
+  pass and the user confirmed all desktop listening checks. Pi acceptance is
+  pending; Lua remains deferred.
+
 - Added explicit standalone pulse DC conditioning using current smoothed width
   and fixed half gain, preserving raw output. Added settled-mean, transition,
   bounded-output, reset, and render-partition checks. Bank/SDL integration and

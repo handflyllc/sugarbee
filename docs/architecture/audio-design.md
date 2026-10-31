@@ -12,13 +12,13 @@ not current limitations.
 | Area | Implemented now | Still pending |
 | --- | --- | --- |
 | Output | Host-owned SDL2 device, 48 kHz float stereo, silent fallback, clean close | Live failure detection/reconnection, measured end-to-end latency |
-| Voice bank | Nine explicit native slots, triangle, white noise, or saw, independent state | Pulse, live cross-waveform transitions |
+| Voice bank | Nine explicit native slots, triangle, white noise, saw, or pulse, independent state | Live cross-waveform transitions |
 | Triangle | Direct waveform, 220–660 Hz, phase-preserving pitch/retrigger | Aliasing control and broader supported pitch range |
 | Saw | PolyBLEP, 220–660 Hz, native bank/SDL integration and automated checks | Broader pitch |
-| Pulse | Standalone PolyBLEP, 220–660 Hz, width 0.05–0.95, default 0.5, 10 ms ramps, explicit DC conditioning | Bank/SDL, listening/Pi |
+| Pulse | Bank/SDL PolyBLEP, 220–660 Hz, width 0.05–0.95, default 0.5, 10 ms ramps, explicit DC conditioning | Pi acceptance |
 | Noise | Deterministic per-sample white noise, distinct default seeds, repeatable idle starts | Rate-controlled/tonal noise remains deferred; no current noise frequency control |
 | Envelope | Linear ADSR, captured per note, current-level active retrigger | No additional envelope model planned for this checkpoint |
-| Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Filters, pulse width, group/master controls |
+| Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Filters, group/master controls |
 | Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
 | Integration | Locked native controls and separate listening executables | Lua audio API, cartridge-owned audio cleanup and pause/error policy |
 | WAV | Design only | Decoder, bounded asset storage, playback voices, Lua controls |
@@ -163,8 +163,9 @@ features still to be added. Current native restrictions above remain in force.
 | Filter cutoff | 2000 Hz |
 | Filter resonance | 0.0 |
 
-Pulse width and 10 ms live ramps are implemented only in the standalone oscillator;
-bank integration and filter fields remain unimplemented. Retain pulse width while other waveforms are selected and retain filter settings
+Pulse width and 10 ms live ramps are implemented in the native bank/SDL controls.
+Width is retained while other waveforms are selected; idle pulse starts apply the
+stored target immediately. Filter fields remain unimplemented; retain filter settings
 while bypassed. Sustain and voice volume use 0–1 values; pan uses -1 (left)
 through 0 (center) to 1 (right). Envelope times are in seconds.
 
@@ -183,7 +184,7 @@ Envelope, volume, and pan already apply to noise; filtering is still future work
 | Triangle pitch | 220–660 Hz | 20–20,000 Hz, strictly below half the sample rate; requires aliasing work |
 | White noise | New value every sample at 48 kHz; no pitch argument | Rate-controlled noise deferred; original 20–20,000 Hz change-rate proposal is not implemented |
 | Noise seed | uint32; zero selects a distinct fixed default per bank slot | Lua seed exposure undecided |
-| Pulse width | Standalone only: 0.05–0.95, 10 ms live ramps | Bank controls pending |
+| Pulse width | Native bank/SDL: 0.05–0.95, 10 ms live ramps | Lua controls pending |
 | Attack, decay, release | 0–10 seconds each | Same |
 | Sustain and voice volume | 0–1 | Same |
 | Pan | -1–1, equal-power stereo | Same |
@@ -365,9 +366,9 @@ filter gain handling, and combined-output attenuation remain to be specified. A 
 
 ## Remaining implementation questions
 
-- Pulse bank integration with explicit DC conditioning. Standalone live-width
-  PolyBLEP is implemented; saw is validated on desktop/Pi within its range. Measure quality before expanding the bounded pitch ranges.
-- Smooth live waveform changes and integrate pulse-width controls; current active cross-type changes
+- Pulse Pi acceptance; native bank/SDL integration with explicit
+  DC conditioning is implemented. Measure quality before expanding pitch ranges.
+- Smooth live waveform changes; current active cross-type changes
   are rejected. White noise versus any future rate-controlled noise API.
 - Filter mathematics, resonance mapping, stability, smoothing, and gain bounds.
 - Lua result/error contracts, configuration atomicity, and noise call/seed shape.
@@ -388,8 +389,9 @@ equal-power synth pan, fixed 1/9 current synth headroom, and noise seed rules.
 
 1. PolyBLEP saw and bank/SDL integration are implemented at 220–660 Hz.
    Desktop and Pi validation passed; broader range requires a separate checkpoint.
-2. Pulse waveform/pulse width; smooth waveform transitions and broader pitch
-   support through separately reviewed checkpoints.
+2. Pulse bank/SDL and width controls are implemented; desktop listening passed and Pi acceptance
+   is pending. Smooth waveform transitions and broader pitch support follow
+   through separately reviewed checkpoints.
 3. Per-voice low-pass/bypass, with resonance and gain bounds settled before use.
 4. Cartridge audio lifecycle and minimal Lua controls for validated features.
 5. A small Synth Lab, then a narrow Pong Lab audio update: one short wall-hit
@@ -675,4 +677,18 @@ DC-blocking filter or live mode crossfade.
 [Pulse tests and measured limits](../../tests/audio-pulse.md) cover reset,
 bounds, raw and conditioned DC means, transition conditioning, static alias
 suppression, exact width ramps, moving-edge correction, and comparison against an oversampled PWM reference. Bank
-integration, listening, and Pi validation remain deferred.
+integration is now implemented; desktop listening passed and Pi validation remains pending.
+
+## Native pulse integration checkpoint
+
+The bank routes conditioned pulse output through shared ADSR, volume/pan, and
+short stop, with fixed 1/9 headroom and separate SDL diagnostic gain. Idle pulse
+starts reset phase to zero and apply stored width (default .5); active retrigger
+preserves phase and width ramp. Width is retained across other waveform choices.
+Active cross-type starts remain rejected. `sbee-pulse-test` exercises pitch,
+width sweep, stereo placement, retrigger, and a nine-voice mix. See the
+[pulse contract and checks](../../tests/audio-pulse.md#native-bank-and-sdl-integration).
+All 61 automated tests pass. The user confirmed all desktop listening checks,
+including stereo placement, pitch/width/retrigger playback, mixed voices, and
+normal exit. Pi acceptance remains pending. Lua and cartridge-owned audio
+lifecycle remain later work.

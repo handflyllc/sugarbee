@@ -1,9 +1,9 @@
-# Standalone PolyBLEP pulse
+# PolyBLEP pulse
 
 The pure C mono oscillator runs at 48 kHz, with finite pitch 220–660 Hz and
 pulse width 0.05–0.95. Width is the high fraction of each cycle. The default
 width constant is 0.5 (square wave). Reset supplies the initial width. Live edits ramp over 480 samples (10 ms);
-there is no bank/SDL integration or listening executable.
+native bank/SDL integration and a listening executable are described below.
 
 ## Raw state and signal contract
 
@@ -62,12 +62,12 @@ Build independently of the SDL/Lua host:
 
 ```sh
 cmake -S . -B /tmp/sugarbee-pulse-standalone -DSUGARBEE_BUILD_HOST=OFF -DSUGARBEE_BUILD_PACKER=OFF
-cmake --build /tmp/sugarbee-pulse-standalone --target test_audio_pulse test_audio_pulse_width test_audio_pulse_dc
+cmake --build /tmp/sugarbee-pulse-standalone --target test_audio_pulse test_audio_pulse_width test_audio_pulse_dc test_audio_pulse_bank
 ctest --test-dir /tmp/sugarbee-pulse-standalone -R '^audio_pulse' --output-on-failure
 ```
 
-Native bank/SDL controls,
-listening, and Pi validation remain later checkpoints. Lua remains deferred.
+Native bank/SDL controls are now implemented. Desktop listening passed; Pi acceptance remains
+pending and Lua remains deferred.
 
 ## Live width checkpoint
 
@@ -75,8 +75,8 @@ listening, and Pi validation remain later checkpoints. Lua remains deferred.
 ramps linearly from the current width over a full 480 rendered samples. Repeating
 the same target does not restart its deadline. Width edits preserve phase and
 pitch; reset applies width immediately and cancels the ramp. The standalone
-oscillator has no note/idle state; immediate idle edits belong to later bank
-integration. Rendering zero samples does not advance the ramp.
+oscillator has no note/idle state; bank controls store idle edits and apply them
+immediately at the next pulse start. Rendering zero samples does not advance the ramp.
 
 The falling-edge correction accounts for relative motion: phase increment minus
 width increment. Corrections on either side use the corresponding previous or
@@ -101,8 +101,8 @@ of alias-free output or every modulation trajectory.
 `0.5 * (raw - (2*current_smoothed_width - 1))`. This subtracts the
 settled expected DC value with fixed gain to retain bounded output. It halves
 square-wave amplitude (about 6 dB); there is no automatic loudness normalization.
-It does not promise zero average over short transition windows. Bank integration
-and listening remain separate work.
+It does not promise zero average over short transition windows. Native bank
+integration uses this conditioned renderer.
 
 Conditioning uses the width for the sample being rendered, before advancing the
 ramp, rather than the target or next width. Current raw and width bounds imply
@@ -120,3 +120,46 @@ pitches, raw-output preservation, square amplitude, same-sample conditioning
 during full ramps and reversals, bounds, render partition independence, reset
 replay, and invalid/zero-length requests. It does not require zero average over
 short transition windows or claim audible validation.
+
+## Native bank and SDL integration
+
+`sb_audio_bank_pulse_on` / `sb_audio_voice_pulse_on` start or retrigger a pulse
+in an explicit slot 1–9, at 220–660 Hz. Idle starts reset phase to zero and apply
+the stored width (default 0.5). Active pulse retriggers preserve phase and width
+ramp, including release/short-stop retriggers. Starting a different waveform in
+an active slot is rejected without mutation; idle slots may change type.
+
+`sb_audio_bank_pulse_width` / `sb_audio_voice_pulse_width` accept finite 0.05–0.95.
+Active pulses ramp for 480 samples; repeated targets do not restart the ramp.
+For idle slots or other waveforms, width is retained for the next pulse start.
+A note that ends during a ramp starts next time at its stored target. Reset
+restores default width. Pitch edits preserve phase and width state.
+
+Conditioning runs before the shared ADSR, volume, and equal-power pan. Mute
+still advances oscillator, width, and envelope. The existing 10 ms short stop
+and captured ADSR semantics apply. Nine voices retain fixed 1/9 mixer headroom;
+the SDL diagnostic gain remains separately 0.790569415. No pulse-specific
+loudness compensation, allocation, callback logging, or Lua controls were added.
+SDL controls lock the device; rendering remains in the existing callback path.
+
+`audio_pulse_bank` checks all nine slots against the conditioned oscillator,
+retrigger/pitch/width preservation, idle target retention, type/argument rejection,
+muted progression, release/stop, narrow-pulse headroom, mixed-source partitioning,
+slot independence, and reset. `audio_bank_sdl` checks real wrapper/callback routing,
+diagnostic gain, legacy-test exclusion, invalid controls, and active teardown.
+`audio_pulse_output` runs the listening program with a dummy device and a timeout;
+it verifies completion, not audible quality.
+
+Run on the intended audio output:
+
+```sh
+./build/sbee-pulse-test
+```
+
+Listen for the left pulse changing pitch, the centered width sweep (square to
+5%, then 95%), release/retrigger, a fresh right pulse, and a nine-voice mix of
+triangle/noise/saw/pulse. Width changes intentionally alter timbre and loudness.
+Check for unexpected clicks/distortion, correct placement, and normal exit.
+The user confirmed all desktop listening checks: clean pitch/width/retrigger
+playback, correct stereo placement, clean mixed voices, and normal exit. All 61
+automated tests passed. Pi validation remains pending.

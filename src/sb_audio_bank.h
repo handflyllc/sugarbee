@@ -1,18 +1,21 @@
-/* Internal native triangle/noise/saw bank: no SDL, Lua, allocation, or device ownership. */
+/* Internal native triangle/noise/saw/pulse bank: no SDL, Lua, allocation, or device ownership. */
 #ifndef SB_AUDIO_BANK_H
 #define SB_AUDIO_BANK_H
 #include "sb_audio_triangle.h"
 #include "sb_audio_saw.h"
+#include "sb_audio_pulse.h"
 #define SB_AUDIO_BANK_VOICES 9u
 #define SB_AUDIO_SYNTH_GAIN (1.0 / SB_AUDIO_BANK_VOICES)
 typedef enum {
-    SB_AUDIO_VOICE_TRIANGLE = 0, SB_AUDIO_VOICE_NOISE, SB_AUDIO_VOICE_SAW
+    SB_AUDIO_VOICE_TRIANGLE = 0, SB_AUDIO_VOICE_NOISE, SB_AUDIO_VOICE_SAW, SB_AUDIO_VOICE_PULSE
 } sb_audio_voice_kind_t;
 typedef struct {
     sb_audio_triangle_t voices[SB_AUDIO_BANK_VOICES];
     sb_audio_noise_t noise[SB_AUDIO_BANK_VOICES];
     uint32_t seeds[SB_AUDIO_BANK_VOICES]; /* Zero selects the slot's fixed default. */
     sb_audio_saw_t saw[SB_AUDIO_BANK_VOICES];
+    sb_audio_pulse_t pulse[SB_AUDIO_BANK_VOICES];
+    double widths[SB_AUDIO_BANK_VOICES]; /* Zero selects default .5. */
     sb_audio_voice_kind_t kind[SB_AUDIO_BANK_VOICES];
 } sb_audio_bank_t;
 
@@ -30,6 +33,12 @@ bool sb_audio_bank_noise_on(sb_audio_bank_t *bank, unsigned voice);
 /* Saw starts at phase .5 when idle; active saw retrigger preserves phase.
  * Same 220..660 Hz range, ADSR/control semantics, and cross-type rejection. */
 bool sb_audio_bank_saw_on(sb_audio_bank_t *bank, unsigned voice, double frequency);
+/* Conditioned pulse: idle starts at phase zero with stored width (default .5).
+ * Active retrigger preserves phase and width ramp. Pitch range 220..660 Hz.
+ * Width 0.05..0.95: active pulse ramps 10 ms; otherwise store for next pulse start.
+ * Width persists across other waveform selections; reset restores default. */
+bool sb_audio_bank_pulse_on(sb_audio_bank_t *bank, unsigned voice, double frequency);
+bool sb_audio_bank_pulse_width(sb_audio_bank_t *bank, unsigned voice, double width);
 bool sb_audio_bank_seed(sb_audio_bank_t *bank, unsigned voice, uint32_t seed);
 bool sb_audio_bank_pitch(sb_audio_bank_t *bank, unsigned voice, double frequency);
 bool sb_audio_bank_volume(sb_audio_bank_t *bank, unsigned voice, double volume);

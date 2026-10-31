@@ -165,7 +165,9 @@ playback, correct stereo placement, and normal exit. Pi validation passed at
 `f1982a9`: all 56 tests, saw/earlier tones, gameplay, and Exit to system status 0.
 A standalone PolyBLEP pulse now has reset/bounds/DC/spectral checks and 10 ms
 live-width ramps with moving-edge correction. Explicit DC conditioning and its
-settled/transition checks are implemented. Bank integration and listening are next.
+settled/transition checks are implemented. Native bank/SDL integration and a
+listening tool are now implemented. All 61 automated tests pass and the user
+confirmed all desktop listening checks. Pi validation is next.
 Continue with smooth waveform
 transitions and broader pitch, filtering, then cartridge audio lifecycle and
 minimal Lua controls. Each remains a separately scoped implementation and
