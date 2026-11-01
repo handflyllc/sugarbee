@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 static bool valid_frequency(double frequency) {
-    return isfinite(frequency) && frequency >= 220.0 && frequency <= 660.0;
+    return isfinite(frequency) && frequency >= 110.0 && frequency <= 880.0;
 }
 static bool valid_state(const sb_audio_saw_t *saw) {
     return saw && valid_frequency(saw->frequency) &&

@@ -43,7 +43,7 @@ int main(void) {
     CHECK(sb_audio_saw_reset(&saw, 440));
     CHECK(saw.phase == .5 && saw.frequency == 440);
     copy = saw;
-    const double invalid[] = {0, -1, 219.99, 660.01, NAN, INFINITY, -INFINITY};
+    const double invalid[] = {0, -1, 109.99, 880.01, NAN, INFINITY, -INFINITY};
     for (unsigned i = 0; i < sizeof(invalid)/sizeof(invalid[0]); ++i) {
         CHECK(!sb_audio_saw_reset(&saw, invalid[i]));
         CHECK(!sb_audio_saw_pitch(&saw, invalid[i]));
@@ -73,8 +73,8 @@ int main(void) {
     saw.phase = .005;
     CHECK(sb_audio_saw_render(&saw, output, 1));
     CHECK(fabs(output[0]+.74) < 1e-7);
-    const double pitches[] = {220, 220.125, 440, 659.75, 660};
-    for (unsigned p = 0; p < 5; ++p) {
+    const double pitches[] = {110, 110.125, 220, 220.125, 440, 659.75, 660, 879.75, 880};
+    for (unsigned p = 0; p < sizeof(pitches)/sizeof(pitches[0]); ++p) {
         CHECK(sb_audio_saw_reset(&saw, pitches[p]));
         copy = saw;
         CHECK(sb_audio_saw_render(&saw, output, N));
@@ -95,7 +95,7 @@ int main(void) {
         CHECK(saw.phase == next);
     }
     /* Sweep phase and supported pitch including correction boundaries. */
-    for (unsigned hz = 220; hz <= 660; hz += 20) {
+    for (unsigned hz = 110; hz <= 880; hz += 10) {
         CHECK(sb_audio_saw_reset(&saw, hz));
         for (unsigned i = 0; i <= 1000; ++i) {
             saw.phase = i/1001.0;
@@ -103,8 +103,8 @@ int main(void) {
             CHECK(isfinite(sentinel) && fabs(sentinel) <= 1);
         }
     }
-    const unsigned bins[] = {39, 75, 111};
-    for (unsigned k = 0; k < 3; ++k) {
+    const unsigned bins[] = {19, 39, 75, 111, 149};
+    for (unsigned k = 0; k < sizeof(bins)/sizeof(bins[0]); ++k) {
         unsigned bin = bins[k];
         double frequency = bin*48000.0/N;
         CHECK(sb_audio_saw_reset(&saw, frequency));

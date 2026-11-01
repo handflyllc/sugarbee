@@ -1,7 +1,7 @@
 # Native waveform switching
 
 Explicit triangle/saw/pulse/noise selection is available in the nine-voice bank
-and locked SDL controls. Pitched sources remain limited to 220–660 Hz. Broader
+and locked SDL controls. Pitched sources remain limited to 110–880 Hz. Broader
 pitch, Lua controls, and cartridge-owned audio lifecycle are deferred. Noise
 seed/retained-pitch rules and tests are detailed in [noise transitions](audio-noise-switch.md).
 

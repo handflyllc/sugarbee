@@ -172,8 +172,8 @@ The development machine is the source of changes. The Pi is a receive-only valid
 - Inspect repository status before edits, staging, commits, and merges. Never assume the working tree is clean.
 - Preserve user modifications, untracked files, local preferences, and stashes. Stage only files belonging to the authorized checkpoint.
 - Do not discard, reset, overwrite, rebase, force-push, or otherwise perform destructive operations without explicit agreement.
-- After implementing and verifying a checkpoint, report it as uncommitted until the user authorizes the commit. A clear continuation of a proposed commit step is sufficient; do not request redundant confirmation.
-- When authorized, make the commit on the development machine, report its hash and working-tree state, and provide the push command.
+- After implementing an agreed checkpoint, completing appropriate automated checks, and receiving any required user listening/manual acceptance, commit the checkpoint without requesting separate commit authorization. This standing permission covers focused code, test, documentation, and validation-record commits within agreed scope; it does not authorize new implementation scope, merges, pushes, or destructive Git operations.
+- Make commits on the development machine, report their hashes and working-tree state, and provide the user push command. If checks fail or required user validation is pending, preserve the work and report the blocker rather than treating the checkpoint as accepted.
 - The user performs pushes requiring their credentials. Do not push on their behalf unless they explicitly change this arrangement.
 - For Pi validation, provide fetch/switch/pull commands, the expected commit, and a concise checklist. Do not commit or push from the Pi. Treat test-selector edits there as local validation changes and preserve them unless the user authorizes otherwise.
 - Record user-reported hardware and listening results against the tested commit. Distinguish observations from established causes or broader compatibility claims.

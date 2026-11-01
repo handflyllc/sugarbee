@@ -46,7 +46,7 @@ int main(void) {
             CHECK(sb_audio_bank_volume(&b, 1, 1));
             CHECK(sb_audio_bank_pan(&b, 1, -1));
             CHECK(sb_audio_bank_pulse_width(&b, 1, f ? .05 : .95));
-            CHECK(sb_audio_bank_start_selected(&b, 1, f ? 660 : 220));
+            CHECK(sb_audio_bank_start_selected(&b, 1, f ? 880 : 110));
             CHECK(phase(&b, 0, kinds[from]) == (from == 0 ? .25 : from == 1 ? .5 : 0));
             CHECK(sb_audio_bank_render(&b, out, 137));
             snapshot = b;

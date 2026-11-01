@@ -15,7 +15,7 @@ typedef struct {
 } sb_audio_pulse_t;
 
 /* Reset at the rising edge (phase 0); first corrected sample is zero.
- * Pitch: 220..660 Hz. Width: high fraction 0.05..0.95, default macro above.
+ * Pitch: 110..880 Hz. Width: high fraction 0.05..0.95, default macro above.
  * Reset sets width immediately and cancels any ramp. Zero-initialized storage
  * is unconfigured. Reset is not an audible fade. Invalid requests fail unchanged. */
 bool sb_audio_pulse_reset(sb_audio_pulse_t *pulse, double frequency, double width);

@@ -171,7 +171,7 @@ int main(void) {
     CHECK(audio->bank.pulse[0].phase == phase);
     memcpy(snapshot, &audio->bank, sizeof(snapshot));
     CHECK(!sb_audio_voice_pulse_width(audio, 1, NAN));
-    CHECK(!sb_audio_voice_pulse_on(audio, 1, 661));
+    CHECK(!sb_audio_voice_pulse_on(audio, 1, 881));
     CHECK(!sb_audio_voice_pulse_on(audio, 10, 440));
     CHECK(!sb_audio_voice_saw_on(audio, 1, 440));
     CHECK(!sb_audio_start_test_tone(audio) && !sb_audio_start_triangle(audio, 440));
@@ -251,6 +251,37 @@ int main(void) {
     CHECK(sb_audio_voice_stop(audio,1));
     audio_output(audio,(Uint8 *)output,sizeof(output));
     CHECK(!sb_audio_voice_active(audio,1) && !audio->bank.switch_left[0]);
+    sb_audio_bank_reset(&audio->bank);
+    /* Expanded range through every public pitched start, pitch control, and
+     * selected retrigger during a fade; failures must leave all state intact. */
+    const double limits[] = {110, 880};
+    const double bad_pitch[] = {109.999, 880.001, NAN, INFINITY, -INFINITY};
+    for (unsigned k=0;k<3;++k) for (unsigned f=0;f<2;++f) {
+        sb_audio_bank_reset(&audio->bank);
+        CHECK(sb_audio_voice_configure(audio,1,0,0,1,0));
+        CHECK(k==0 ? sb_audio_voice_note_on(audio,1,limits[f]) :
+              k==1 ? sb_audio_voice_saw_on(audio,1,limits[f]) :
+                     sb_audio_voice_pulse_on(audio,1,limits[f]));
+        CHECK(sb_audio_voice_pitch(audio,1,limits[1-f]));
+        CHECK(audio->bank.retained_pitch[0] == limits[1-f]);
+        memcpy(snapshot,&audio->bank,sizeof(snapshot));
+        for (unsigned i=0;i<sizeof(bad_pitch)/sizeof(bad_pitch[0]);++i) {
+            CHECK(!sb_audio_voice_pitch(audio,1,bad_pitch[i]));
+            CHECK(!(k==0 ? sb_audio_voice_note_on(audio,1,bad_pitch[i]) :
+                    k==1 ? sb_audio_voice_saw_on(audio,1,bad_pitch[i]) :
+                           sb_audio_voice_pulse_on(audio,1,bad_pitch[i])));
+            CHECK(memcmp(snapshot,&audio->bank,sizeof(snapshot)) == 0);
+        }
+        CHECK(sb_audio_voice_waveform(audio,1,k==0 ? SB_AUDIO_VOICE_SAW : SB_AUDIO_VOICE_TRIANGLE));
+        CHECK(sb_audio_voice_start_selected(audio,1,limits[f]));
+        CHECK(audio->bank.switch_left[0] == 480);
+        CHECK(audio->bank.retained_pitch[0] == limits[f]);
+        reference = audio->bank;
+        CHECK(sb_audio_bank_render(&reference,expected,1024));
+        audio_output(audio,(Uint8 *)output,sizeof(output));
+        for (unsigned i=0;i<2048;++i)
+            CHECK(fabsf(output[i]-expected[i]*0.790569415f) < 1e-8f);
+    }
     sb_audio_bank_reset(&audio->bank);
     /* Destroy while nine mixed voices are active; no release wait needed. */
     for (unsigned v = 1; v <= 9; ++v) {

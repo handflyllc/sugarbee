@@ -64,7 +64,7 @@ int main(void) {
         /* Seed and pitch edits must not change noise samples already playing. */
         ref = b;
         CHECK(sb_audio_bank_seed(&b,1,54321));
-        CHECK(sb_audio_bank_pitch(&b,1,660));
+        CHECK(sb_audio_bank_pitch(&b,1,880));
         CHECK(sb_audio_bank_render(&b,out,1024));
         CHECK(sb_audio_bank_render(&ref,expected,1024));
         CHECK(memcmp(out,expected,2048*sizeof(float)) == 0);
@@ -72,7 +72,7 @@ int main(void) {
         CHECK(b.noise[0].state == ref.noise[0].state);
         CHECK(sb_audio_bank_waveform(&b,1,kinds[k]));
         CHECK(phase(&b,kinds[k]) == (k==0 ? .25 : k==1 ? .5 : 0));
-        CHECK(frequency(&b,kinds[k]) == 660);
+        CHECK(frequency(&b,kinds[k]) == 880);
         if (k==2) CHECK(b.pulse[0].width == .25 && b.pulse[0].width_left == 0);
         CHECK(!sb_audio_bank_start_selected_noise(&b,1));
         ref = b;
@@ -96,12 +96,12 @@ int main(void) {
         CHECK(sb_audio_bank_start_selected_noise(&b,1));
         CHECK(b.noise[0].state == current && b.switch_left[0] == 360);
         CHECK(b.voices[0].envelope.level == level);
-        CHECK(sb_audio_bank_pitch(&b,1,220)); /* Updates outgoing pitched source. */
-        CHECK(frequency(&b,kinds[k]) == 220 && b.retained_pitch[0] == 220);
+        CHECK(sb_audio_bank_pitch(&b,1,110)); /* Updates outgoing pitched source. */
+        CHECK(frequency(&b,kinds[k]) == 110 && b.retained_pitch[0] == 110);
         snapshot = b;
         CHECK(!sb_audio_bank_pitch(&b,1,NAN));
-        CHECK(!sb_audio_bank_pitch(&b,1,219));
-        CHECK(!sb_audio_bank_pitch(&b,1,661));
+        CHECK(!sb_audio_bank_pitch(&b,1,109));
+        CHECK(!sb_audio_bank_pitch(&b,1,881));
         CHECK(!sb_audio_bank_waveform(&b,1,(sb_audio_voice_kind_t)99));
         CHECK(memcmp(&b,&snapshot,sizeof b) == 0);
         CHECK(sb_audio_bank_render(&b,out,360));
@@ -111,7 +111,7 @@ int main(void) {
         CHECK(sb_audio_bank_start_selected_noise(&b,1));
         CHECK(b.noise[0].state == snapshot.noise[0].state);
         CHECK(sb_audio_bank_waveform(&b,1,kinds[k]));
-        CHECK(frequency(&b,kinds[k]) == 220);
+        CHECK(frequency(&b,kinds[k]) == 110);
         current = b.noise[0].state;
         CHECK(sb_audio_bank_start_selected(&b,1,550));
         CHECK(b.noise[0].state == current && b.switch_left[0] == 480);

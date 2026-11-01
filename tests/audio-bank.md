@@ -7,7 +7,7 @@ A separate listening executable exercises it; no Lua API is exposed.
 
 - Native voice numbers are 1–9. Each has independent triangle, ADSR, pitch,
   volume, pan, retrigger, and short-stop state.
-- Existing prototype limits remain: 220–660 Hz, volume 0–1, pan -1–1,
+- Existing prototype limits remain: 110–880 Hz, volume 0–1, pan -1–1,
   default volume 0.5 and center pan, and 10 ms live control smoothing.
 - Each note captures its envelope settings. Retrigger preserves phase and
   attacks from the current level over the full new attack duration.

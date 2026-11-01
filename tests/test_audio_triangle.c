@@ -9,12 +9,12 @@ int main(void) {
     CHECK(!sb_audio_triangle_pitch(&v, 440));
     CHECK(!sb_audio_triangle_start(&v, NAN));
     CHECK(!sb_audio_triangle_start(&v, INFINITY));
-    CHECK(!sb_audio_triangle_start(&v, 219));
-    CHECK(!sb_audio_triangle_start(&v, 661));
+    CHECK(!sb_audio_triangle_start(&v, 109));
+    CHECK(!sb_audio_triangle_start(&v, 881));
     sb_audio_triangle_stop(&v);
     sb_audio_triangle_render(&v, a, 10);
     for (unsigned i = 0; i < 20; ++i) CHECK(a[i] == 0);
-    for (unsigned hz = 220; hz <= 660; hz += 220) {
+    for (unsigned hz = 110; hz <= 880; hz += 110) {
         memset(&v, 0, sizeof(v));
         CHECK(sb_audio_triangle_start(&v, hz));
         CHECK(sb_audio_triangle_start(&v, hz));

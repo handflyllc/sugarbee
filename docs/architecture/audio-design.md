@@ -1,6 +1,6 @@
 # SugarBee audio — settled initial design
 
-Status reconciled with the implementation on 2026-10-31. The initial design was
+Status reconciled with the implementation on 2026-11-01. The initial design was
 settled on 2026-10-18; implementation decisions below refine that design.
 This document separates the current native implementation from the planned Lua
 API and remaining synthesis/WAV work. Illustrative Lua calls are not available
@@ -13,9 +13,9 @@ not current limitations.
 | --- | --- | --- |
 | Output | Host-owned SDL2 device, 48 kHz float stereo, silent fallback, clean close | Live failure detection/reconnection, measured end-to-end latency |
 | Voice bank | Nine explicit native slots, triangle, white noise, saw, or pulse, independent state; 10 ms transitions including noise | Broader pitch and Lua integration |
-| Triangle | Direct waveform, 220–660 Hz, phase-preserving pitch/retrigger | Aliasing control and broader supported pitch range |
-| Saw | PolyBLEP, 220–660 Hz, native bank/SDL integration and automated checks | Broader pitch |
-| Pulse | Bank/SDL PolyBLEP, 220–660 Hz, width 0.05–0.95, default 0.5, 10 ms ramps, explicit DC conditioning | Broader pitch |
+| Triangle | Direct waveform, 110–880 Hz, phase-preserving pitch/retrigger | Aliasing control and broader supported pitch range |
+| Saw | PolyBLEP, 110–880 Hz, native bank/SDL integration and automated checks | Broader pitch |
+| Pulse | Bank/SDL PolyBLEP, 110–880 Hz, width 0.05–0.95, default 0.5, 10 ms ramps, explicit DC conditioning | Broader pitch |
 | Noise | Deterministic per-sample white noise, distinct default seeds, repeatable idle starts | Rate-controlled/tonal noise remains deferred; no current noise frequency control |
 | Envelope | Linear ADSR, captured per note, current-level active retrigger | No additional envelope model planned for this checkpoint |
 | Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Filters, group/master controls |
@@ -35,6 +35,13 @@ status 0. Desktop validation also passed. This does not establish compatibility
 with every audio device or live output switching. See
 [saw validation](../../tests/audio-saw.md#pi-validation) and
 [Pi output observations](../../tests/audio-bank.md#pi-validation-and-output-observations).
+
+The current 110–880 Hz extension preserves oscillator methods, 10 ms ramps,
+pulse width limits, and fixed headroom. Automated coverage includes the new
+endpoints, fractional pitches, transitions, retained pitch, and spectral/reference
+checks. Triangle remains non-band-limited; PolyBLEP remains alias-suppressed.
+The user confirmed desktop listening performed as expected; Pi validation is pending. See
+[pitch range validation](../../tests/audio-pitch-range.md).
 
 ## Purpose and scope
 
@@ -184,7 +191,7 @@ Envelope, volume, and pan already apply to noise; filtering is still future work
 | Parameter | Current native implementation | Target / deferred design |
 | --- | --- | --- |
 | Synth voice number | Integers 1–9 | Same |
-| Triangle pitch | 220–660 Hz | 20–20,000 Hz, strictly below half the sample rate; requires aliasing work |
+| Triangle pitch | 110–880 Hz | 20–20,000 Hz, strictly below half the sample rate; requires aliasing work |
 | White noise | New value every sample at 48 kHz; no pitch argument | Rate-controlled noise deferred; original 20–20,000 Hz change-rate proposal is not implemented |
 | Noise seed | uint32; zero selects a distinct fixed default per bank slot | Lua seed exposure undecided |
 | Pulse width | Native bank/SDL: 0.05–0.95, 10 ms live ramps | Lua controls pending |
@@ -390,13 +397,15 @@ equal-power synth pan, fixed 1/9 current synth headroom, and noise seed rules.
 
 ## Agreed next sequence — checkpoint by checkpoint
 
-1. PolyBLEP saw and bank/SDL integration are implemented at 220–660 Hz.
-   Desktop and Pi validation passed; broader range requires a separate checkpoint.
+1. PolyBLEP saw and bank/SDL integration were validated at 220–660 Hz.
+   The current 110–880 Hz extension has separate validation below.
 2. Pulse bank/SDL and width controls are validated on desktop/Pi. Native
    triangle/saw/pulse transitions are implemented and validated on desktop/Pi.
    Noise transitions are implemented; the revised desktop comparison is clearly
    distinguishable. Pi validation passed at `29d63ff`.
-   Broader pitch needs a separately reviewed checkpoint.
+   The first broader-pitch checkpoint implements 110–880 Hz across all pitched
+   sources and retained pitch. Desktop listening passed per the user; Pi validation is pending;
+   see [pitch checks](../../tests/audio-pitch-range.md). Further expansion is deferred.
 3. Per-voice low-pass/bypass, with resonance and gain bounds settled before use.
 4. Cartridge audio lifecycle and minimal Lua controls for validated features.
 5. A small Synth Lab, then a narrow Pong Lab audio update: one short wall-hit

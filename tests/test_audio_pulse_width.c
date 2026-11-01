@@ -69,16 +69,16 @@ int main(void) {
      * quadratic edge correction. Use relative edge speed, not pitch alone. */
     for (unsigned direction = 0; direction < 2; ++direction) {
         double from = direction ? .95 : .05, to = direction ? .05 : .95;
-        CHECK(sb_audio_pulse_reset(&pulse, 220, from));
+        CHECK(sb_audio_pulse_reset(&pulse, 110, from));
         CHECK(sb_audio_pulse_width(&pulse, to));
-        double relative_step = 220.0/48000-(to-from)/480;
+        double relative_step = 110.0/48000-(to-from)/480;
         pulse.phase = from-relative_step*.5;
         CHECK(sb_audio_pulse_render(&pulse, output, 2));
         CHECK(fabs(output[0]-.75) < 1e-6 && fabs(output[1]+.75) < 1e-6);
     }
     /* Extreme ramps, reversal, and varying pitch never escape width/output bounds. */
-    const double frequencies[] = {220, 440, 660};
-    for (unsigned f = 0; f < 3; ++f) {
+    const double frequencies[] = {110, 110.125, 220, 440, 660, 879.75, 880};
+    for (unsigned f = 0; f < sizeof(frequencies)/sizeof(frequencies[0]); ++f) {
         CHECK(sb_audio_pulse_reset(&pulse, frequencies[f], .05));
         for (unsigned run = 0; run < 30; ++run) {
             CHECK(sb_audio_pulse_width(&pulse, run%2 ? .05 : .95));
@@ -89,12 +89,28 @@ int main(void) {
             for (unsigned i = 0; i < frames; ++i) CHECK(isfinite(output[i]) && fabs(output[i]) <= 1);
         }
     }
+    /* Pitch can jump at any ramp position. Render one sample per call so
+     * stored-history validation runs after every interval, including the
+     * 880 Hz decreasing-width case that exceeded the old .02 bound. */
+    for (unsigned direction = 0; direction < 2; ++direction) {
+        CHECK(sb_audio_pulse_reset(&pulse, 880, direction ? .95 : .05));
+        CHECK(sb_audio_pulse_width(&pulse, direction ? .05 : .95));
+        for (unsigned i = 0; i < 960; ++i) {
+            if (i == 137) CHECK(sb_audio_pulse_pitch(&pulse, 110));
+            if (i == 211) CHECK(sb_audio_pulse_width(&pulse, direction ? .95 : .05));
+            if (i == 349) CHECK(sb_audio_pulse_pitch(&pulse, 880));
+            CHECK(sb_audio_pulse_render(&pulse, output, 1));
+            CHECK(isfinite(output[0]) && fabs(output[0]) <= 1);
+            CHECK(pulse.previous_falling_step > 0 && pulse.previous_falling_step < .025);
+        }
+        CHECK(pulse.width_left == 0);
+    }
     /* Periodic moving-width signal: compare selected complex coefficients
      * against independently generated 32x-rate raw PWM. Its low-frequency DFT
      * coefficients approximate a band-limited reference, without using BLEP.
      * Compare only common base-rate bins, not all high-rate harmonics. */
-    const unsigned carrier_bins[] = {11, 19, 27};
-    for (unsigned f = 0; f < 3; ++f) {
+    const unsigned carrier_bins[] = {5, 11, 19, 27, 37};
+    for (unsigned f = 0; f < sizeof(carrier_bins)/sizeof(carrier_bins[0]); ++f) {
         unsigned carrier = carrier_bins[f];
         CHECK(sb_audio_pulse_reset(&pulse, carrier*48000.0/N, .05));
         for (unsigned i = 0; i < N; ++i) {

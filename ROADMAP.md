@@ -185,9 +185,11 @@ pitch, and a frequency-free selected-noise start. The user confirmed clear
 tone/noise distinction in the revised one/three/nine-voice desktop listening
 comparison; the voice limit is unchanged. Pi validation passed at `29d63ff`: all
 65 tests, clean noise transitions/earlier tones, gameplay checks, and Exit to
-system status 0. Broader pitch remains the next separately scoped discussion,
-followed by filtering, cartridge audio lifecycle and
-minimal Lua controls. Each remains a separately scoped implementation and
+system status 0. The agreed first pitch expansion, 110–880 Hz, is now implemented
+on `feature/audio-pitch-range`; desktop listening passed per the user; Pi validation is pending.
+See [pitch checks](tests/audio-pitch-range.md). Further pitch expansion remains
+uncommitted future scope. Filtering, cartridge audio lifecycle and minimal Lua
+controls follow as separately agreed checkpoints. Each remains a separately scoped implementation and
 validation step; see the [audio sequence](docs/architecture/audio-design.md#agreed-next-sequence--checkpoint-by-checkpoint).
 
 After a small Synth Lab, add two short Pong sounds: one on a wall hit and a

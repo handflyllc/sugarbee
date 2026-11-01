@@ -48,7 +48,7 @@ static void pan_gains(double pan, double *left, double *right) {
     }
 }
 static bool valid_pitch(double frequency) {
-    return isfinite(frequency) && frequency >= 220.0 && frequency <= 660.0;
+    return isfinite(frequency) && frequency >= 110.0 && frequency <= 880.0;
 }
 bool sb_audio_triangle_configure(sb_audio_triangle_t *v, const sb_envelope_settings_t *s) {
     if (!v || !sb_envelope_settings_valid(s)) return false;
