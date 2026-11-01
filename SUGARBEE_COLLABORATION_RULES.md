@@ -193,6 +193,7 @@ Documentation is part of development, not an afterthought.
 - Keep development and release behavior appropriately documented.
 - Avoid duplicating technical specifications across multiple locations where they might drift apart.
 - Preserve useful historical decisions without allowing obsolete material to override the current implementation.
+- When present, refresh the local, Git-ignored handoff at `docs/handoff/SUGARBEE_NEW_CHAT_HANDOFF.md` alongside broader documentation updates at major checkpoints, after accepted scope changes, or before a chat transition. Keep its dated checkpoint, validation evidence, workflow, and next action current; distinguish pending work from completed work. It is shared manually between chats and is not distributed with the repository.
 
 ## 13. Example Games as Engineering Laboratories
 
