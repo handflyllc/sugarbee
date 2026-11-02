@@ -8,7 +8,10 @@
   cap to accommodate valid high-pitch width ramps. Extended sample, spectral,
   transition, headroom, and SDL checks; added `sbee-pitch-test` for listening.
   Debug build and all 67 tests pass; the user confirmed desktop listening
-  performed as expected. Pi validation remains pending. Triangle remains direct
+  performed as expected. On 2026-11-02 the user reported Pi audio, Pong/Pac-Man,
+  and Exit to system checks passed for the requested `ff61ef6` validation;
+  the user also confirmed a successful Pi build and zero test failures.
+  Pi validation is complete. Triangle remains direct
   and non-band-limited; no Lua API, filter, gain, or voice-count changes.
 
 - Extended native waveform switching to noise, with fresh-entry seeds,

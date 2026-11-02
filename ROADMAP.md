@@ -186,7 +186,9 @@ tone/noise distinction in the revised one/three/nine-voice desktop listening
 comparison; the voice limit is unchanged. Pi validation passed at `29d63ff`: all
 65 tests, clean noise transitions/earlier tones, gameplay checks, and Exit to
 system status 0. The agreed first pitch expansion, 110–880 Hz, is now implemented
-on `feature/audio-pitch-range`; desktop listening passed per the user; Pi validation is pending.
+on `feature/audio-pitch-range`; desktop listening passed per the user; Pi audio, Pong/Pac-Man, and Exit to system checks passed per the user;
+The user also confirmed a successful Pi build and zero test failures at
+`ff61ef6` on 2026-11-02, completing Pi validation.
 See [pitch checks](tests/audio-pitch-range.md). Further pitch expansion remains
 uncommitted future scope. Filtering, cartridge audio lifecycle and minimal Lua
 controls follow as separately agreed checkpoints. Each remains a separately scoped implementation and

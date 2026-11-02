@@ -40,7 +40,9 @@ The current 110–880 Hz extension preserves oscillator methods, 10 ms ramps,
 pulse width limits, and fixed headroom. Automated coverage includes the new
 endpoints, fractional pitches, transitions, retained pitch, and spectral/reference
 checks. Triangle remains non-band-limited; PolyBLEP remains alias-suppressed.
-The user confirmed desktop listening performed as expected; Pi validation is pending. See
+The user confirmed desktop listening performed as expected; Pi audio, Pong/Pac-Man, and Exit to system checks passed per the user;
+The user also confirmed a successful Pi build and zero test failures at
+`ff61ef6` on 2026-11-02, completing Pi validation. See
 [pitch range validation](../../tests/audio-pitch-range.md).
 
 ## Purpose and scope
@@ -404,7 +406,9 @@ equal-power synth pan, fixed 1/9 current synth headroom, and noise seed rules.
    Noise transitions are implemented; the revised desktop comparison is clearly
    distinguishable. Pi validation passed at `29d63ff`.
    The first broader-pitch checkpoint implements 110–880 Hz across all pitched
-   sources and retained pitch. Desktop listening passed per the user; Pi validation is pending;
+   sources and retained pitch. Desktop listening passed per the user; Pi audio, Pong/Pac-Man, and Exit to system checks passed per the user;
+The user also confirmed a successful Pi build and zero test failures at
+`ff61ef6` on 2026-11-02, completing Pi validation;
    see [pitch checks](../../tests/audio-pitch-range.md). Further expansion is deferred.
 3. Per-voice low-pass/bypass, with resonance and gain bounds settled before use.
 4. Cartridge audio lifecycle and minimal Lua controls for validated features.

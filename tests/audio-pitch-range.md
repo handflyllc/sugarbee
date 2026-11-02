@@ -79,4 +79,10 @@ error reduction at the added low/high records was 7.60/8.87 dB. These are
 regression measurements, not listening results. The user reported that the desktop
 `sbee-pitch-test` performed as expected on 2026-11-01. This report applies to the
 uncommitted checkpoint on `feature/audio-pitch-range`, based on `1827c50`.
-Pi validation remains pending.
+The checkpoint was subsequently committed as `ff61ef6`.
+
+Pi report (2026-11-02), for the requested `ff61ef6` validation: the user confirmed
+that audio checks, Pong/Pac-Man labs, and Exit to system checks passed.
+The user also confirmed the Pi built successfully and the test run reported
+zero failures. Pi validation is complete for this checkpoint. These hardware
+results are user-reported; they were not independently run in this session.
