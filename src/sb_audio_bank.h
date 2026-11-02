@@ -4,6 +4,7 @@
 #include "sb_audio_triangle.h"
 #include "sb_audio_saw.h"
 #include "sb_audio_pulse.h"
+#include "sb_audio_filter.h"
 #define SB_AUDIO_BANK_VOICES 9u
 #define SB_AUDIO_SYNTH_GAIN (1.0 / SB_AUDIO_BANK_VOICES)
 #include "sb_audio_waveform.h"
@@ -14,6 +15,7 @@ typedef struct {
     uint32_t seeds[SB_AUDIO_BANK_VOICES]; /* Zero selects the slot's fixed default. */
     sb_audio_saw_t saw[SB_AUDIO_BANK_VOICES];
     sb_audio_pulse_t pulse[SB_AUDIO_BANK_VOICES];
+    sb_audio_filter_t filters[SB_AUDIO_BANK_VOICES];
     double retained_pitch[SB_AUDIO_BANK_VOICES]; /* Zero selects default 440 Hz. */
     double widths[SB_AUDIO_BANK_VOICES]; /* Zero selects default .5. */
     sb_audio_voice_kind_t kind[SB_AUDIO_BANK_VOICES];
@@ -60,6 +62,14 @@ bool sb_audio_bank_seed(sb_audio_bank_t *bank, unsigned voice, uint32_t seed);
 bool sb_audio_bank_pitch(sb_audio_bank_t *bank, unsigned voice, double frequency);
 bool sb_audio_bank_volume(sb_audio_bank_t *bank, unsigned voice, double volume);
 bool sb_audio_bank_pan(sb_audio_bank_t *bank, unsigned voice, double pan);
+/* One-pole low-pass after source blending, before ADSR/volume/pan.
+ * Cutoff 20..20000 Hz (default 2000), bypass true by default. Cutoff edits do
+ * not enable filtering. Live coefficient and dry/wet changes ramp 480 frames;
+ * idle edits are immediate. Same targets preserve deadlines. Active retrigger
+ * and waveform changes retain history; fresh notes clear it and settle ramps.
+ * Muted/bypassed active voices still advance history. Reset restores defaults. */
+bool sb_audio_bank_filter_cutoff(sb_audio_bank_t *bank, unsigned voice, double cutoff);
+bool sb_audio_bank_filter_bypass(sb_audio_bank_t *bank, unsigned voice, bool bypass);
 bool sb_audio_bank_note_off(sb_audio_bank_t *bank, unsigned voice);
 bool sb_audio_bank_stop(sb_audio_bank_t *bank, unsigned voice);
 bool sb_audio_bank_active(const sb_audio_bank_t *bank, unsigned voice);
