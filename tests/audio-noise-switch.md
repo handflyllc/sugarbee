@@ -22,7 +22,7 @@ unchanged, without queuing. Idle selection is silent. Lua remains deferred.
 
 Each voice remembers its last successfully requested pitched frequency, even
 while noise plays. A voice that has never received one uses 440 Hz. Bank reset
-restores that default. Valid active `pitch` calls accept finite 220–660 Hz and
+restores that default. Valid active `pitch` calls accept finite 110–880 Hz and
 update the stored value; on steady noise this makes no audible change. During a
 fade they also update whichever pitched source is still audible. Idle pitch
 calls remain rejected, matching the existing control contract.

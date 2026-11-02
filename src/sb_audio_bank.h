@@ -46,16 +46,16 @@ bool sb_audio_bank_note_on(sb_audio_bank_t *bank, unsigned voice, double frequen
  * Seed edits affect the next fresh noise start/transition; zero restores slot default. */
 bool sb_audio_bank_noise_on(sb_audio_bank_t *bank, unsigned voice);
 /* Saw starts at phase .5 when idle; active saw retrigger preserves phase.
- * Same 220..660 Hz range, ADSR/control semantics, and cross-type rejection. */
+ * Same 110..880 Hz range, ADSR/control semantics, and cross-type rejection. */
 bool sb_audio_bank_saw_on(sb_audio_bank_t *bank, unsigned voice, double frequency);
 /* Conditioned pulse: idle starts at phase zero with stored width (default .5).
- * Active retrigger preserves phase and width ramp. Pitch range 220..660 Hz.
+ * Active retrigger preserves phase and width ramp. Pitch range 110..880 Hz.
  * Width 0.05..0.95: active pulse ramps 10 ms; otherwise store for next pulse start.
  * Width persists across other waveform selections; reset restores default. */
 bool sb_audio_bank_pulse_on(sb_audio_bank_t *bank, unsigned voice, double frequency);
 bool sb_audio_bank_pulse_width(sb_audio_bank_t *bank, unsigned voice, double width);
 bool sb_audio_bank_seed(sb_audio_bank_t *bank, unsigned voice, uint32_t seed);
-/* Active voices only, finite 220..660 Hz. Updates retained pitch and any audible
+/* Active voices only, finite 110..880 Hz. Updates retained pitch and any audible
  * pitched source; during steady noise only the retained frequency changes. */
 bool sb_audio_bank_pitch(sb_audio_bank_t *bank, unsigned voice, double frequency);
 bool sb_audio_bank_volume(sb_audio_bank_t *bank, unsigned voice, double volume);

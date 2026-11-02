@@ -9,7 +9,7 @@ typedef struct {
     double phase, frequency;
 } sb_audio_saw_t;
 
-/* Reset to rising zero crossing (phase 0.5), with pitch 220..660 Hz inclusive.
+/* Reset to rising zero crossing (phase 0.5), with pitch 110..880 Hz inclusive.
  * Pitch edits preserve phase. Invalid/nonfinite requests return false unchanged.
  * Zero-initialized storage is unconfigured; reset is required before rendering.
  * Reset is not a fade; audible note lifecycle belongs to later integration. */

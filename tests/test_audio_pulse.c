@@ -42,7 +42,7 @@ int main(void) {
     CHECK(sb_audio_pulse_reset(&pulse, 440, SB_AUDIO_PULSE_DEFAULT_WIDTH));
     CHECK(pulse.phase == 0 && pulse.width == .5);
     copy = pulse;
-    const double bad_pitch[] = {0, 219.99, 660.01, NAN, INFINITY, -INFINITY};
+    const double bad_pitch[] = {0, 109.99, 880.01, NAN, INFINITY, -INFINITY};
     const double bad_width[] = {0, .04999, .95001, 1, NAN, INFINITY, -INFINITY};
     for (unsigned i = 0; i < sizeof(bad_pitch)/sizeof(bad_pitch[0]); ++i) {
         CHECK(!sb_audio_pulse_reset(&pulse, bad_pitch[i], .25));
@@ -77,8 +77,8 @@ int main(void) {
         CHECK(fabs(sentinel-values[i]) < 1e-6);
     }
     const double widths[] = {.05, .125, .25, .5, .75, .875, .95};
-    const double pitches[] = {220, 220.125, 440, 659.75, 660};
-    for (unsigned w = 0; w < 7; ++w) for (unsigned f = 0; f < 5; ++f) {
+    const double pitches[] = {110, 110.125, 220, 220.125, 440, 659.75, 660, 879.75, 880};
+    for (unsigned w = 0; w < 7; ++w) for (unsigned f = 0; f < sizeof(pitches)/sizeof(pitches[0]); ++f) {
         CHECK(sb_audio_pulse_reset(&pulse, pitches[f], widths[w]));
         copy = pulse;
         CHECK(sb_audio_pulse_render(&pulse, output, N));
@@ -99,7 +99,7 @@ int main(void) {
     }
     /* Dense phase grid covers both minimum-duty extremes at maximum pitch. */
     for (unsigned w = 0; w < 7; ++w) {
-        CHECK(sb_audio_pulse_reset(&pulse, 660, widths[w]));
+        CHECK(sb_audio_pulse_reset(&pulse, 880, widths[w]));
         for (unsigned i = 0; i < 10001; ++i) {
             pulse.phase = i/10001.0;
             CHECK(sb_audio_pulse_render(&pulse, &sentinel, 1));
@@ -107,9 +107,9 @@ int main(void) {
         }
     }
     /* Coherent records check DC independently of AC alias-reduction metrics. */
-    const unsigned bins[] = {39, 75, 111};
+    const unsigned bins[] = {19, 39, 75, 111, 149};
     const double spectral_widths[] = {.05, .25, .5, .75, .95};
-    for (unsigned f = 0; f < 3; ++f) for (unsigned w = 0; w < 5; ++w) {
+    for (unsigned f = 0; f < sizeof(bins)/sizeof(bins[0]); ++f) for (unsigned w = 0; w < 5; ++w) {
         unsigned bin = bins[f];
         double frequency = bin*48000.0/N, width = spectral_widths[w];
         CHECK(sb_audio_pulse_reset(&pulse, frequency, width));

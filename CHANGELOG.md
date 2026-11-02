@@ -2,6 +2,18 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Expanded native triangle, saw, pulse, and retained pitch to 110–880 Hz,
+  including fractional frequencies and unchanged rejection outside the range.
+  Reviewed pulse edge-motion/spacing bounds and increased its internal history
+  cap to accommodate valid high-pitch width ramps. Extended sample, spectral,
+  transition, headroom, and SDL checks; added `sbee-pitch-test` for listening.
+  Debug build and all 67 tests pass; the user confirmed desktop listening
+  performed as expected. On 2026-11-02 the user reported Pi audio, Pong/Pac-Man,
+  and Exit to system checks passed for the requested `ff61ef6` validation;
+  the user also confirmed a successful Pi build and zero test failures.
+  Pi validation is complete. Triangle remains direct
+  and non-band-limited; no Lua API, filter, gain, or voice-count changes.
+
 - Extended native waveform switching to noise, with fresh-entry seeds,
   stream-preserving retrigger, retained pitch (default 440 Hz), normal oscillator
   phase on return, and a frequency-free selected-noise start. Active noise pitch

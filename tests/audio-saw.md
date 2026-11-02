@@ -1,7 +1,7 @@
 # Standalone PolyBLEP saw
 
 This pure C component generates normalized mono saw samples at 48 kHz and
-accepts finite pitches from 220 through 660 Hz. The oscillator itself has no
+accepts finite pitches from 110 through 880 Hz. The oscillator itself has no
 envelope, volume, or diagnostic gain. Native bank/SDL integration is described
 below; Lua controls remain deferred. Existing listening tools are unchanged.
 
@@ -40,11 +40,11 @@ phase-preserving pitch updates, finite bounds, invalid requests, and identical
 output under different buffer partitions. A phase/pitch grid checks bounded
 output throughout the supported region.
 
-The spectral regression uses 8192-sample coherent records at 228.515625,
-439.453125, and 650.390625 Hz. It compares residual power outside the intended
+The spectral regression uses 8192-sample coherent records at 111.328125, 228.515625,
+439.453125, 650.390625, and 873.046875 Hz. It compares residual power outside the intended
 harmonic bins against the same-phase raw ramp. The corrected signal must reduce
 that unwanted power by at least 10 dB while keeping fundamental amplitude within
-1% of the raw signal and near the expected 2/pi. Desktop measurements were
+1% of the raw signal and near the expected 2/pi. Earlier desktop measurements at the three interior frequencies were
 16.21, 16.05, and 15.84 dB respectively. This prevents passing by merely reducing
 volume. The metric does not count alias components that coincide with intended
 harmonics and does not establish quality at all frequencies or during modulation.
@@ -64,7 +64,7 @@ one of the nine native slots. Idle start resets the saw phase to 0.5; active
 saw retrigger preserves phase, changes pitch, and attacks from the current level
 over the full new attack duration. This also applies during release or short
 stop, which retrigger cancels. Pitch-only changes preserve phase and envelope.
-The supported range remains 220–660 Hz; no pitch glide is added.
+The supported range remains 110–880 Hz; no pitch glide is added.
 
 Triangle, noise, and saw share ADSR, volume/pan smoothing, mute, release, and
 10 ms stop behavior. Muted saw notes still advance phase, as do release and stop

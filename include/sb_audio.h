@@ -22,7 +22,7 @@ void sb_audio_destroy(sb_audio_t *audio);
 bool sb_audio_start_test_tone(sb_audio_t *audio);
 bool sb_audio_test_tone_active(sb_audio_t *audio);
 
-/* Native prototype: 220--660 Hz, fixed attenuation 0.05. Configure validates all
+/* Native prototype: 110--880 Hz, fixed attenuation 0.05. Configure validates all
  * four ADSR fields before updating; current notes retain their captured values.
  * Start/retrigger preserves active phase and attacks from current level over
  * the full new attack time; it refuses a playing diagnostic sine tone.
@@ -66,17 +66,17 @@ bool sb_audio_voice_note_on(sb_audio_t *audio, unsigned voice, double frequency)
  * distinct fixed default. Idle note-on restarts the seed; active retrigger keeps
  * the sequence. Seed edits apply on the next fresh noise start/transition.
  * Type-specific note-ons reject active cross-type starts and all active fades. */
-/* Saw uses the same 220..660 Hz limits. Idle start resets phase to .5;
+/* Saw uses the same 110..880 Hz limits. Idle start resets phase to .5;
  * active saw retrigger/pitch changes preserve phase. Active type changes fail. */
 bool sb_audio_voice_saw_on(sb_audio_t *audio, unsigned voice, double frequency);
-/* DC-conditioned pulse, 220..660 Hz. Idle start resets phase to zero and uses
+/* DC-conditioned pulse, 110..880 Hz. Idle start resets phase to zero and uses
  * stored width (default .5); active retrigger preserves phase/width ramp.
  * Width 0.05..0.95 ramps 10 ms on active pulse; otherwise stored for next start. */
 bool sb_audio_voice_pulse_on(sb_audio_t *audio, unsigned voice, double frequency);
 bool sb_audio_voice_pulse_width(sb_audio_t *audio, unsigned voice, double width);
 bool sb_audio_voice_noise_on(sb_audio_t *audio, unsigned voice);
 bool sb_audio_voice_seed(sb_audio_t *audio, unsigned voice, uint32_t seed);
-/* Active voices: finite 220..660 Hz. On steady noise updates retained pitch
+/* Active voices: finite 110..880 Hz. On steady noise updates retained pitch
  * without changing its sound; during fades updates any audible pitched source. */
 bool sb_audio_voice_pitch(sb_audio_t *audio, unsigned voice, double frequency);
 bool sb_audio_voice_volume(sb_audio_t *audio, unsigned voice, double volume);

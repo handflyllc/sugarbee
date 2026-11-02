@@ -82,6 +82,12 @@ target_include_directories(sugarbee_synth PUBLIC "${PROJECT_SOURCE_DIR}/include"
 target_link_libraries(sugarbee_synth PRIVATE sugarbee_envelope sugarbee_noise sugarbee_saw sugarbee_pulse m)
 sugarbee_warnings(sugarbee_synth)
 if(BUILD_TESTING)
+    add_executable(test_audio_pitch_range tests/test_audio_pitch_range.c)
+    target_link_libraries(test_audio_pitch_range PRIVATE sugarbee_synth)
+    sugarbee_warnings(test_audio_pitch_range)
+    add_test(NAME audio_pitch_range COMMAND test_audio_pitch_range)
+    set_tests_properties(audio_pitch_range PROPERTIES TIMEOUT 10)
+
     add_executable(test_audio_noise_switch tests/test_audio_noise_switch.c)
     target_link_libraries(test_audio_noise_switch PRIVATE sugarbee_synth)
     sugarbee_warnings(test_audio_noise_switch)
@@ -161,6 +167,10 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sugarbee_audio PRIVATE sugarbee_synth PkgConfig::SDL2 m)
     sugarbee_warnings(sugarbee_audio)
 
+    add_executable(sbee-pitch-test tools/sbee-pitch-test.c)
+    target_link_libraries(sbee-pitch-test PRIVATE sugarbee_audio PkgConfig::SDL2)
+    sugarbee_warnings(sbee-pitch-test)
+
     add_executable(sbee-noise-switch-test tools/sbee-noise-switch-test.c)
     target_link_libraries(sbee-noise-switch-test PRIVATE sugarbee_audio PkgConfig::SDL2)
     sugarbee_warnings(sbee-noise-switch-test)
@@ -223,6 +233,10 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     target_link_libraries(test_audio_bank_sdl PRIVATE sugarbee_synth PkgConfig::SDL2 m)
     sugarbee_warnings(test_audio_bank_sdl)
     add_test(NAME audio_bank_sdl COMMAND test_audio_bank_sdl)
+    add_test(NAME audio_pitch_output COMMAND sbee-pitch-test)
+    set_tests_properties(audio_pitch_output PROPERTIES TIMEOUT 30
+        ENVIRONMENT "SDL_AUDIODRIVER=dummy")
+
     add_test(NAME audio_noise_switch_output COMMAND sbee-noise-switch-test)
     set_tests_properties(audio_noise_switch_output PROPERTIES TIMEOUT 30
         ENVIRONMENT "SDL_AUDIODRIVER=dummy")

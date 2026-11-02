@@ -55,7 +55,7 @@ retrigger/restart. It has a five-second external timeout.
 ten-second timeout. Existing triangle and host tests remain in the full suite.
 These tests establish generated samples and control behavior, not audibility.
 
-The voice still uses a direct, non-band-limited triangle at 220–660 Hz. Multiple
+The voice still uses a direct, non-band-limited triangle at 110–880 Hz. Multiple
 voices, Lua controls, filters, other waveforms, and WAV playback remain deferred.
 
 ## Pi output observation

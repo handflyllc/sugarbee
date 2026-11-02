@@ -19,8 +19,8 @@ int main(void) {
     CHECK(!sb_audio_pulse_render_conditioned(&pulse, &sentinel, SIZE_MAX/sizeof(float)+1));
     CHECK(memcmp(&pulse, &copy, sizeof(pulse)) == 0 && sentinel == 123);
     const double widths[] = {.05, .25, .5, .75, .95};
-    const unsigned bins[] = {39, 75, 111};
-    for (unsigned f = 0; f < 3; ++f) {
+    const unsigned bins[] = {19, 39, 75, 111, 149};
+    for (unsigned f = 0; f < sizeof(bins)/sizeof(bins[0]); ++f) {
         for (unsigned w = 0; w < 5; ++w) {
             CHECK(sb_audio_pulse_reset(&pulse, bins[f]*48000.0/N, widths[w]));
             reference = pulse;
@@ -40,8 +40,8 @@ int main(void) {
     }
     /* Compare paired states sample by sample through full ramps and reversals.
      * This catches use of target/next width instead of the rendered width. */
-    const double frequencies[] = {220, 440, 660};
-    for (unsigned f = 0; f < 3; ++f) {
+    const double frequencies[] = {110, 110.125, 220, 440, 660, 879.75, 880};
+    for (unsigned f = 0; f < sizeof(frequencies)/sizeof(frequencies[0]); ++f) {
         CHECK(sb_audio_pulse_reset(&pulse, frequencies[f], .05));
         reference = pulse;
         for (unsigned run = 0; run < 12; ++run) {

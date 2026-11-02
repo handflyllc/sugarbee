@@ -131,7 +131,7 @@ static void set_source_pitch(sb_audio_bank_t *bank, unsigned slot, sb_audio_voic
 bool sb_audio_bank_pitch(sb_audio_bank_t *bank, unsigned voice, double frequency) {
     sb_audio_triangle_t *v = voice_at(bank, voice);
     if (!v || !v->active ||
-        !isfinite(frequency) || frequency < 220 || frequency > 660) return false;
+        !isfinite(frequency) || frequency < 110 || frequency > 880) return false;
     unsigned slot = voice-1;
     bank->retained_pitch[slot] = frequency;
     set_source_pitch(bank, slot, bank->kind[slot], frequency);
@@ -145,7 +145,7 @@ bool sb_audio_bank_start_selected(sb_audio_bank_t *bank, unsigned voice, double 
         bank->destination[voice-1] : bank->kind[voice-1];
     if (!pitched(selected)) return false;
     if (bank->switch_left[voice-1]) {
-        if (!isfinite(frequency) || frequency < 220 || frequency > 660) return false;
+        if (!isfinite(frequency) || frequency < 110 || frequency > 880) return false;
         if (!sb_audio_voice_start(v)) return false;
         return sb_audio_bank_pitch(bank, voice, frequency);
     }

@@ -3,19 +3,23 @@
 #include <stdint.h>
 
 static bool valid_frequency(double frequency) {
-    return isfinite(frequency) && frequency >= 220.0 && frequency <= 660.0;
+    return isfinite(frequency) && frequency >= 110.0 && frequency <= 880.0;
 }
 static bool valid_width(double width) {
     return isfinite(width) && width >= .05 && width <= .95;
 }
+/* At 110..880 Hz, step is 0.0022917..0.0183334. Width velocity is
+ * bounded by 0.9/480 = 0.001875, so falling motion stays positive and below
+ * 0.020209. Require each stored interval below half the minimum edge spacing
+ * (0.05/2): even across pitch edits the two correction regions stay disjoint. */
 static bool valid_state(const sb_audio_pulse_t *pulse) {
     return pulse && valid_frequency(pulse->frequency) && valid_width(pulse->width) &&
            isfinite(pulse->phase) && pulse->phase >= 0 && pulse->phase < 1 &&
            valid_width(pulse->width_from) && valid_width(pulse->width_target) &&
            pulse->width_left <= SB_AUDIO_PULSE_WIDTH_FRAMES &&
-           isfinite(pulse->previous_step) && pulse->previous_step > 0 && pulse->previous_step < .02 &&
+           isfinite(pulse->previous_step) && pulse->previous_step > 0 && pulse->previous_step < .025 &&
            isfinite(pulse->previous_falling_step) && pulse->previous_falling_step > 0 &&
-           pulse->previous_falling_step < .02;
+           pulse->previous_falling_step < .025;
 }
 bool sb_audio_pulse_reset(sb_audio_pulse_t *pulse, double frequency, double width) {
     if (!pulse || !valid_frequency(frequency) || !valid_width(width)) return false;

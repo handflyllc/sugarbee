@@ -1,6 +1,6 @@
 # PolyBLEP pulse
 
-The pure C mono oscillator runs at 48 kHz, with finite pitch 220–660 Hz and
+The pure C mono oscillator runs at 48 kHz, with finite pitch 110–880 Hz and
 pulse width 0.05–0.95. Width is the high fraction of each cycle. The default
 width constant is 0.5 (square wave). Reset supplies the initial width. Live edits ramp over 480 samples (10 ms);
 native bank/SDL integration and a listening executable are described below.
@@ -49,7 +49,8 @@ width and pitch boundaries, finite bounded output, invalid requests, pitch-only
 phase preservation, and render partition independence. A phase grid at maximum
 pitch covers widths including both narrow-duty extremes.
 
-Coherent 8192-sample records at 228.515625, 439.453125, and 650.390625 Hz test
+Coherent 8192-sample records at 111.328125, 228.515625, 439.453125,
+650.390625, and 873.046875 Hz test
 widths 0.05, 0.25, 0.5, 0.75, and 0.95. Their mean must be within 1e-5 of the
 expected DC value. A separate AC metric removes DC and intended harmonic-bin
 power, then compares remaining power with an uncorrected pulse. At least 10 dB
@@ -115,7 +116,7 @@ copies to compare raw and conditioned versions of the same samples. There is no
 DC-blocking filter state, allocation, envelope, or live output-mode crossfade.
 Do not alternate render modes expecting a click-free transition.
 
-`audio_pulse_dc` checks coherent settled means across five widths and three
+`audio_pulse_dc` checks coherent settled means across five widths and five
 pitches, raw-output preservation, square amplitude, same-sample conditioning
 during full ramps and reversals, bounds, render partition independence, reset
 replay, and invalid/zero-length requests. It does not require zero average over
@@ -124,7 +125,7 @@ short transition windows or claim audible validation.
 ## Native bank and SDL integration
 
 `sb_audio_bank_pulse_on` / `sb_audio_voice_pulse_on` start or retrigger a pulse
-in an explicit slot 1–9, at 220–660 Hz. Idle starts reset phase to zero and apply
+in an explicit slot 1–9, at 110–880 Hz. Idle starts reset phase to zero and apply
 the stored width (default 0.5). Active pulse retriggers preserve phase and width
 ramp, including release/short-stop retriggers. Starting a different waveform in
 an active slot is rejected without mutation; idle slots may change type.
@@ -178,3 +179,7 @@ not latency measurements or evidence that audio caused the delay.
 Explicit triangle/saw/pulse selection is now available separately from the
 existing type-specific note-ons. See the [waveform switching contract](audio-waveform.md);
 noise transitions are covered in [noise transition checks](audio-noise-switch.md).
+
+The expanded 110–880 Hz checkpoint also covers moving-width references at
+117.1875 and 867.1875 Hz. See [pitch range](audio-pitch-range.md) for the
+interval bounds and validation status.
