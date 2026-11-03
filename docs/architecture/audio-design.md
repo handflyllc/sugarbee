@@ -1,10 +1,10 @@
 # SugarBee audio — settled initial design
 
-Status reconciled with the implementation on 2026-11-02. The initial design was
+Status reconciled with the implementation on 2026-11-03. The initial design was
 settled on 2026-10-18; implementation decisions below refine that design.
-This document separates the current native implementation from the planned Lua
-API and remaining synthesis/WAV work. Illustrative Lua calls are not available
-APIs. Historical checkpoint notes at the end describe their state at the time,
+This document separates the current native/Lua synth implementation from
+remaining synthesis/WAV work. The current Lua contract is in
+[the audio API](../api/audio.md); later WAV/mixer examples remain planned. Historical checkpoint notes at the end describe their state at the time,
 not current limitations.
 
 ## Current implementation
@@ -12,7 +12,7 @@ not current limitations.
 | Area | Implemented now | Still pending |
 | --- | --- | --- |
 | Output | Host-owned SDL2 device, 48 kHz float stereo, silent fallback, clean close | Live failure detection/reconnection, measured end-to-end latency |
-| Voice bank | Nine explicit native slots, triangle, white noise, saw, or pulse, independent state; 10 ms transitions including noise | Broader pitch and Lua integration |
+| Voice bank | Nine explicit native slots, triangle, white noise, saw, or pulse, independent state; 10 ms transitions including noise | Broader pitch |
 | Triangle | Direct waveform, 110–880 Hz, phase-preserving pitch/retrigger | Aliasing control and broader supported pitch range |
 | Saw | PolyBLEP, 110–880 Hz, native bank/SDL integration and automated checks | Broader pitch |
 | Pulse | Bank/SDL PolyBLEP, 110–880 Hz, width 0.05–0.95, default 0.5, 10 ms ramps, explicit DC conditioning | Broader pitch |
@@ -21,7 +21,7 @@ not current limitations.
 | Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Group/master controls |
 | Filter | Per-voice one-pole low-pass/bypass, 20–20,000 Hz cutoff, 10 ms coefficient/bypass ramps | Resonance deferred |
 | Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
-| Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables | Lua audio API |
+| Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables, minimal Lua synth API and basic Synth Lab | Musical lab follow-up |
 | WAV | Design only | Decoder, bounded asset storage, playback voices, Lua controls |
 
 Current bank diagnostic attenuation is separately 0.790569415, chosen for
@@ -64,44 +64,21 @@ External tools may eventually author compositions targeting SugarBee.
 - Evaluate twelve or more voices later through performance and listening tests,
   including Raspberry Pi 4 testing. No expanded capacity is promised.
 
-## Planned Lua API shape — not implemented
+## Lua synth API — implemented and validated on desktop/Pi
 
-Use a dedicated synthesis namespace, numbered voices 1 through 9, and table-based
-configuration. Voice numbers are independent of input-player slots and sample
-playback voices.
+The first checkpoint exposes `configure`, `note_on`, `note_off`, and `stop`
+under `sugarbee.synth`, with numbered voices 1–9 and partial table configuration.
+See [audio API](../api/audio.md) for exact arguments, defaults, and results.
+The adapter validates the complete request before native mutation. A single
+locked native transaction publishes all settings or rejects them unchanged.
+Configuration remains usable without output; playback reports unavailability.
 
-```lua
-sugarbee.synth.configure(1, {
-    waveform = "pulse",
-    pulse_width = 0.5,
-    attack = 0.01,
-    decay = 0.12,
-    sustain = 0.6,
-    release = 0.25,
-    volume = 0.7,
-    pan = -0.5,
-    filter = {
-        mode = "lowpass",
-        cutoff = 1800,
-        resonance = 0.3
-    }
-})
-
-sugarbee.synth.note_on(1, 440)
-sugarbee.synth.set_pitch(1, 660)
-sugarbee.synth.set_pan(1, 0.5)
-sugarbee.synth.set_volume(1, 0.4)
-sugarbee.synth.set_filter(1, { cutoff = 700 })
-sugarbee.synth.note_off(1)
-sugarbee.synth.stop(1)
-```
-
-Configuration updates only supplied fields, including fields in nested tables.
-Validate the entire request before changing anything. Invalid values and unknown
-fields reject the entire request, with a diagnostic identifying the voice, field,
-and problem. Configuration changes do not implicitly start or retrigger a note.
-Out-of-range values are rejected rather than silently clamped. Exact synth
-error-delivery and success-return semantics remain to be finalized.
+No separate setters, seed control, availability query, resonance, or WAV binding
+are included. A basic [Synth Lab](../../examples/synth-lab/README.md) exercises
+real cartridge calls. The accepted follow-up is a short public-domain musical
+passage (candidate: Mozart's Eine kleine Nachtmusik), using a Lua pitch/duration
+sequence and update timing. Verify the score source before transcribing. Start
+with melody; accompaniment is optional. No tracker or music-file format.
 
 ## Current native voice lifecycle
 
@@ -128,19 +105,19 @@ error-delivery and success-return semantics remain to be finalized.
 - Idle slots can start any implemented type. Active cross-type starts are
   rejected. Noise has a separate frequency-free note-on and rejects pitch edits.
 - Bank reset cancels notes and restores defaults; it is cleanup, not a fade.
-  Normal host startup remains silent; cartridges cannot request audio yet.
+  Normal host startup remains silent; cartridges request notes explicitly.
 
-## Target voice lifecycle — remaining API work
+## Voice lifecycle contract
 
-These Lua-facing behaviors include already implemented native foundations and
-features still to be added. Current native restrictions above remain in force.
+The minimal Lua API uses the native foundations. Separate pitch-only setters
+remain deferred; current native restrictions above remain in force.
 
 
 - Every voice starts silent with predictable settings.
 - `note_on` starts the requested frequency in hertz. On an already sounding voice,
   it replaces the pitch and retriggers the envelope using the current-level,
-  full-attack-duration rule implemented natively. The Lua noise call shape
-  must be reconciled with the current frequency-free white-noise operation.
+  full-attack-duration rule implemented natively. Noise uses `note_on(voice)`
+  with no frequency.
 - `set_pitch` changes frequency without retriggering the envelope.
 - Each `note_on` captures attack, decay, sustain, and release settings for that
   note, including its later release. Envelope configuration edits apply to the
@@ -328,7 +305,7 @@ Implemented now: startup failure permits silent gameplay with one diagnostic;
 the host retains the device across cartridge sessions and closes it after
 eligible Lua shutdown on host exit. Native control calls return false when
 audio is unavailable. Device access is serialized with SDL locking. There is
-no Lua audio query, WAV loading, or cartridge-generated audio yet.
+no Lua audio query or WAV loading. Minimal Lua synth controls are implemented.
 
 Native cartridge lifecycle is implemented: fresh default banks on launch,
 10 ms pause fade followed by complete bank freeze, and 10 ms resume fade.
@@ -400,11 +377,13 @@ filter gain handling, and combined-output attenuation remain to be specified. A 
   on desktop/Pi. Measure quality before expanding pitch ranges.
 - Native switching including noise is validated on desktop/Pi.
   White noise versus any future rate-controlled noise API.
-- Validate the simple native low-pass through desktop listening and Pi checks.
-  Resonance and other filter modes are deferred, not requirements for Lua work.
-- Lua result/error contracts, configuration atomicity, and noise call/seed shape.
-  Native controls already synchronize with the callback through SDL device locks.
-- Cartridge voice ownership, pause/resume, Guru recovery, and bounded teardown.
+- Simple low-pass desktop/Pi validation is complete. Resonance and other filter
+  modes remain deferred.
+- Lua result/error contracts, atomic configuration, and noise call shape are
+  implemented; seed exposure remains deferred.
+  The minimal Lua contract is now implemented; desktop and Pi validation passed per the user at `7f28fbd`.
+- Cartridge voice ownership, pause/resume, Guru recovery, and bounded teardown
+  are implemented and validated.
 - Group/master controls, WAV balance, combined headroom, final clamp, and clipping
   diagnostic access/reset rules.
 - WAV decoding, asset/playback handles, validation/refusal precedence, stopping
@@ -432,8 +411,9 @@ The user also confirmed a successful Pi build and zero test failures at
 3. Simple per-voice one-pole low-pass/bypass is implemented; desktop listening
    and Pi validation passed per the user at `4b64455`. No resonance or further filter modes in this checkpoint.
 4. Cartridge audio lifecycle (desktop and Pi validated at `5cf471b`),
-   then minimal Lua controls for validated features as a separate checkpoint.
-5. A small Synth Lab, then a narrow Pong Lab audio update: one short wall-hit
+   then minimal Lua controls (desktop/Pi validated at `7f28fbd`).
+5. Basic Synth Lab (implemented), then a short public-domain musical lab,
+   then a narrow Pong Lab audio update: one short wall-hit
    blip and a distinguishable paddle-reflection blip. Keep gameplay unchanged;
    this is an API-use/acceptance exercise, not a soundtrack or game redesign.
 6. Bounded WAV playback as a separate milestone.

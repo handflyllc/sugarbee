@@ -403,3 +403,29 @@ void sb_audio_session_prepare_shutdown(sb_audio_t *audio) {
     }
     SDL_UnlockAudioDevice(audio->device);
 }
+
+sb_audio_voice_settings_t sb_audio_voice_defaults(void) {
+    return (sb_audio_voice_settings_t){SB_AUDIO_VOICE_TRIANGLE,
+        .01, .1, .7, .15, .5, 0, .5, 2000, true};
+}
+bool sb_audio_voice_apply_settings(sb_audio_t *audio, unsigned voice,
+                          const sb_audio_voice_settings_t *settings) {
+    if (!audio || !settings) return false;
+    SDL_LockAudioDevice(audio->device);
+    /* Fixed-size scratch copy: validate every operation before publishing it.
+     * No Lua call, allocation, or error transfer occurs while locked. */
+    sb_audio_bank_t next = audio->bank;
+    sb_envelope_settings_t envelope = {settings->attack, settings->decay,
+                                       settings->sustain, settings->release};
+    bool ok = bank_controls_allowed(audio) &&
+        sb_audio_bank_configure(&next,voice,&envelope) &&
+        sb_audio_bank_volume(&next,voice,settings->volume) &&
+        sb_audio_bank_pan(&next,voice,settings->pan) &&
+        sb_audio_bank_pulse_width(&next,voice,settings->pulse_width) &&
+        sb_audio_bank_filter_cutoff(&next,voice,settings->cutoff) &&
+        sb_audio_bank_filter_bypass(&next,voice,settings->bypass) &&
+        sb_audio_bank_waveform(&next,voice,settings->waveform);
+    if (ok) audio->bank = next;
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}

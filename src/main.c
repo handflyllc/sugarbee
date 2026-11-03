@@ -30,6 +30,7 @@
 #include "sb_timing.h"
 #include "sb_save.h"
 #include "sb_audio.h"
+#include "sb_lua_synth.h"
 
 #define SB_LAUNCHER_MAX_CARTRIDGES 64
 #define SB_LAUNCHER_PATH_SIZE 4096
@@ -505,6 +506,7 @@ void register_sugarbee_api(lua_State* L) {
     lua_pushcfunction(L, l_sugarbee_btnp);  lua_setfield(L, -2, "btnp");
     lua_pushcfunction(L, l_sugarbee_save); lua_setfield(L, -2, "save");
     lua_pushcfunction(L, l_sugarbee_load_save); lua_setfield(L, -2, "load_save");
+    sb_lua_synth_register(L, g_engine.audio);
     lua_setglobal(L, "sugarbee");
 }
 

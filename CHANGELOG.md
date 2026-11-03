@@ -2,6 +2,16 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added minimal `sugarbee.synth` Lua controls: partial atomic configuration,
+  selected pitched/noise note-on, note-off, and stop. Strict validation precedes
+  native changes; unavailable output permits configuration and silent gameplay.
+  Added the basic interactive Synth Lab and Lua/real-cartridge regressions.
+  Debug build and all 75 tests pass. On 2026-11-03 the user confirmed all desktop
+  sound checks, exit, and relaunch passed. Pi validation passed at `7f28fbd`
+  per the user: sound controls, pause/resume, exit/relaunch, Pong/Pac-Man,
+  Exit to system status 0, and zero test failures. Musical Synth Lab remains
+  an accepted follow-up; no separate setters, WAV, or music-file format.
+
 - Added native cartridge audio lifecycle: fresh default banks, 10 ms pause/resume
   fades with complete bank freeze at silence, failure rejection and cleanup,
   and bounded teardown after eligible shutdown. Paused shutdown stays silent;

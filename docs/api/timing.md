@@ -169,8 +169,7 @@ Each cartridge starts with a silent bank and default settings. Guru failure
 rejects bank commands immediately, fades out, and clears the bank. Eligible
 `shutdown()` retains native audio access; shutdown from pause stays silent.
 Native cleanup then clears audio immediately without waiting for notes or a fade
-to finish. The host keeps its audio device for the next cartridge. There are no
-Lua audio bindings yet. See [session checks](../../tests/audio-session.md).
+to finish. The host keeps its audio device for the next cartridge. Cartridges use the [Lua synth API](audio.md). See [session checks](../../tests/audio-session.md).
 
 ## Input at update boundaries
 

@@ -33,6 +33,19 @@ void sb_audio_session_end(sb_audio_t *audio);
  * command availability and state until End. Running sessions remain audible. */
 void sb_audio_session_prepare_shutdown(sb_audio_t *audio);
 
+/* Complete synth settings, used for atomic language-adapter updates. */
+typedef struct {
+    sb_audio_voice_kind_t waveform;
+    double attack, decay, sustain, release;
+    double volume, pan, pulse_width, cutoff;
+    bool bypass;
+} sb_audio_voice_settings_t;
+sb_audio_voice_settings_t sb_audio_voice_defaults(void);
+/* Validate/apply all fields under one device lock. Failure changes nothing,
+ * including when a conflicting waveform transition is in progress. */
+bool sb_audio_voice_apply_settings(sb_audio_t *audio, unsigned voice,
+                          const sb_audio_voice_settings_t *settings);
+
 /* Native diagnostic only: request one quiet, one-second 440 Hz tone.
  * False if unavailable or already active (does not restart). Call on the host
  * control thread, never in the audio callback. Normal host never requests it. */
