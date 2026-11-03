@@ -38,8 +38,11 @@ verify execution, not audible quality. Development Debug build completed without
 compiler warnings on 2026-11-03; all 75 automated tests passed.
 
 Desktop acceptance (2026-11-03), user-reported for the implementation based on
-`240a4f0`: all sound checks passed, with successful exit and relaunch. Pi
-validation is pending; record its results against the implementation commit.
+`240a4f0`: all sound checks passed, with successful exit and relaunch.
+
+Pi acceptance (2026-11-03), user-reported at `7f28fbd`: sound controls, pause,
+resume, exit, relaunch, and Pong/Pac-Man passed. Exit to system returned 0;
+the test suite reported zero failures. Desktop and Pi validation are complete.
 
 The lab currently uses one voice. Regression tests cover independent voices and
 API rejection paths. A musical lab with a short public-domain passage is the

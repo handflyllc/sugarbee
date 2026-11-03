@@ -21,7 +21,7 @@ not current limitations.
 | Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Group/master controls |
 | Filter | Per-voice one-pole low-pass/bypass, 20–20,000 Hz cutoff, 10 ms coefficient/bypass ramps | Resonance deferred |
 | Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
-| Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables, minimal Lua synth API and basic Synth Lab | Lua checkpoint Pi validation |
+| Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables, minimal Lua synth API and basic Synth Lab | Musical lab follow-up |
 | WAV | Design only | Decoder, bounded asset storage, playback voices, Lua controls |
 
 Current bank diagnostic attenuation is separately 0.790569415, chosen for
@@ -64,7 +64,7 @@ External tools may eventually author compositions targeting SugarBee.
 - Evaluate twelve or more voices later through performance and listening tests,
   including Raspberry Pi 4 testing. No expanded capacity is promised.
 
-## Lua synth API — implemented, desktop accepted; Pi validation pending
+## Lua synth API — implemented and validated on desktop/Pi
 
 The first checkpoint exposes `configure`, `note_on`, `note_off`, and `stop`
 under `sugarbee.synth`, with numbered voices 1–9 and partial table configuration.
@@ -381,7 +381,7 @@ filter gain handling, and combined-output attenuation remain to be specified. A 
   modes remain deferred.
 - Lua result/error contracts, atomic configuration, and noise call shape are
   implemented; seed exposure remains deferred.
-  The minimal Lua contract is now implemented; desktop sound checks passed per the user; Pi validation is pending.
+  The minimal Lua contract is now implemented; desktop and Pi validation passed per the user at `7f28fbd`.
 - Cartridge voice ownership, pause/resume, Guru recovery, and bounded teardown
   are implemented and validated.
 - Group/master controls, WAV balance, combined headroom, final clamp, and clipping
@@ -411,7 +411,7 @@ The user also confirmed a successful Pi build and zero test failures at
 3. Simple per-voice one-pole low-pass/bypass is implemented; desktop listening
    and Pi validation passed per the user at `4b64455`. No resonance or further filter modes in this checkpoint.
 4. Cartridge audio lifecycle (desktop and Pi validated at `5cf471b`),
-   then minimal Lua controls (implemented; desktop accepted; Pi pending).
+   then minimal Lua controls (desktop/Pi validated at `7f28fbd`).
 5. Basic Synth Lab (implemented), then a short public-domain musical lab,
    then a narrow Pong Lab audio update: one short wall-hit
    blip and a distinguishable paddle-reflection blip. Keep gameplay unchanged;

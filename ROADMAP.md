@@ -14,7 +14,7 @@ callbacks, a host pause/exit menu, and cartridge discovery and launching.
 Invaders Lab, Pong Lab, and the Pac-Man demo help exercise the engine.
 The launcher has passed desktop and Raspberry Pi checks.
 
-Designed, implemented, and validated are separate states. In particular, native synth audio is implemented; minimal Lua synth controls are implemented, desktop accepted, awaiting Pi validation. Execution limits are
+Designed, implemented, and validated are separate states. In particular, native synth audio is implemented; minimal Lua synth controls are implemented, validated on desktop and Pi. Execution limits are
 implemented and validated on desktop and Pi for the documented accidental-loop
 cases. The budgets remain provisional, with explicit coverage limitations.
 
@@ -203,7 +203,8 @@ desktop session listening and Pong/Pac-Man checks passed per the user. Pi
 validation passed at `5cf471b` on 2026-11-03 per the user: audio and Pong/Pac-Man
 checks, Exit to system status 0, and zero test failures. See
 [session checks](tests/audio-session.md). Minimal Lua controls and the basic Synth Lab are implemented; desktop sound checks, exit, and relaunch passed per the user on
-2026-11-03. Pi validation is pending. See [audio API](docs/api/audio.md). Resonance and additional
+2026-11-03. Pi validation passed at `7f28fbd` per the user: sound controls,
+pause/resume, exit/relaunch, Pong/Pac-Man, Exit to system 0, and zero test failures. See [audio API](docs/api/audio.md). Resonance and additional
 synthesis features are deferred unless a practical game need justifies them.
 
 After validating the basic Synth Lab, the accepted follow-up is a few measures
