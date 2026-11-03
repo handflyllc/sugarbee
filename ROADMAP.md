@@ -207,11 +207,15 @@ checks, Exit to system status 0, and zero test failures. See
 pause/resume, exit/relaunch, Pong/Pac-Man, Exit to system 0, and zero test failures. See [audio API](docs/api/audio.md). Resonance and additional
 synthesis features are deferred unless a practical game need justifies them.
 
-After validating the basic Synth Lab, the accepted follow-up is a few measures
-of public-domain music (candidate: Eine kleine Nachtmusik), using a small Lua
-note/duration table and update-driven sequencer. Verify the score source before
-transcription; begin with melody and optional simple accompaniment. No tracker
-or music-file format. Then add two short Pong sounds: one on a wall hit and a
+The musical follow-up is implemented as a separate
+[Musical Synth Lab](examples/musical-synth-lab/README.md): the opening four bars
+of Eine kleine Nachtmusik, melody only one octave lower, from a verified
+public-domain Mutopia score. A small Lua note/duration table and update-driven
+timeline use the existing API. Desktop listening and Pi validation are complete per the user (2026-11-03):
+Pi commit `683badf` passed playback/lifecycle checks, Pong/Pac-Man, Exit to
+system 0, and all 79 tests;
+no tracker, accompaniment, or music-file format. After validation, the next
+planned game exercise is two short Pong sounds: one on a wall hit and a
 different one on paddle reflection. Preserve gameplay; use this narrow exercise
 to validate the audio API in an existing cartridge. Bounded WAV playback follows
 as a separate milestone. No composition format or music-authoring system is added.
