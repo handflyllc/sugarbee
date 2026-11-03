@@ -217,9 +217,15 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sbee-audio-test PRIVATE sugarbee_audio PkgConfig::SDL2)
     sugarbee_warnings(sbee-audio-test)
 
+    add_library(sugarbee_lua_synth STATIC src/sb_lua_synth.c)
+    target_include_directories(sugarbee_lua_synth PUBLIC "${PROJECT_SOURCE_DIR}/include")
+    target_link_libraries(sugarbee_lua_synth PUBLIC sugarbee_audio PkgConfig::LUA54)
+    sugarbee_warnings(sugarbee_lua_synth)
+
     add_executable(sugarbee src/main.c)
     target_link_libraries(sugarbee PRIVATE
         sugarbee_save
+        sugarbee_lua_synth
         sugarbee_audio
         sugarbee_graphics
         sugarbee_input
@@ -308,6 +314,26 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     add_test(NAME audio_tone_output COMMAND sbee-audio-test)
     set_tests_properties(audio_tone_output PROPERTIES TIMEOUT 10
         ENVIRONMENT "SDL_AUDIODRIVER=dummy")
+
+    add_executable(test_lua_synth tests/test_lua_synth.c)
+    target_link_libraries(test_lua_synth PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    sugarbee_warnings(test_lua_synth)
+    add_test(NAME lua_synth COMMAND test_lua_synth)
+    set_tests_properties(lua_synth PROPERTIES TIMEOUT 5 ENVIRONMENT "SDL_AUDIODRIVER=dummy")
+
+    if(SUGARBEE_BUILD_PACKER)
+        add_test(NAME synth_lab_pack COMMAND sbee-pack
+            -i "${PROJECT_SOURCE_DIR}/examples/synth-lab"
+            -o "${CMAKE_CURRENT_BINARY_DIR}/synth-lab-test.vcart" -t "Synth Lab"
+            --uuid 5f5040f9-6d44-485d-a923-f977d76cd2de)
+        set_tests_properties(synth_lab_pack PROPERTIES FIXTURES_SETUP synth_lab TIMEOUT 5)
+        foreach(mode IN ITEMS audible unavailable)
+            add_test(NAME synth_lab_${mode} COMMAND test_lua_synth
+                "${CMAKE_CURRENT_BINARY_DIR}/synth-lab-test.vcart" $<$<STREQUAL:${mode},unavailable>:unavailable>)
+            set_tests_properties(synth_lab_${mode} PROPERTIES FIXTURES_REQUIRED synth_lab
+                TIMEOUT 5 ENVIRONMENT "SDL_AUDIODRIVER=dummy;SDL_VIDEODRIVER=dummy")
+        endforeach()
+    endif()
 
     add_executable(test_audio_host tests/test_audio_host.c)
     target_link_libraries(test_audio_host PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})

@@ -14,7 +14,7 @@ callbacks, a host pause/exit menu, and cartridge discovery and launching.
 Invaders Lab, Pong Lab, and the Pac-Man demo help exercise the engine.
 The launcher has passed desktop and Raspberry Pi checks.
 
-Designed, implemented, and validated are separate states. In particular, native synth audio is implemented; Lua audio controls remain pending. Execution limits are
+Designed, implemented, and validated are separate states. In particular, native synth audio is implemented; minimal Lua synth controls are implemented, desktop accepted, awaiting Pi validation. Execution limits are
 implemented and validated on desktop and Pi for the documented accidental-loop
 cases. The budgets remain provisional, with explicit coverage limitations.
 
@@ -202,11 +202,15 @@ implemented with pause/freeze/resume, failure rejection, and teardown checks;
 desktop session listening and Pong/Pac-Man checks passed per the user. Pi
 validation passed at `5cf471b` on 2026-11-03 per the user: audio and Pong/Pac-Man
 checks, Exit to system status 0, and zero test failures. See
-[session checks](tests/audio-session.md). Minimal Lua controls remain the next
-separate checkpoint. Resonance and additional
+[session checks](tests/audio-session.md). Minimal Lua controls and the basic Synth Lab are implemented; desktop sound checks, exit, and relaunch passed per the user on
+2026-11-03. Pi validation is pending. See [audio API](docs/api/audio.md). Resonance and additional
 synthesis features are deferred unless a practical game need justifies them.
 
-After a small Synth Lab, add two short Pong sounds: one on a wall hit and a
+After validating the basic Synth Lab, the accepted follow-up is a few measures
+of public-domain music (candidate: Eine kleine Nachtmusik), using a small Lua
+note/duration table and update-driven sequencer. Verify the score source before
+transcription; begin with melody and optional simple accompaniment. No tracker
+or music-file format. Then add two short Pong sounds: one on a wall hit and a
 different one on paddle reflection. Preserve gameplay; use this narrow exercise
 to validate the audio API in an existing cartridge. Bounded WAV playback follows
 as a separate milestone. No composition format or music-authoring system is added.
