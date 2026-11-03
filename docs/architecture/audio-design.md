@@ -1,6 +1,6 @@
 # SugarBee audio — settled initial design
 
-Status reconciled with the implementation on 2026-11-01. The initial design was
+Status reconciled with the implementation on 2026-11-02. The initial design was
 settled on 2026-10-18; implementation decisions below refine that design.
 This document separates the current native implementation from the planned Lua
 API and remaining synthesis/WAV work. Illustrative Lua calls are not available
@@ -18,7 +18,8 @@ not current limitations.
 | Pulse | Bank/SDL PolyBLEP, 110–880 Hz, width 0.05–0.95, default 0.5, 10 ms ramps, explicit DC conditioning | Broader pitch |
 | Noise | Deterministic per-sample white noise, distinct default seeds, repeatable idle starts | Rate-controlled/tonal noise remains deferred; no current noise frequency control |
 | Envelope | Linear ADSR, captured per note, current-level active retrigger | No additional envelope model planned for this checkpoint |
-| Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Filters, group/master controls |
+| Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Group/master controls |
+| Filter | Per-voice one-pole low-pass/bypass, 20–20,000 Hz cutoff, 10 ms coefficient/bypass ramps | Resonance deferred |
 | Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
 | Integration | Locked native controls and separate listening executables | Lua audio API, cartridge-owned audio cleanup and pause/error policy |
 | WAV | Design only | Decoder, bounded asset storage, playback voices, Lua controls |
@@ -173,12 +174,12 @@ features still to be added. Current native restrictions above remain in force.
 | Pan | 0.0, centered |
 | Filter mode | Bypass |
 | Filter cutoff | 2000 Hz |
-| Filter resonance | 0.0 |
+| Filter resonance | No control in current implementation |
 
 Pulse width and 10 ms live ramps are implemented in the native bank/SDL controls.
 Width is retained while other waveforms are selected; idle pulse starts apply the
-stored target immediately. Filter fields remain unimplemented; retain filter settings
-while bypassed. Sustain and voice volume use 0–1 values; pan uses -1 (left)
+stored target immediately. Native filter cutoff and bypass are implemented;
+cutoff is retained while bypassed. Sustain and voice volume use 0–1 values; pan uses -1 (left)
 through 0 (center) to 1 (right). Envelope times are in seconds.
 
 The target waveform set is triangle, saw, pulse, and noise. The original design
@@ -186,7 +187,7 @@ assigned noise frequency to the rate of random-value changes. The accepted first
 noise implementation instead generates a new white-noise value every audio
 sample and has no frequency parameter. Rate-controlled or tonal noise is a
 separate deferred discussion, not a missing control to expose automatically.
-Envelope, volume, and pan already apply to noise; filtering is still future work.
+Envelope, volume, pan, and the native low-pass filter apply to noise.
 
 ## Current and target parameter limits
 
@@ -200,8 +201,8 @@ Envelope, volume, and pan already apply to noise; filtering is still future work
 | Attack, decay, release | 0–10 seconds each | Same |
 | Sustain and voice volume | 0–1 | Same |
 | Pan | -1–1, equal-power stereo | Same |
-| Filter cutoff | Not implemented | 20–20,000 Hz, strictly below half the sample rate |
-| Resonance | Not implemented | 0–1; mapping and stability limits unresolved |
+| Filter cutoff | 20–20,000 Hz, default 2000; bypassed by default | Lua controls pending |
+| Resonance | Not implemented | Deferred unless a practical need justifies it |
 
 Reject non-finite values (NaN and infinity), invalid voice indices, and values
 outside these ranges. Controls accept fractional values, not only tenths;
@@ -211,18 +212,29 @@ deliberately does not promise click-free arbitrary settings. The
 10-second limit applies to transitions, not total note duration.
 
 The planned WAV path will support longer ambience through whole-sound loops; externally authored scores remain deferred.
-The foundation uses a 48,000 Hz internal sample rate. Any additional numerical
-stability margin for the filter must be specified and tested before publishing
-a concrete synthesis API contract.
+The foundation uses a 48,000 Hz internal sample rate.
 
-## Filtering — not implemented
+## Filtering — first native checkpoint
 
-Provide an independent filter per voice, initially low-pass and bypass.
-The conceptual signal path is oscillator → filter → envelope and volume → pan
-→ mix. Cutoff is expressed in hertz. Smooth live parameter changes where needed.
-Filter implementation and exact smoothing behavior remain open.
-High-pass, band-pass, automatic filter envelopes, and modulation routing are
-future discussion topics rather than initial requirements.
+The agreed simple implementation is one non-resonant low-pass per bank voice,
+with separate cutoff and bypass controls. Signal order is waveform blend →
+filter → envelope and volume → pan → mix. Cutoff is 20–20,000 Hz, default 2000;
+bypass is the default and returns the original samples exactly.
+
+Live changes ramp the filter coefficient or dry/wet blend over 480 samples.
+Idle changes are immediate. Filter history advances while active, including
+mute/bypass; active retriggers and waveform changes preserve it. Fresh idle
+starts clear history and settle retained targets. The one-pole recurrence is a
+weighted average, preserving bounded output and existing fixed headroom without
+resonance gain or a limiter. See [filter contract and checks](../../tests/audio-filter.md).
+
+The Debug build and all 69 tests pass; the user accepted desktop listening.
+The user confirmed Pi validation at `4b64455` on 2026-11-03: zero test failures,
+filter listening, Pong/Pac-Man, pause/resume, and Exit to system status 0.
+Resonance, other filter types,
+and modulation routing are deferred; they are not prerequisites for cartridge
+lifecycle, minimal Lua controls, and the two Pong blips. Add complexity only
+when a practical game need justifies it.
 
 ## Sample playback — not implemented
 
@@ -382,7 +394,8 @@ filter gain handling, and combined-output attenuation remain to be specified. A 
   on desktop/Pi. Measure quality before expanding pitch ranges.
 - Native switching including noise is validated on desktop/Pi.
   White noise versus any future rate-controlled noise API.
-- Filter mathematics, resonance mapping, stability, smoothing, and gain bounds.
+- Validate the simple native low-pass through desktop listening and Pi checks.
+  Resonance and other filter modes are deferred, not requirements for Lua work.
 - Lua result/error contracts, configuration atomicity, and noise call/seed shape.
   Native controls already synchronize with the callback through SDL device locks.
 - Cartridge voice ownership, pause/resume, Guru recovery, and bounded teardown.
@@ -410,7 +423,8 @@ equal-power synth pan, fixed 1/9 current synth headroom, and noise seed rules.
 The user also confirmed a successful Pi build and zero test failures at
 `ff61ef6` on 2026-11-02, completing Pi validation;
    see [pitch checks](../../tests/audio-pitch-range.md). Further expansion is deferred.
-3. Per-voice low-pass/bypass, with resonance and gain bounds settled before use.
+3. Simple per-voice one-pole low-pass/bypass is implemented; desktop listening
+   and Pi validation passed per the user at `4b64455`. No resonance or further filter modes in this checkpoint.
 4. Cartridge audio lifecycle and minimal Lua controls for validated features.
 5. A small Synth Lab, then a narrow Pong Lab audio update: one short wall-hit
    blip and a distinguishable paddle-reflection blip. Keep gameplay unchanged;

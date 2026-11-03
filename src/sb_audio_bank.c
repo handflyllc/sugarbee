@@ -14,7 +14,9 @@ bool sb_audio_bank_configure(sb_audio_bank_t *bank, unsigned voice, const sb_env
 bool sb_audio_bank_note_on(sb_audio_bank_t *bank, unsigned voice, double frequency) {
     sb_audio_triangle_t *v = voice_at(bank, voice);
     if (!v || bank->switch_left[voice-1] || (v->active && bank->kind[voice-1] != SB_AUDIO_VOICE_TRIANGLE)) return false;
+    bool idle = !v->active;
     if (!sb_audio_triangle_start(v, frequency)) return false;
+    if (idle) sb_audio_filter_start(&bank->filters[voice-1]);
     bank->kind[voice-1] = SB_AUDIO_VOICE_TRIANGLE;
     bank->retained_pitch[voice-1] = frequency;
     return true;
@@ -39,7 +41,10 @@ bool sb_audio_bank_noise_on(sb_audio_bank_t *bank, unsigned voice) {
     if (!v || bank->switch_left[voice-1] || (v->active && bank->kind[voice-1] != SB_AUDIO_VOICE_NOISE)) return false;
     bool idle = !v->active;
     if (!sb_audio_voice_start(v)) return false;
-    if (idle) fresh_noise(bank, voice-1);
+    if (idle) {
+        fresh_noise(bank, voice-1);
+        sb_audio_filter_start(&bank->filters[voice-1]);
+    }
     bank->kind[voice-1] = SB_AUDIO_VOICE_NOISE;
     return true;
 }
@@ -50,7 +55,9 @@ bool sb_audio_bank_saw_on(sb_audio_bank_t *bank, unsigned voice, double frequenc
     sb_audio_saw_t next = bank->saw[voice-1];
     bool ok = v->active ? sb_audio_saw_pitch(&next, frequency) :
                           sb_audio_saw_reset(&next, frequency);
+    bool idle = !v->active;
     if (!ok || !sb_audio_voice_start(v)) return false;
+    if (idle) sb_audio_filter_start(&bank->filters[voice-1]);
     bank->saw[voice-1] = next;
     bank->kind[voice-1] = SB_AUDIO_VOICE_SAW;
     bank->retained_pitch[voice-1] = frequency;
@@ -63,7 +70,9 @@ bool sb_audio_bank_pulse_on(sb_audio_bank_t *bank, unsigned voice, double freque
     double width = bank->widths[voice-1];
     bool ok = v->active ? sb_audio_pulse_pitch(&next, frequency) :
         sb_audio_pulse_reset(&next, frequency, width ? width : SB_AUDIO_PULSE_DEFAULT_WIDTH);
+    bool idle = !v->active;
     if (!ok || !sb_audio_voice_start(v)) return false;
+    if (idle) sb_audio_filter_start(&bank->filters[voice-1]);
     bank->pulse[voice-1] = next;
     bank->kind[voice-1] = SB_AUDIO_VOICE_PULSE;
     bank->retained_pitch[voice-1] = frequency;
@@ -168,6 +177,14 @@ bool sb_audio_bank_volume(sb_audio_bank_t *bank, unsigned voice, double volume) 
 bool sb_audio_bank_pan(sb_audio_bank_t *bank, unsigned voice, double pan) {
     return sb_audio_triangle_pan(voice_at(bank, voice), pan);
 }
+bool sb_audio_bank_filter_cutoff(sb_audio_bank_t *bank, unsigned voice, double cutoff) {
+    sb_audio_triangle_t *v = voice_at(bank, voice);
+    return v && sb_audio_filter_cutoff(&bank->filters[voice-1], cutoff, v->active);
+}
+bool sb_audio_bank_filter_bypass(sb_audio_bank_t *bank, unsigned voice, bool bypass) {
+    sb_audio_triangle_t *v = voice_at(bank, voice);
+    return v && sb_audio_filter_bypass(&bank->filters[voice-1], bypass, v->active);
+}
 static void complete_switch(sb_audio_bank_t *bank, unsigned slot) {
     if (bank->switch_left[slot]) {
         bank->kind[slot] = bank->destination[slot];
@@ -221,6 +238,7 @@ bool sb_audio_bank_render(sb_audio_bank_t *bank, float *output, size_t frames) {
                     else --bank->switch_left[slot];
                 }
             }
+            if (v->active) sample = sb_audio_filter_sample(&bank->filters[slot], sample);
             float stereo[2];
             sb_audio_voice_apply(v, sample, stereo);
             if (!v->active) complete_switch(bank, slot);

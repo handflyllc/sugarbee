@@ -2,6 +2,16 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added a simple native one-pole low-pass per bank voice, with 20–20,000 Hz
+  cutoff (default 2000), exact default bypass, and 10 ms coefficient/bypass
+  smoothing. Filters preserve history through active retriggers and waveform
+  switches; fresh notes clear history. Existing fixed headroom is preserved.
+  Added regression coverage and `sbee-filter-test`, a saw/noise tone comparison.
+  Debug build and all 69 tests pass; the user accepted desktop listening.
+  On 2026-11-03 the user confirmed Pi validation at `4b64455`: zero test
+  failures, filter listening, Pong/Pac-Man, pause/resume, and Exit to system
+  status 0. No resonance or Lua API.
+
 - Expanded native triangle, saw, pulse, and retained pitch to 110–880 Hz,
   including fractional frequencies and unchanged rejection outside the range.
   Reviewed pulse edge-motion/spacing bounds and increased its internal history

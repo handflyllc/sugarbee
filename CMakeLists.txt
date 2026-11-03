@@ -77,11 +77,17 @@ if(BUILD_TESTING)
 endif()
 
 # Pure-C voice rendering and nine-voice mixing, usable without the host.
-add_library(sugarbee_synth STATIC src/sb_audio_triangle.c src/sb_audio_bank.c)
+add_library(sugarbee_synth STATIC src/sb_audio_triangle.c src/sb_audio_bank.c src/sb_audio_filter.c)
 target_include_directories(sugarbee_synth PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_link_libraries(sugarbee_synth PRIVATE sugarbee_envelope sugarbee_noise sugarbee_saw sugarbee_pulse m)
 sugarbee_warnings(sugarbee_synth)
 if(BUILD_TESTING)
+    add_executable(test_audio_filter tests/test_audio_filter.c)
+    target_link_libraries(test_audio_filter PRIVATE sugarbee_synth)
+    sugarbee_warnings(test_audio_filter)
+    add_test(NAME audio_filter COMMAND test_audio_filter)
+    set_tests_properties(audio_filter PROPERTIES TIMEOUT 10)
+
     add_executable(test_audio_pitch_range tests/test_audio_pitch_range.c)
     target_link_libraries(test_audio_pitch_range PRIVATE sugarbee_synth)
     sugarbee_warnings(test_audio_pitch_range)
@@ -167,6 +173,10 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sugarbee_audio PRIVATE sugarbee_synth PkgConfig::SDL2 m)
     sugarbee_warnings(sugarbee_audio)
 
+    add_executable(sbee-filter-test tools/sbee-filter-test.c)
+    target_link_libraries(sbee-filter-test PRIVATE sugarbee_audio PkgConfig::SDL2 m)
+    sugarbee_warnings(sbee-filter-test)
+
     add_executable(sbee-pitch-test tools/sbee-pitch-test.c)
     target_link_libraries(sbee-pitch-test PRIVATE sugarbee_audio PkgConfig::SDL2)
     sugarbee_warnings(sbee-pitch-test)
@@ -233,6 +243,10 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     target_link_libraries(test_audio_bank_sdl PRIVATE sugarbee_synth PkgConfig::SDL2 m)
     sugarbee_warnings(test_audio_bank_sdl)
     add_test(NAME audio_bank_sdl COMMAND test_audio_bank_sdl)
+    add_test(NAME audio_filter_output COMMAND sbee-filter-test)
+    set_tests_properties(audio_filter_output PROPERTIES TIMEOUT 25
+        ENVIRONMENT "SDL_AUDIODRIVER=dummy")
+
     add_test(NAME audio_pitch_output COMMAND sbee-pitch-test)
     set_tests_properties(audio_pitch_output PROPERTIES TIMEOUT 30
         ENVIRONMENT "SDL_AUDIODRIVER=dummy")

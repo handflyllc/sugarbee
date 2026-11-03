@@ -283,6 +283,35 @@ int main(void) {
             CHECK(fabsf(output[i]-expected[i]*0.790569415f) < 1e-8f);
     }
     sb_audio_bank_reset(&audio->bank);
+    /* Filter controls use the same locked bank state as the callback. */
+    CHECK(!sb_audio_voice_filter_cutoff(NULL,1,2000));
+    CHECK(!sb_audio_voice_filter_bypass(NULL,1,false));
+    CHECK(sb_audio_voice_filter_cutoff(audio,1,500));
+    CHECK(sb_audio_voice_filter_bypass(audio,1,false));
+    CHECK(!sb_audio_voice_active(audio,1));
+    CHECK(sb_audio_voice_configure(audio,1,0,0,1,.01));
+    CHECK(sb_audio_voice_saw_on(audio,1,440));
+    CHECK(sb_audio_voice_filter_cutoff(audio,1,20));
+    CHECK(sb_audio_voice_filter_bypass(audio,1,true));
+    memcpy(snapshot,&audio->bank,sizeof(snapshot));
+    CHECK(!sb_audio_voice_filter_cutoff(audio,0,2000));
+    CHECK(!sb_audio_voice_filter_cutoff(audio,1,NAN));
+    CHECK(!sb_audio_voice_filter_cutoff(audio,1,20001));
+    CHECK(!sb_audio_voice_filter_bypass(audio,10,false));
+    CHECK(memcmp(snapshot,&audio->bank,sizeof(snapshot))==0);
+    reference=audio->bank;
+    CHECK(sb_audio_bank_render(&reference,expected,1024));
+    audio_output(audio,(Uint8 *)output,sizeof(output));
+    for (unsigned i=0;i<2048;++i)
+        CHECK(fabsf(output[i]-expected[i]*0.790569415f)<1e-8f);
+    CHECK(audio->bank.filters[0].wet==0 && !audio->bank.filters[0].coefficient_left);
+    CHECK(sb_audio_voice_filter_bypass(audio,1,false));
+    CHECK(sb_audio_voice_note_off(audio,1));
+    audio_output(audio,(Uint8 *)output,sizeof(output));
+    CHECK(!sb_audio_voice_active(audio,1));
+    CHECK(sb_audio_voice_noise_on(audio,1));
+    CHECK(audio->bank.filters[0].state==0 && audio->bank.filters[0].wet==1);
+    sb_audio_bank_reset(&audio->bank);
     /* Destroy while nine mixed voices are active; no release wait needed. */
     for (unsigned v = 1; v <= 9; ++v) {
         if (v%4 == 0) CHECK(sb_audio_voice_pulse_on(audio, v, 440));

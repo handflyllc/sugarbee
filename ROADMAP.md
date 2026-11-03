@@ -1,6 +1,6 @@
 # Project SugarBee — Preliminary Roadmap
 
-Last reviewed: 2026-10-29.
+Last reviewed: 2026-11-02.
 
 This is a preliminary, revisable plan, not a release schedule or a promise of
 features. Review it at each major checkpoint. Choose the next small, testable
@@ -193,6 +193,14 @@ See [pitch checks](tests/audio-pitch-range.md). Further pitch expansion remains
 uncommitted future scope. Filtering, cartridge audio lifecycle and minimal Lua
 controls follow as separately agreed checkpoints. Each remains a separately scoped implementation and
 validation step; see the [audio sequence](docs/architecture/audio-design.md#agreed-next-sequence--checkpoint-by-checkpoint).
+
+The simple non-resonant per-voice low-pass/bypass checkpoint is implemented with
+cutoff control and 10 ms smoothing. Desktop listening passed per the user;
+Pi validation passed at `4b64455` on 2026-11-03 per the user: zero test failures,
+filter listening, Pong/Pac-Man, pause/resume, and Exit to system status 0.
+See [filter checks](tests/audio-filter.md). Keep the next work focused
+on cartridge lifecycle and minimal Lua controls. Resonance and additional
+synthesis features are deferred unless a practical game need justifies them.
 
 After a small Synth Lab, add two short Pong sounds: one on a wall hit and a
 different one on paddle reflection. Preserve gameplay; use this narrow exercise

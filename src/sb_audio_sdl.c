@@ -293,3 +293,18 @@ bool sb_audio_voice_start_selected_noise(sb_audio_t *audio, unsigned voice) {
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
+
+bool sb_audio_voice_filter_cutoff(sb_audio_t *audio, unsigned voice, double cutoff) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = sb_audio_bank_filter_cutoff(&audio->bank, voice, cutoff);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+bool sb_audio_voice_filter_bypass(sb_audio_t *audio, unsigned voice, bool bypass) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok = sb_audio_bank_filter_bypass(&audio->bank, voice, bypass);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}

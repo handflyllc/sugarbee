@@ -81,6 +81,15 @@ bool sb_audio_voice_seed(sb_audio_t *audio, unsigned voice, uint32_t seed);
 bool sb_audio_voice_pitch(sb_audio_t *audio, unsigned voice, double frequency);
 bool sb_audio_voice_volume(sb_audio_t *audio, unsigned voice, double volume);
 bool sb_audio_voice_pan(sb_audio_t *audio, unsigned voice, double pan);
+/* Per-voice non-resonant low-pass after waveform blending, before ADSR/pan.
+ * Cutoff finite 20..20000 Hz, default 2000; bypass true by default. Setting
+ * cutoff does not enable the filter. Live coefficient and bypass changes ramp
+ * for 10 ms, idle edits apply immediately; repeated targets keep deadlines.
+ * Fresh notes clear history and settle retained targets. Active retriggers and
+ * waveform switches preserve it. Muting/bypass do not freeze active history.
+ * Bank controls only; legacy standalone diagnostics remain unfiltered. */
+bool sb_audio_voice_filter_cutoff(sb_audio_t *audio, unsigned voice, double cutoff);
+bool sb_audio_voice_filter_bypass(sb_audio_t *audio, unsigned voice, bool bypass);
 bool sb_audio_voice_note_off(sb_audio_t *audio, unsigned voice);
 bool sb_audio_voice_stop(sb_audio_t *audio, unsigned voice);
 bool sb_audio_voice_active(sb_audio_t *audio, unsigned voice);
