@@ -6,8 +6,8 @@
 SDL_AudioDeviceID __real_SDL_OpenAudioDevice(const char *, int,
     const SDL_AudioSpec *, SDL_AudioSpec *, int);
 void __real_SDL_CloseAudioDevice(SDL_AudioDeviceID device);
-static bool fail_open, format_ok, silence_ok;
-static unsigned opens, closes, shutdown_calls;
+static bool fail_open, format_ok, silence_ok, shutdown_error;
+static unsigned opens, closes, shutdown_calls, shutdown_audio_ok;
 static SDL_AudioCallback original_callback;
 static void *original_userdata;
 static SDL_atomic_t callbacks;
@@ -50,9 +50,24 @@ static int check_shutdown(lua_State *L) {
     (void)L;
     ++shutdown_calls;
     if (!g_engine.audio || closes != 0) return luaL_error(L, "audio closed before Lua shutdown");
+    if (!sb_audio_voice_note_on(g_engine.audio, 1, 440))
+        return luaL_error(L, "audio unavailable during eligible shutdown");
+    ++shutdown_audio_ok;
+    if (shutdown_error) return luaL_error(L, "injected shutdown error");
     return 0;
 }
+static int fail_update(lua_State *L) {
+    return luaL_error(L, "injected runtime failure");
+}
+static bool callback_silent(void) {
+    float samples[2048];
+    original_callback(original_userdata, (Uint8 *)samples, sizeof(samples));
+    for (size_t i=0; i<2048; ++i) if (samples[i]!=0) return false;
+    return true;
+}
 static bool session(void) {
+    g_engine.guru_active = false; /* Simulate returning from Guru to launcher. */
+    sb_audio_session_begin(g_engine.audio);
     g_engine.L = luaL_newstate();
     if (!g_engine.L) return false;
     g_engine.cart_loaded = true;
@@ -117,7 +132,37 @@ int main(int argc, char **argv) {
         sb_audio_t *audio = g_engine.audio;
         CHECK(session()); end_cartridge();
         CHECK(shutdown_calls == 1 && g_engine.audio == audio && closes == 0 && opens == 1);
-        CHECK(session()); /* A new cartridge still uses the existing device. */
+        SDL_PauseAudioDevice(observed_device, 1);
+        CHECK(!sb_audio_voice_note_on(audio,1,440));
+        CHECK(session());
+        CHECK(sb_audio_voice_note_on(audio,1,440));
+        set_cartridge_paused(true);
+        (void)callback_silent(); /* Render the pause fade. */
+        CHECK(callback_silent());
+        set_cartridge_paused(false);
+        CHECK(!callback_silent());
+        set_cartridge_paused(true);
+        shutdown_error = true;
+        end_cartridge(); /* Paused shutdown can issue commands, even if it errors. */
+        shutdown_error = false;
+        CHECK(shutdown_calls == 2 && callback_silent());
+        CHECK(!sb_audio_voice_note_on(audio,1,440));
+        CHECK(session());
+        CHECK(sb_audio_voice_note_on(audio,1,440));
+        lua_pushcfunction(g_engine.L, fail_update);
+        lua_setglobal(g_engine.L, "update");
+        call_lua_global_function("update", true, .016);
+        CHECK(g_engine.guru_active && !sb_audio_voice_note_on(audio,1,440));
+        (void)callback_silent();
+        CHECK(callback_silent());
+        end_cartridge();
+        CHECK(shutdown_calls == 2); /* Failed sessions skip Lua shutdown. */
+        CHECK(!start_cartridge("/nonexistent/sugarbee-audio-test.vcart"));
+        CHECK(!g_engine.L && callback_silent());
+        CHECK(!sb_audio_voice_note_on(audio,1,440));
+        CHECK(session()); /* Recovery retains the same device. */
+        CHECK(g_engine.audio == audio && opens == 1 && closes == 0);
+        CHECK(sb_audio_voice_note_on(audio,1,440));
     } else {
         CHECK(opens == (fail_open ? 1u : 0u) && closes == 0);
         CHECK(SDL_WasInit(SDL_INIT_AUDIO) == 0);
@@ -126,7 +171,7 @@ int main(int argc, char **argv) {
     shutdown_engine();
     CHECK(!g_engine.audio && SDL_WasInit(0) == 0);
     CHECK(closes == (available ? 1u : 0u));
-    if (available) CHECK(shutdown_calls == 2);
+    if (available) CHECK(shutdown_calls == 3 && shutdown_audio_ok == 3);
     int count = SDL_AtomicGet(&callbacks);
     SDL_Delay(30);
     CHECK(SDL_AtomicGet(&callbacks) == count);

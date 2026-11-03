@@ -161,6 +161,17 @@ The input guarantees below describe normal gameplay. Start is host-reserved,
 menu presses are consumed, and buttons held across resume are suppressed until
 released. See [input](input.md#host-pause-menu) for controls.
 
+The native audio bank fades out over 10 ms, then freezes its complete state.
+Resume continues that state with a 10 ms fade-in. Repeated pause requests do not
+extend the fade; a rapid reversal starts from the current gain.
+
+Each cartridge starts with a silent bank and default settings. Guru failure
+rejects bank commands immediately, fades out, and clears the bank. Eligible
+`shutdown()` retains native audio access; shutdown from pause stays silent.
+Native cleanup then clears audio immediately without waiting for notes or a fade
+to finish. The host keeps its audio device for the next cartridge. There are no
+Lua audio bindings yet. See [session checks](../../tests/audio-session.md).
+
 ## Input at update boundaries
 
 The host polls SDL events each render iteration and stores press transitions

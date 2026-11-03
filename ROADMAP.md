@@ -1,6 +1,6 @@
 # Project SugarBee — Preliminary Roadmap
 
-Last reviewed: 2026-11-02.
+Last reviewed: 2026-11-03.
 
 This is a preliminary, revisable plan, not a release schedule or a promise of
 features. Review it at each major checkpoint. Choose the next small, testable
@@ -14,8 +14,7 @@ callbacks, a host pause/exit menu, and cartridge discovery and launching.
 Invaders Lab, Pong Lab, and the Pac-Man demo help exercise the engine.
 The launcher has passed desktop and Raspberry Pi checks.
 
-Designed, implemented, and validated are separate states. In particular, audio
-has an agreed initial design but is not implemented. Execution limits are
+Designed, implemented, and validated are separate states. In particular, native synth audio is implemented; Lua audio controls remain pending. Execution limits are
 implemented and validated on desktop and Pi for the documented accidental-loop
 cases. The budgets remain provisional, with explicit coverage limitations.
 
@@ -198,8 +197,12 @@ The simple non-resonant per-voice low-pass/bypass checkpoint is implemented with
 cutoff control and 10 ms smoothing. Desktop listening passed per the user;
 Pi validation passed at `4b64455` on 2026-11-03 per the user: zero test failures,
 filter listening, Pong/Pac-Man, pause/resume, and Exit to system status 0.
-See [filter checks](tests/audio-filter.md). Keep the next work focused
-on cartridge lifecycle and minimal Lua controls. Resonance and additional
+See [filter checks](tests/audio-filter.md). Native cartridge lifecycle is now
+implemented with pause/freeze/resume, failure rejection, and teardown checks;
+desktop session listening and Pong/Pac-Man checks passed per the user; Pi
+validation is pending. See
+[session checks](tests/audio-session.md). Minimal Lua controls remain the next
+separate checkpoint. Resonance and additional
 synthesis features are deferred unless a practical game need justifies them.
 
 After a small Synth Lab, add two short Pong sounds: one on a wall hit and a

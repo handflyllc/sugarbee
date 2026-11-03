@@ -21,7 +21,7 @@ not current limitations.
 | Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Group/master controls |
 | Filter | Per-voice one-pole low-pass/bypass, 20–20,000 Hz cutoff, 10 ms coefficient/bypass ramps | Resonance deferred |
 | Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
-| Integration | Locked native controls and separate listening executables | Lua audio API, cartridge-owned audio cleanup and pause/error policy |
+| Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables | Lua audio API; lifecycle Pi validation pending |
 | WAV | Design only | Decoder, bounded asset storage, playback voices, Lua controls |
 
 Current bank diagnostic attenuation is separately 0.790569415, chosen for
@@ -330,9 +330,15 @@ eligible Lua shutdown on host exit. Native control calls return false when
 audio is unavailable. Device access is serialized with SDL locking. There is
 no Lua audio query, WAV loading, or cartridge-generated audio yet.
 
-The remainder of this section is the target contract. Cartridge-owned voice
-cleanup and audio behavior on pause/resume/Guru must be implemented and tested
-before Lua audio is exposed.
+Native cartridge lifecycle is implemented: fresh default banks on launch,
+10 ms pause fade followed by complete bank freeze, and 10 ms resume fade.
+Failure rejects bank controls immediately and clears the bank after its fade.
+Eligible shutdown retains access; paused shutdown stays silent. Teardown clears
+immediately without waiting for callback progress, and may truncate a failure
+fade. Already queued device samples cannot be retracted. See
+[session checks](../../tests/audio-session.md) for validation and limits.
+
+The remaining Lua availability and WAV behavior below is the target contract.
 
 
 Unavailable audio allows silent gameplay and produces one explanatory diagnostic.
@@ -425,7 +431,8 @@ The user also confirmed a successful Pi build and zero test failures at
    see [pitch checks](../../tests/audio-pitch-range.md). Further expansion is deferred.
 3. Simple per-voice one-pole low-pass/bypass is implemented; desktop listening
    and Pi validation passed per the user at `4b64455`. No resonance or further filter modes in this checkpoint.
-4. Cartridge audio lifecycle and minimal Lua controls for validated features.
+4. Cartridge audio lifecycle (native implementation complete; desktop accepted; Pi pending),
+   then minimal Lua controls for validated features as a separate checkpoint.
 5. A small Synth Lab, then a narrow Pong Lab audio update: one short wall-hit
    blip and a distinguishable paddle-reflection blip. Keep gameplay unchanged;
    this is an API-use/acceptance exercise, not a soundtrack or game redesign.

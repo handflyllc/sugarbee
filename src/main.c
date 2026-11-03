@@ -520,6 +520,7 @@ void trigger_guru_meditation(uint32_t code, const char* title, const char* messa
     }
 
     fflush(stderr);
+    sb_audio_session_fail(g_engine.audio);
     g_engine.guru_active = true;
     g_engine.error_code = code;
     strncpy(g_engine.error_title, title, sizeof(g_engine.error_title) - 1);
@@ -702,6 +703,7 @@ static bool start_cartridge(const char *filepath) {
     /* A new session must not overwrite an existing Lua state. */
     if (!filepath || g_engine.L) return false;
 
+    sb_audio_session_begin(g_engine.audio);
     g_engine.L = luaL_newstate();
     if (!g_engine.L) {
         trigger_guru_meditation(
@@ -742,6 +744,7 @@ bool init_engine(void) {
     if (!g_engine.input) return false;
 
     g_engine.audio = sb_audio_create(); /* Failure is nonfatal and diagnosed once. */
+    sb_audio_session_end(g_engine.audio); /* Idle host has no cartridge voices. */
     g_engine.is_running = true;
     return true;
 }
@@ -911,6 +914,11 @@ static void draw_system_exit_confirmation(void) {
                      360, 455, 200, 200, 200, 1);
 }
 
+static void set_cartridge_paused(bool paused) {
+    g_engine.paused = paused;
+    sb_audio_session_pause(g_engine.audio, paused);
+}
+
 void main_loop(void) {
     sb_timing_t timing;
     sb_timing_reset(&timing);
@@ -1012,14 +1020,14 @@ void main_loop(void) {
 
                 /* Pause toggle block */
                 if (g_engine.cart_loaded && start_pressed) {
-                    g_engine.paused = !g_engine.paused;
+                    set_cartridge_paused(!g_engine.paused);
                     pause_changed = true;
 
                     if (g_engine.paused) {
                         g_engine.pause_selection = PAUSE_MENU_RESUME;
                     }
                 } else if (g_engine.paused && back_pressed) {
-                    g_engine.paused = false;
+                    set_cartridge_paused(false);
                     pause_changed = true;
                 }
 
@@ -1027,7 +1035,7 @@ void main_loop(void) {
                 if (g_engine.paused && !pause_changed) {
                     if (confirm_pressed) {
                         if (g_engine.pause_selection == PAUSE_MENU_RESUME) {
-                            g_engine.paused = false;
+                            set_cartridge_paused(false);
                             pause_changed = true;
                         } else if (g_engine.pause_selection == PAUSE_MENU_EXIT) {
                             g_engine.cartridge_exit_requested = true;
@@ -1211,7 +1219,9 @@ static void call_lua_shutdown(void) {
 }
 
 static void end_cartridge(void) {
+    sb_audio_session_prepare_shutdown(g_engine.audio);
     call_lua_shutdown();
+    sb_audio_session_end(g_engine.audio);
 
     if (g_engine.L) {
         lua_close(g_engine.L);
