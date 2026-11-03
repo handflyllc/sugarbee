@@ -8,7 +8,9 @@
   switches; fresh notes clear history. Existing fixed headroom is preserved.
   Added regression coverage and `sbee-filter-test`, a saw/noise tone comparison.
   Debug build and all 69 tests pass; the user accepted desktop listening.
-  Pi validation is pending. No resonance or Lua API.
+  On 2026-11-03 the user confirmed Pi validation at `4b64455`: zero test
+  failures, filter listening, Pong/Pac-Man, pause/resume, and Exit to system
+  status 0. No resonance or Lua API.
 
 - Expanded native triangle, saw, pulse, and retained pitch to 110–880 Hz,
   including fractional frequencies and unchanged rejection outside the range.

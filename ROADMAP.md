@@ -196,7 +196,9 @@ validation step; see the [audio sequence](docs/architecture/audio-design.md#agre
 
 The simple non-resonant per-voice low-pass/bypass checkpoint is implemented with
 cutoff control and 10 ms smoothing. Desktop listening passed per the user;
-Pi validation is pending; see [filter checks](tests/audio-filter.md). Keep the next work focused
+Pi validation passed at `4b64455` on 2026-11-03 per the user: zero test failures,
+filter listening, Pong/Pac-Man, pause/resume, and Exit to system status 0.
+See [filter checks](tests/audio-filter.md). Keep the next work focused
 on cartridge lifecycle and minimal Lua controls. Resonance and additional
 synthesis features are deferred unless a practical game need justifies them.
 

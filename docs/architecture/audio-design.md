@@ -19,7 +19,7 @@ not current limitations.
 | Noise | Deterministic per-sample white noise, distinct default seeds, repeatable idle starts | Rate-controlled/tonal noise remains deferred; no current noise frequency control |
 | Envelope | Linear ADSR, captured per note, current-level active retrigger | No additional envelope model planned for this checkpoint |
 | Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Group/master controls |
-| Filter | Per-voice one-pole low-pass/bypass, 20–20,000 Hz cutoff, 10 ms coefficient/bypass ramps | Pi validation; resonance deferred |
+| Filter | Per-voice one-pole low-pass/bypass, 20–20,000 Hz cutoff, 10 ms coefficient/bypass ramps | Resonance deferred |
 | Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
 | Integration | Locked native controls and separate listening executables | Lua audio API, cartridge-owned audio cleanup and pause/error policy |
 | WAV | Design only | Decoder, bounded asset storage, playback voices, Lua controls |
@@ -229,7 +229,9 @@ weighted average, preserving bounded output and existing fixed headroom without
 resonance gain or a limiter. See [filter contract and checks](../../tests/audio-filter.md).
 
 The Debug build and all 69 tests pass; the user accepted desktop listening.
-Pi validation is pending. Resonance, other filter types,
+The user confirmed Pi validation at `4b64455` on 2026-11-03: zero test failures,
+filter listening, Pong/Pac-Man, pause/resume, and Exit to system status 0.
+Resonance, other filter types,
 and modulation routing are deferred; they are not prerequisites for cartridge
 lifecycle, minimal Lua controls, and the two Pong blips. Add complexity only
 when a practical game need justifies it.
@@ -422,7 +424,7 @@ The user also confirmed a successful Pi build and zero test failures at
 `ff61ef6` on 2026-11-02, completing Pi validation;
    see [pitch checks](../../tests/audio-pitch-range.md). Further expansion is deferred.
 3. Simple per-voice one-pole low-pass/bypass is implemented; desktop listening
-   passed per the user and Pi validation is pending. No resonance or further filter modes in this checkpoint.
+   and Pi validation passed per the user at `4b64455`. No resonance or further filter modes in this checkpoint.
 4. Cartridge audio lifecycle and minimal Lua controls for validated features.
 5. A small Synth Lab, then a narrow Pong Lab audio update: one short wall-hit
    blip and a distinguishable paddle-reflection blip. Keep gameplay unchanged;

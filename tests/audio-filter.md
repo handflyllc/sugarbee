@@ -81,5 +81,12 @@ and Exit to system status 0. Keep Pi edits local; it remains receive-only.
 Status (2026-11-02): Debug build succeeded without compiler warnings; all
 **69/69 tests passed**. The user accepted desktop listening on 2026-11-02
 ("The sound is perfect") for the uncommitted checkpoint based on `afad217`.
-Pi validation is pending. No resonance, additional filter modes, automatic
+Pi validation is recorded below. No resonance, additional filter modes, automatic
 filter envelopes, Lua binding, WAV support, or voice-count changes are included.
+
+
+Pi manual validation (2026-11-03), user-reported at **`4b64455`**: filter listening,
+Pong/Pac-Man, pause/resume, and Exit to system all passed; exit status was **0**.
+The user corrected an initially transcribed older hash to `4b64455`.
+The user also confirmed zero automated test failures. Pi validation is complete
+for `4b64455`; hardware results are user-reported.
