@@ -21,7 +21,7 @@ not current limitations.
 | Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Group/master controls |
 | Filter | Per-voice one-pole low-pass/bypass, 20–20,000 Hz cutoff, 10 ms coefficient/bypass ramps | Resonance deferred |
 | Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
-| Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables | Lua audio API; lifecycle Pi validation pending |
+| Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables | Lua audio API |
 | WAV | Design only | Decoder, bounded asset storage, playback voices, Lua controls |
 
 Current bank diagnostic attenuation is separately 0.790569415, chosen for
@@ -431,7 +431,7 @@ The user also confirmed a successful Pi build and zero test failures at
    see [pitch checks](../../tests/audio-pitch-range.md). Further expansion is deferred.
 3. Simple per-voice one-pole low-pass/bypass is implemented; desktop listening
    and Pi validation passed per the user at `4b64455`. No resonance or further filter modes in this checkpoint.
-4. Cartridge audio lifecycle (native implementation complete; desktop accepted; Pi pending),
+4. Cartridge audio lifecycle (desktop and Pi validated at `5cf471b`),
    then minimal Lua controls for validated features as a separate checkpoint.
 5. A small Synth Lab, then a narrow Pong Lab audio update: one short wall-hit
    blip and a distinguishable paddle-reflection blip. Keep gameplay unchanged;

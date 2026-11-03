@@ -63,5 +63,6 @@ after strengthening the shutdown-command assertion.
 Desktop acceptance (2026-11-03), user-reported: `sbee-session-test` and
 Pong/Pac-Man checks passed for the implementation based on `120c523`.
 
-Pi validation is pending. Record Pi results against the implementation commit;
-do not treat dummy output as listening validation.
+Pi acceptance (2026-11-03), user-reported at `5cf471b`: audio session test
+passed, Pong/Pac-Man checks passed, Exit to system returned 0, and the test
+suite reported zero failures. Desktop and Pi validation are complete.

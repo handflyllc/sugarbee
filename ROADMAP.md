@@ -199,8 +199,9 @@ Pi validation passed at `4b64455` on 2026-11-03 per the user: zero test failures
 filter listening, Pong/Pac-Man, pause/resume, and Exit to system status 0.
 See [filter checks](tests/audio-filter.md). Native cartridge lifecycle is now
 implemented with pause/freeze/resume, failure rejection, and teardown checks;
-desktop session listening and Pong/Pac-Man checks passed per the user; Pi
-validation is pending. See
+desktop session listening and Pong/Pac-Man checks passed per the user. Pi
+validation passed at `5cf471b` on 2026-11-03 per the user: audio and Pong/Pac-Man
+checks, Exit to system status 0, and zero test failures. See
 [session checks](tests/audio-session.md). Minimal Lua controls remain the next
 separate checkpoint. Resonance and additional
 synthesis features are deferred unless a practical game need justifies them.
