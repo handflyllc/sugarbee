@@ -30,6 +30,7 @@ See [dependencies](docs/development/dependencies.md) and
 - [Interactive Save Lab](examples/save-lab/README.md)
 - [Synth audio API](docs/api/audio.md)
 - [Interactive Synth Lab](examples/synth-lab/README.md)
+- [Musical Synth Lab](examples/musical-synth-lab/README.md)
 - [Current architecture](docs/architecture/overview.md)
 - [Imported historical design](docs/architecture/project_sugarbee_technical_design_specification.md)
 

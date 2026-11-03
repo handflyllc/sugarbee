@@ -35,7 +35,7 @@ static bool lab_key(Uint32 type, SDL_Scancode key) {
     call_lua_global_function("draw",false,0);
     return !g_engine.guru_active;
 }
-static int lab(const char *path, bool unavailable) {
+static int lab(const char *path, bool unavailable, bool musical) {
     if (unavailable) CHECK(SDL_setenv("SDL_AUDIODRIVER","sugarbee-no-device",1)==0);
     CHECK(init_engine());
     sb_audio_t *a=g_engine.audio;
@@ -45,6 +45,38 @@ static int lab(const char *path, bool unavailable) {
     CHECK(lab_key(SDL_KEYDOWN,SDL_SCANCODE_J));
     if (a) CHECK(bank_active(a));
     float output[2048];
+    if (musical) {
+        CHECK(lab_key(SDL_KEYUP,SDL_SCANCODE_J));
+        set_cartridge_paused(true);
+        if (a) {
+            audio_output(a,(Uint8 *)output,sizeof output);
+            sb_audio_bank_t frozen=a->bank;
+            audio_output(a,(Uint8 *)output,sizeof output);
+            CHECK(!memcmp(&frozen,&a->bank,sizeof frozen));
+            for (unsigned i=0;i<2048;++i) CHECK(output[i]==0);
+        }
+        set_cartridge_paused(false);
+        for (unsigned frame=0;frame<600;++frame) {
+            call_lua_global_function("update",true,1.0/60);
+            CHECK(!g_engine.guru_active);
+            if (a) audio_output(a,(Uint8 *)output,800*2*sizeof(float));
+        }
+        if (a) CHECK(!bank_active(a));
+        CHECK(lab_key(SDL_KEYDOWN,SDL_SCANCODE_J));
+        if (a) CHECK(bank_active(a));
+        CHECK(lab_key(SDL_KEYUP,SDL_SCANCODE_J));
+        CHECK(lab_key(SDL_KEYDOWN,SDL_SCANCODE_K));
+        if (a) {
+            audio_output(a,(Uint8 *)output,sizeof output);
+            CHECK(!bank_active(a));
+        }
+        end_cartridge();
+        CHECK(start_cartridge(path));
+        if (a) CHECK(!bank_active(a));
+        shutdown_engine();
+        puts("Musical Synth Lab cartridge checks passed");
+        return 0;
+    }
     for (unsigned i=0;i<4;++i) {
         if (a) audio_output(a,(Uint8 *)output,sizeof output);
         CHECK(lab_key(SDL_KEYDOWN,SDL_SCANCODE_D));
@@ -67,7 +99,8 @@ static int lab(const char *path, bool unavailable) {
     return 0;
 }
 int main(int argc, char **argv) {
-    if (argc>1) return lab(argv[1],argc>2);
+    if (argc>1) return lab(argv[1],argc>2 && strstr(argv[2],"unavailable"),
+                          argc>2 && strstr(argv[2],"music"));
     sb_audio_t *a=sb_audio_create(); CHECK(a);
     SDL_PauseAudioDevice(a->device,1);
     CHECK(fresh(a));

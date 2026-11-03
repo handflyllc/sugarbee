@@ -85,5 +85,6 @@ waiting for notes to finish. See [lifecycle checks](../../tests/audio-session.md
 
 Separate pitch-only controls, WAV playback, music-file formats, and sequencing
 helpers are not exposed here. The basic [Synth Lab](../../examples/synth-lab/README.md)
-demonstrates the current API. A short public-domain musical passage is accepted
-follow-up work using a Lua note/duration table, after this checkpoint is validated.
+demonstrates the current API. The [Musical Synth Lab](../../examples/musical-synth-lab/README.md) uses a
+local Lua note/duration table for four Mozart bars; desktop listening is
+accepted and Pi validation of that cartridge is pending.

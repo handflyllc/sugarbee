@@ -322,6 +322,17 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     set_tests_properties(lua_synth PROPERTIES TIMEOUT 5 ENVIRONMENT "SDL_AUDIODRIVER=dummy")
 
     if(SUGARBEE_BUILD_PACKER)
+        add_test(NAME musical_synth_lab_pack COMMAND sbee-pack
+            -i "${PROJECT_SOURCE_DIR}/examples/musical-synth-lab"
+            -o "${CMAKE_CURRENT_BINARY_DIR}/musical-synth-lab-test.vcart" -t "Musical Synth Lab"
+            --uuid 7499fd87-b134-47f5-bdf8-0889dce5ad9d)
+        set_tests_properties(musical_synth_lab_pack PROPERTIES FIXTURES_SETUP musical_synth_lab TIMEOUT 5)
+        foreach(mode IN ITEMS music music-unavailable)
+            add_test(NAME musical_synth_lab_${mode} COMMAND test_lua_synth
+                "${CMAKE_CURRENT_BINARY_DIR}/musical-synth-lab-test.vcart" ${mode})
+            set_tests_properties(musical_synth_lab_${mode} PROPERTIES FIXTURES_REQUIRED musical_synth_lab
+                TIMEOUT 5 ENVIRONMENT "SDL_AUDIODRIVER=dummy;SDL_VIDEODRIVER=dummy")
+        endforeach()
         add_test(NAME synth_lab_pack COMMAND sbee-pack
             -i "${PROJECT_SOURCE_DIR}/examples/synth-lab"
             -o "${CMAKE_CURRENT_BINARY_DIR}/synth-lab-test.vcart" -t "Synth Lab"
@@ -524,6 +535,10 @@ if(BUILD_TESTING)
     endif()
 
     if(LUA54_INTERPRETER_COMPATIBLE)
+        add_test(NAME musical_synth_lab_behavior
+            COMMAND "${LUA54_INTERPRETER}" "${PROJECT_SOURCE_DIR}/tests/musical-synth-lab/test.lua"
+                "${PROJECT_SOURCE_DIR}/examples/musical-synth-lab/main.lua")
+        set_tests_properties(musical_synth_lab_behavior PROPERTIES TIMEOUT 5)
         add_test(NAME save_lab_behavior
             COMMAND "${LUA54_INTERPRETER}"
                 "${PROJECT_SOURCE_DIR}/tests/save-lab/test.lua"

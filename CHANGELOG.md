@@ -2,6 +2,14 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added a separate Musical Synth Lab: Mozart K.525's first four bars, melody
+  only, one octave down, from a verified public-domain Mutopia score. A small
+  Lua note/duration table drives one triangle voice at 120 BPM, with rests,
+  play/restart, stop, and existing host pause/resume. Added timing and real-host
+  regressions. Debug build and all 79 tests pass; the user accepted desktop
+  listening on 2026-11-03. Pi validation is pending. No engine or
+  audio API changes, accompaniment, tracker, or music-file format.
+
 - Added minimal `sugarbee.synth` Lua controls: partial atomic configuration,
   selected pitched/noise note-on, note-off, and stop. Strict validation precedes
   native changes; unavailable output permits configuration and silent gameplay.

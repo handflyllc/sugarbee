@@ -45,5 +45,5 @@ resume, exit, relaunch, and Pong/Pac-Man passed. Exit to system returned 0;
 the test suite reported zero failures. Desktop and Pi validation are complete.
 
 The lab currently uses one voice. Regression tests cover independent voices and
-API rejection paths. A musical lab with a short public-domain passage is the
-accepted follow-up; this cartridge is the basic controls checkpoint.
+API rejection paths. The separate [Musical Synth Lab](../musical-synth-lab/README.md)
+plays a short public-domain passage using the same API.
