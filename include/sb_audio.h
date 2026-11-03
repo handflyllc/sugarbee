@@ -16,6 +16,23 @@ sb_audio_t *sb_audio_create(void);
  * NULL is harmless. Call after cartridge shutdown and before SDL_Quit(). */
 void sb_audio_destroy(sb_audio_t *audio);
 
+/* Host cartridge lifecycle; NULL is harmless. Begin resets all voices/settings
+ * and opens a fresh session. Pause fades for 480 frames then freezes the entire
+ * bank; resume fades in from the frozen state. Repeated pause requests are no-ops;
+ * reversals ramp from current gain. Fail rejects bank controls immediately,
+ * fades out, then resets voices; it cannot be resumed. End immediately clears
+ * voices/settings and closes the session without waiting for a fade/device.
+ * Eligible shutdown runs before End; a paused shutdown remains silent.
+ * Host control thread only. Fresh devices allow diagnostics until managed;
+ * between sessions bank controls are rejected. No Lua API in this checkpoint. */
+void sb_audio_session_begin(sb_audio_t *audio);
+void sb_audio_session_pause(sb_audio_t *audio, bool paused);
+void sb_audio_session_fail(sb_audio_t *audio);
+void sb_audio_session_end(sb_audio_t *audio);
+/* Before eligible shutdown: settle a pending pause fade to silence, preserving
+ * command availability and state until End. Running sessions remain audible. */
+void sb_audio_session_prepare_shutdown(sb_audio_t *audio);
+
 /* Native diagnostic only: request one quiet, one-second 440 Hz tone.
  * False if unavailable or already active (does not restart). Call on the host
  * control thread, never in the audio callback. Normal host never requests it. */

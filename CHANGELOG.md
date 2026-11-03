@@ -2,6 +2,15 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added native cartridge audio lifecycle: fresh default banks, 10 ms pause/resume
+  fades with complete bank freeze at silence, failure rejection and cleanup,
+  and bounded teardown after eligible shutdown. Paused shutdown stays silent;
+  the host retains its device between cartridges. Added callback/host regression
+  coverage and `sbee-session-test`. All 71 tests pass; the user confirmed desktop
+  session listening and Pong/Pac-Man checks passed. On 2026-11-03, the user
+  confirmed Pi validation at `5cf471b`: audio and Pong/Pac-Man checks passed,
+  Exit to system returned 0, and zero tests failed. No Lua audio bindings.
+
 - Added a simple native one-pole low-pass per bank voice, with 20–20,000 Hz
   cutoff (default 2000), exact default bypass, and 10 ms coefficient/bypass
   smoothing. Filters preserve history through active retriggers and waveform
