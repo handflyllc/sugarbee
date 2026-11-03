@@ -7,7 +7,9 @@
   Lua note/duration table drives one triangle voice at 120 BPM, with rests,
   play/restart, stop, and existing host pause/resume. Added timing and real-host
   regressions. Debug build and all 79 tests pass; the user accepted desktop
-  listening on 2026-11-03. Pi validation is pending. No engine or
+  listening on 2026-11-03. Pi validation passed at `683badf` per the user:
+  playback and lifecycle controls, Pong/Pac-Man without Gurus or playability
+  issues, Exit to system 0, and all 79 tests. No engine or
   audio API changes, accompaniment, tracker, or music-file format.
 
 - Added minimal `sugarbee.synth` Lua controls: partial atomic configuration,

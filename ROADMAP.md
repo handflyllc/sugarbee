@@ -211,7 +211,9 @@ The musical follow-up is implemented as a separate
 [Musical Synth Lab](examples/musical-synth-lab/README.md): the opening four bars
 of Eine kleine Nachtmusik, melody only one octave lower, from a verified
 public-domain Mutopia score. A small Lua note/duration table and update-driven
-timeline use the existing API. Desktop listening was accepted by the user on 2026-11-03; Pi validation is pending;
+timeline use the existing API. Desktop listening and Pi validation are complete per the user (2026-11-03):
+Pi commit `683badf` passed playback/lifecycle checks, Pong/Pac-Man, Exit to
+system 0, and all 79 tests;
 no tracker, accompaniment, or music-file format. After validation, the next
 planned game exercise is two short Pong sounds: one on a wall hit and a
 different one on paddle reflection. Preserve gameplay; use this narrow exercise

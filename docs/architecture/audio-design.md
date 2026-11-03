@@ -21,7 +21,7 @@ not current limitations.
 | Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Group/master controls |
 | Filter | Per-voice one-pole low-pass/bypass, 20–20,000 Hz cutoff, 10 ms coefficient/bypass ramps | Resonance deferred |
 | Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
-| Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables, minimal Lua synth API and basic Synth Lab | Musical lab Pi validation |
+| Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables, minimal Lua synth API and basic Synth Lab | Pong sound effects |
 | WAV | Design only | Decoder, bounded asset storage, playback voices, Lua controls |
 
 Current bank diagnostic attenuation is separately 0.790569415, chosen for
@@ -78,7 +78,7 @@ are included. A basic [Synth Lab](../../examples/synth-lab/README.md) exercises
 real cartridge calls. The separate [Musical Synth Lab](../../examples/musical-synth-lab/README.md)
 now plays the first four bars of Mozart's Eine kleine Nachtmusik from a verified
 public-domain score, melody only one octave down. A local note/duration table
-and update timing use the existing API. Desktop listening is accepted; Pi validation is pending; no accompaniment, tracker, or music-file format.
+and update timing use the existing API. Desktop and Pi validation passed per the user at `683badf`; no accompaniment, tracker, or music-file format.
 
 ## Current native voice lifecycle
 
@@ -412,7 +412,7 @@ The user also confirmed a successful Pi build and zero test failures at
    and Pi validation passed per the user at `4b64455`. No resonance or further filter modes in this checkpoint.
 4. Cartridge audio lifecycle (desktop and Pi validated at `5cf471b`),
    then minimal Lua controls (desktop/Pi validated at `7f28fbd`).
-5. Basic Synth Lab (implemented), then the musical lab (desktop accepted; Pi pending),
+5. Basic Synth Lab (implemented), then the musical lab (desktop/Pi validated at `683badf`),
    then a narrow Pong Lab audio update: one short wall-hit
    blip and a distinguishable paddle-reflection blip. Keep gameplay unchanged;
    this is an API-use/acceptance exercise, not a soundtrack or game redesign.

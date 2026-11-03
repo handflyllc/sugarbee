@@ -69,7 +69,12 @@ Development validation (2026-11-03): Debug build completed without compiler
 warnings; all 79 tests passed.
 
 Desktop listening accepted on 2026-11-03, user-reported for the implementation
-based on `7c827e8`: the lab behaved exactly as expected. Pi validation is pending.
+based on `7c827e8`: the lab behaved exactly as expected.
+
+Pi acceptance (2026-11-03), user-reported at matching commit `683badf`: playback,
+restart, stop, pause/resume, exit and relaunch all passed. Pong/Pac-Man played
+without Gurus or other playability issues. Exit to system returned 0; all 79
+tests passed. Desktop and Pi validation are complete.
 
 Manual checklist:
 
