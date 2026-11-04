@@ -217,7 +217,8 @@ system 0, and all 79 tests;
 no tracker, accompaniment, or music-file format. The two short Pong sounds are now implemented: a 330 Hz wall blip and a
 660 Hz paddle blip, preserving gameplay. Collision and real-host regression
 checks cover the existing API integration. All desktop checks passed on
-coastline per the user; Pi validation is pending; see [Pong Lab](examples/pong-lab/README.md). Bounded WAV playback follows
+coastline per the user. Pi validation passed at `db58306` on 2026-11-04:
+all requested checks, all 83 tests, and Exit to system 0; see [Pong Lab](examples/pong-lab/README.md). Bounded WAV playback follows
 as a separate milestone. No composition format or music-authoring system is added.
 
 ## Labs alongside engine work

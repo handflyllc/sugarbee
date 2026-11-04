@@ -46,7 +46,11 @@ cartridge test exercises play and relaunch with dummy/unavailable output. The
 existing smoke runner supplies audio stubs; real binding validation belongs to
 the native Lua tests. Development Debug build completed without compiler
 warnings; all 83 automated tests passed. The user confirmed all desktop checks
-passed on coastline, including the listening checklist. Pi validation is pending.
+passed on coastline, including the listening checklist.
+
+Pi validation (2026-11-04), user-reported at `db58306`: all requested checks
+passed, all 83 automated tests passed, and Exit to system returned 0. Desktop
+and Pi validation are complete.
 
 Listen for a lower wall blip and higher paddle blip, with no stuck tones. Check
 pause/resume, exit while sounding, and silent relaunch before the next collision.

@@ -7,7 +7,8 @@
   even on the winner screen; unavailable audio leaves gameplay running. Physics,
   scoring, and input are unchanged. Debug build and all 83 tests pass, including
   collision and real-host regressions. The user confirmed all desktop checks
-  passed on coastline; Pi validation is pending.
+  passed on coastline. On 2026-11-04 the user confirmed Pi validation at
+  `db58306`: all requested checks and all 83 tests passed; Exit to system 0.
 
 - Added a separate Musical Synth Lab: Mozart K.525's first four bars, melody
   only, one octave down, from a verified public-domain Mutopia score. A small
