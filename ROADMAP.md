@@ -214,10 +214,11 @@ public-domain Mutopia score. A small Lua note/duration table and update-driven
 timeline use the existing API. Desktop listening and Pi validation are complete per the user (2026-11-03):
 Pi commit `683badf` passed playback/lifecycle checks, Pong/Pac-Man, Exit to
 system 0, and all 79 tests;
-no tracker, accompaniment, or music-file format. After validation, the next
-planned game exercise is two short Pong sounds: one on a wall hit and a
-different one on paddle reflection. Preserve gameplay; use this narrow exercise
-to validate the audio API in an existing cartridge. Bounded WAV playback follows
+no tracker, accompaniment, or music-file format. The two short Pong sounds are now implemented: a 330 Hz wall blip and a
+660 Hz paddle blip, preserving gameplay. Collision and real-host regression
+checks cover the existing API integration. All desktop checks passed on
+coastline per the user. Pi validation passed at `db58306` on 2026-11-04:
+all requested checks, all 83 tests, and Exit to system 0; see [Pong Lab](examples/pong-lab/README.md). Bounded WAV playback follows
 as a separate milestone. No composition format or music-authoring system is added.
 
 ## Labs alongside engine work

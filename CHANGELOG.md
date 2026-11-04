@@ -2,6 +2,14 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added two short Pong sounds using the existing Lua synth API: 330 Hz wall hits
+  and 660 Hz paddle reflections on separate triangle voices. Release gates run
+  even on the winner screen; unavailable audio leaves gameplay running. Physics,
+  scoring, and input are unchanged. Debug build and all 83 tests pass, including
+  collision and real-host regressions. The user confirmed all desktop checks
+  passed on coastline. On 2026-11-04 the user confirmed Pi validation at
+  `db58306`: all requested checks and all 83 tests passed; Exit to system 0.
+
 - Added a separate Musical Synth Lab: Mozart K.525's first four bars, melody
   only, one octave down, from a verified public-domain Mutopia score. A small
   Lua note/duration table drives one triangle voice at 120 BPM, with rests,

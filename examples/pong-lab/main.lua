@@ -20,8 +20,29 @@ local right_score = 0
 local winning_score = 5
 local winner = nil
 
+-- Separate voices let simultaneous wall/paddle contacts overlap.
+local sound_time = {0, 0}
+local function hit_sound(voice, hz)
+    if sugarbee.synth.note_on(voice, hz) then sound_time[voice] = .025 end
+end
+local function update_sounds(dt)
+    for voice = 1, 2 do
+        if sound_time[voice] > 0 then
+            sound_time[voice] = math.max(0, sound_time[voice] - dt)
+            if sound_time[voice] == 0 then sugarbee.synth.note_off(voice) end
+        end
+    end
+end
+
 function init()
     print("Pong Lab: paddle test loaded")
+    for voice = 1, 2 do
+        sugarbee.synth.configure(voice, {
+            waveform = "triangle", attack = .003, decay = 0,
+            sustain = .7, release = .06, volume = .6, pan = 0,
+            filter = {bypass = true}
+        })
+    end
 
     if math.random(0, 1) == 0 then
         ball_velocity_x = -ball_velocity_x
@@ -33,6 +54,7 @@ function init()
 end
 
 function update(dt)
+    update_sounds(dt) -- Release sounds even on the winner screen.
     if winner then
         if sugarbee.btnp("b", 0) or sugarbee.btnp("b", 1) then
             left_score = 0
@@ -92,9 +114,11 @@ function update(dt)
     if ball_y + ball_size >= screen_height then
         ball_y = screen_height - ball_size
         ball_velocity_y = -ball_velocity_y
+        hit_sound(1, 330)
     elseif ball_y <= 0 then
         ball_y = 0
         ball_velocity_y = -ball_velocity_y
+        hit_sound(1, 330)
     end
 
     -- screen boundary check - horizontal
@@ -137,6 +161,7 @@ function update(dt)
 
         ball_x = paddle_x + paddle_width
         ball_velocity_x = -ball_velocity_x
+        hit_sound(2, 660)
     end
 
     -- detect bounce off right paddle
@@ -148,6 +173,7 @@ function update(dt)
 
         ball_x = right_paddle_x - ball_size
         ball_velocity_x = -ball_velocity_x
+        hit_sound(2, 660)
     end
 
 end
@@ -207,4 +233,9 @@ function draw()
             160, 120
         )
     end
+end
+
+function shutdown()
+    sugarbee.synth.stop(1)
+    sugarbee.synth.stop(2)
 end
