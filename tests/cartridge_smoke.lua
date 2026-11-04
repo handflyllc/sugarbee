@@ -124,6 +124,14 @@ end
 -- The stand-in API
 -- ---------------------------------------------------------------------------
 sugarbee = {}
+-- Synth stubs supply execution coverage only; test_lua_synth checks the real
+-- argument contract. No sound or timing is modeled by this smoke runner.
+sugarbee.synth = {
+    configure = function() return true end,
+    note_on = function() return true end,
+    note_off = function() return true end,
+    stop = function() return true end
+}
 
 function sugarbee.cls(r, g, b)
     opt_int("cls", 1, r, 0); opt_int("cls", 2, g, 0); opt_int("cls", 3, b, 0)

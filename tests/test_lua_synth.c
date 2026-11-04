@@ -35,13 +35,34 @@ static bool lab_key(Uint32 type, SDL_Scancode key) {
     call_lua_global_function("draw",false,0);
     return !g_engine.guru_active;
 }
-static int lab(const char *path, bool unavailable, bool musical) {
+static int lab(const char *path, bool unavailable, bool musical, bool pong) {
     if (unavailable) CHECK(SDL_setenv("SDL_AUDIODRIVER","sugarbee-no-device",1)==0);
     CHECK(init_engine());
     sb_audio_t *a=g_engine.audio;
     CHECK((a==NULL)==unavailable);
     if (a) SDL_PauseAudioDevice(a->device,1);
     CHECK(start_cartridge(path));
+    if (pong) {
+        bool heard=false;
+        float samples[1600];
+        for (unsigned frame=0;frame<600;++frame) {
+            call_lua_global_function("update",true,1.0/60);
+            call_lua_global_function("draw",false,0);
+            CHECK(!g_engine.guru_active);
+            if (a) {
+                heard=heard || bank_active(a);
+                audio_output(a,(Uint8 *)samples,sizeof samples);
+            }
+        }
+        if (a) CHECK(heard);
+        end_cartridge();
+        if (a) CHECK(!bank_active(a));
+        CHECK(start_cartridge(path));
+        if (a) CHECK(!bank_active(a));
+        shutdown_engine();
+        puts("Pong audio cartridge checks passed");
+        return 0;
+    }
     CHECK(lab_key(SDL_KEYDOWN,SDL_SCANCODE_J));
     if (a) CHECK(bank_active(a));
     float output[2048];
@@ -100,7 +121,8 @@ static int lab(const char *path, bool unavailable, bool musical) {
 }
 int main(int argc, char **argv) {
     if (argc>1) return lab(argv[1],argc>2 && strstr(argv[2],"unavailable"),
-                          argc>2 && strstr(argv[2],"music"));
+                          argc>2 && strstr(argv[2],"music"),
+                          argc>2 && strstr(argv[2],"pong"));
     sb_audio_t *a=sb_audio_create(); CHECK(a);
     SDL_PauseAudioDevice(a->device,1);
     CHECK(fresh(a));

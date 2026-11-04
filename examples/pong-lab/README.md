@@ -1,6 +1,6 @@
 # Pong Lab
 
-A small Lua learning exercise using SugarBee’s existing graphics, input, and timing APIs.
+A small Lua learning exercise using SugarBee’s existing graphics, input, timing, and synth APIs.
 
 ## Current behavior
 
@@ -10,6 +10,8 @@ A small Lua learning exercise using SugarBee’s existing graphics, input, and t
 - The ball starts in a randomly selected diagonal direction.
 - It bounces off the top and bottom screen edges.
 - Either paddle reverses horizontal velocity while preserving vertical velocity.
+- Wall reflections play a short 330 Hz triangle blip; paddle reflections play
+  a higher 660 Hz blip. Separate voices permit simultaneous contacts.
 - When the ball reaches a left or right screen boundary, the opponent earns one point.
 - After a point, the ball returns to center and travels toward the player who scored, with a randomized vertical direction.
 - First to five points wins, and movement stops.
@@ -26,7 +28,30 @@ From the repository root, with the engine and packager already built:
 ./build/sugarbee /tmp/pong-lab.vcart
 ```
 
-Repack after changing the Lua source.
+Repack after changing the Lua source. Use `--console` before the cartridge path
+when checking Exit to system.
+
+## Audio checkpoint
+
+Voice 1 is the wall sound; voice 2 is the paddle sound. Each uses a 3 ms attack,
+25 ms gameplay gate (rounded up to the next update), and 60 ms release. The gate
+is refreshed on a repeated hit; it releases even on the winner screen. The
+existing host freezes audio and gameplay during pause and clears it on exit.
+Shutdown also requests short stops for both voices. Audio unavailability does
+not alter gameplay. There are no scoring, win, startup, or background sounds.
+
+Tests cover both wall and paddle directions, separation after a bounce, misses,
+simultaneous contacts, winner-screen release, and unavailable output. A real-host
+cartridge test exercises play and relaunch with dummy/unavailable output. The
+existing smoke runner supplies audio stubs; real binding validation belongs to
+the native Lua tests. Development Debug build completed without compiler
+warnings; all 83 automated tests passed. The user confirmed all desktop checks
+passed on coastline, including the listening checklist. Pi validation is pending.
+
+Listen for a lower wall blip and higher paddle blip, with no stuck tones. Check
+pause/resume, exit while sounding, and silent relaunch before the next collision.
+Then check Pac-Man and Exit to system status 0. Two-player controls and gameplay
+remain unchanged; test both paddles when two controllers are available.
 
 ## Manual checks
 

@@ -322,6 +322,16 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     set_tests_properties(lua_synth PROPERTIES TIMEOUT 5 ENVIRONMENT "SDL_AUDIODRIVER=dummy")
 
     if(SUGARBEE_BUILD_PACKER)
+        add_test(NAME pong_audio_pack COMMAND sbee-pack
+            -i "${PROJECT_SOURCE_DIR}/examples/pong-lab"
+            -o "${CMAKE_CURRENT_BINARY_DIR}/pong-audio-test.vcart" -t "Pong Lab")
+        set_tests_properties(pong_audio_pack PROPERTIES FIXTURES_SETUP pong_audio TIMEOUT 5)
+        foreach(mode IN ITEMS pong pong-unavailable)
+            add_test(NAME pong_audio_${mode} COMMAND test_lua_synth
+                "${CMAKE_CURRENT_BINARY_DIR}/pong-audio-test.vcart" ${mode})
+            set_tests_properties(pong_audio_${mode} PROPERTIES FIXTURES_REQUIRED pong_audio
+                TIMEOUT 5 ENVIRONMENT "SDL_AUDIODRIVER=dummy;SDL_VIDEODRIVER=dummy")
+        endforeach()
         add_test(NAME musical_synth_lab_pack COMMAND sbee-pack
             -i "${PROJECT_SOURCE_DIR}/examples/musical-synth-lab"
             -o "${CMAKE_CURRENT_BINARY_DIR}/musical-synth-lab-test.vcart" -t "Musical Synth Lab"
@@ -535,6 +545,10 @@ if(BUILD_TESTING)
     endif()
 
     if(LUA54_INTERPRETER_COMPATIBLE)
+        add_test(NAME pong_audio_behavior COMMAND "${LUA54_INTERPRETER}"
+            "${PROJECT_SOURCE_DIR}/tests/pong-audio/test.lua"
+            "${PROJECT_SOURCE_DIR}/examples/pong-lab/main.lua")
+        set_tests_properties(pong_audio_behavior PROPERTIES TIMEOUT 5)
         add_test(NAME musical_synth_lab_behavior
             COMMAND "${LUA54_INTERPRETER}" "${PROJECT_SOURCE_DIR}/tests/musical-synth-lab/test.lua"
                 "${PROJECT_SOURCE_DIR}/examples/musical-synth-lab/main.lua")
