@@ -221,7 +221,8 @@ coastline per the user. Pi validation passed at `db58306` on 2026-11-04:
 all requested checks, all 83 tests, and Exit to system 0; see [Pong Lab](examples/pong-lab/README.md). The native WAV foundation is now implemented as a separate checkpoint:
 bounded PCM decoding, shared assets, eight one-shot playbacks, fixed mixing
 headroom, controls and lifecycle. Desktop checks passed on coastline per the
-user; Pi validation is pending; see [native WAV checks](tests/audio-wav.md). Lua loading and a cartridge
+user. Pi validation passed at `b292f82` on 2026-11-04: all 86 tests, WAV
+listening, gameplay/lifecycle checks, and Exit to system 0; see [native WAV checks](tests/audio-wav.md). Lua loading and a cartridge
 WAV Lab remain the next separately scoped checkpoint. Looping and streaming
 are deferred. No composition format or music-authoring system is added.
 

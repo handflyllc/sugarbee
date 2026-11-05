@@ -22,7 +22,7 @@ not current limitations.
 | Filter | Per-voice one-pole low-pass/bypass, 20–20,000 Hz cutoff, 10 ms coefficient/bypass ramps | Resonance deferred |
 | Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
 | Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables, minimal Lua synth API and basic Synth Lab | Bounded WAV playback |
-| WAV | Native bounded PCM decoder/storage, eight one-shot voices, controls, fixed mixing and lifecycle | Pi validation, Lua/asset integration, looping/streaming |
+| WAV | Native bounded PCM decoder/storage, eight one-shot voices, controls, fixed mixing and lifecycle | Lua/asset integration, looping/streaming |
 
 Current bank diagnostic attenuation is separately 0.790569415, chosen for
 listening audibility. Legacy single-triangle and sine diagnostics retain their
@@ -219,7 +219,7 @@ Implemented native subset: bounded in-memory PCM decoding, 48 kHz conversion,
 64 shared assets / 32 MiB retained samples, eight one-shot voices, volume/pan,
 10 ms gain/stop ramps and the common cartridge lifecycle. Handles never recycle
 within a device lifetime. The native diagnostic exercises generated samples;
-desktop checks passed on coastline; Pi validation is pending. See
+desktop and Pi checks passed per the user at `b292f82`. See
 [native WAV contract and checks](../../tests/audio-wav.md).
 
 The Lua API, cartridge lookup, and loops below remain planned. Native load
@@ -429,7 +429,7 @@ The user also confirmed a successful Pi build and zero test failures at
    then the Pong Lab audio update (desktop/Pi validated at `db58306`): one short wall-hit
    blip and a distinguishable paddle-reflection blip. Keep gameplay unchanged;
    this is an API-use/acceptance exercise, not a soundtrack or game redesign.
-6. Native bounded WAV foundation (desktop accepted; Pi pending), then
+6. Native bounded WAV foundation (desktop/Pi validated at `b292f82`), then
    Lua loading and a small WAV Lab as a separate checkpoint. One-shot playback
    only initially; looping and streaming are deferred.
 

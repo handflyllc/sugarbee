@@ -8,7 +8,9 @@
   cleanup. WAVs have fixed 0.2 total headroom alongside unchanged synth gain.
   Added decoder/pool/callback regressions and `sbee-wav-test` with generated
   sounds. Debug build and all 86 tests pass. The user confirmed all coastline
-  checks passed on 2026-11-04. Pi validation is pending; no Lua WAV bindings,
+  checks passed on 2026-11-04. Pi validation passed at `b292f82` per the user:
+  all 86 tests, WAV listening, Pong/Synth Labs/Pac-Man, lifecycle checks and
+  Exit to system 0. No Lua WAV bindings,
   cartridge WAV loading, loops, or streaming in this checkpoint.
 
 - Added two short Pong sounds using the existing Lua synth API: 330 Hz wall hits

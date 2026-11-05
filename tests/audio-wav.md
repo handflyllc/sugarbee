@@ -136,7 +136,11 @@ clean control transitions, and no stuck sounds or bursts during pause/cleanup.
 Then check Pong sounds, musical/basic Synth Labs, Pac-Man, pause/resume,
 exit/relaunch, and Exit to system status 0. Desktop acceptance (2026-11-04):
 the user confirmed all checks passed on coastline for the implementation based
-on `79b631d`. Pi validation is pending. No Lua API changes are included.
+on `79b631d`. No Lua API changes are included.
+
+Pi validation (2026-11-04), user-reported at `b292f82`: all 86 tests passed;
+WAV listening, Pong, Synth Labs, Pac-Man, pause/resume, exit and launch all
+passed. Exit to system returned 0. Desktop and Pi validation are complete.
 
 Development verification (2026-11-04): Debug build completed without compiler
 warnings; all 86 tests passed. After preserving the idle-silence fast path, all
