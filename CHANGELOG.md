@@ -2,6 +2,15 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added the native WAV foundation: bounded 16-bit PCM mono/stereo decoding at
+  22.05/44.1/48 kHz, load-time conversion, shared assets, eight one-shot voices,
+  volume/pan and stop fades, stale-handle protection, and cartridge lifecycle
+  cleanup. WAVs have fixed 0.2 total headroom alongside unchanged synth gain.
+  Added decoder/pool/callback regressions and `sbee-wav-test` with generated
+  sounds. Debug build and all 86 tests pass. The user confirmed all coastline
+  checks passed on 2026-11-04. Pi validation is pending; no Lua WAV bindings,
+  cartridge WAV loading, loops, or streaming in this checkpoint.
+
 - Added two short Pong sounds using the existing Lua synth API: 330 Hz wall hits
   and 660 Hz paddle reflections on separate triangle voices. Release gates run
   even on the winner screen; unavailable audio leaves gameplay running. Physics,

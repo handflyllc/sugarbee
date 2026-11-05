@@ -218,8 +218,12 @@ no tracker, accompaniment, or music-file format. The two short Pong sounds are n
 660 Hz paddle blip, preserving gameplay. Collision and real-host regression
 checks cover the existing API integration. All desktop checks passed on
 coastline per the user. Pi validation passed at `db58306` on 2026-11-04:
-all requested checks, all 83 tests, and Exit to system 0; see [Pong Lab](examples/pong-lab/README.md). Bounded WAV playback follows
-as a separate milestone. No composition format or music-authoring system is added.
+all requested checks, all 83 tests, and Exit to system 0; see [Pong Lab](examples/pong-lab/README.md). The native WAV foundation is now implemented as a separate checkpoint:
+bounded PCM decoding, shared assets, eight one-shot playbacks, fixed mixing
+headroom, controls and lifecycle. Desktop checks passed on coastline per the
+user; Pi validation is pending; see [native WAV checks](tests/audio-wav.md). Lua loading and a cartridge
+WAV Lab remain the next separately scoped checkpoint. Looping and streaming
+are deferred. No composition format or music-authoring system is added.
 
 ## Labs alongside engine work
 
