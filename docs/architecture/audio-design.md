@@ -22,13 +22,13 @@ not current limitations.
 | Filter | Per-voice one-pole low-pass/bypass, 20–20,000 Hz cutoff, 10 ms coefficient/bypass ramps | Resonance deferred |
 | Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
 | Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables, minimal Lua synth API and basic Synth Lab | Bounded WAV playback |
-| WAV | Design only | Decoder, bounded asset storage, playback voices, Lua controls |
+| WAV | Native bounded PCM decoder/storage, eight one-shot voices, controls, fixed mixing and lifecycle | Lua/asset integration, looping/streaming |
 
 Current bank diagnostic attenuation is separately 0.790569415, chosen for
 listening audibility. Legacy single-triangle and sine diagnostics retain their
-0.05 level. These are test levels, not a finalized master-volume API. Current
-triangle/noise mixing stays within ±1 under supported controls; there is no
-final clamp or clipping counter yet. Filters and WAV mixing need new bounds.
+0.05 level. These are test levels, not a finalized master-volume API. The native WAV group now adds a fixed maximum 0.2 per channel; combined
+synth/WAV peak stays below 1 under supported controls. There is no final clamp
+or clipping counter. See [native WAV checks](../../tests/audio-wav.md) for bounds.
 
 The user confirmed successful Pi validation at `f1982a9`: all 56 automated
 tests, clean native saw and earlier audio sequences, gameplay, and Exit to system
@@ -215,6 +215,17 @@ when a practical game need justifies it.
 
 ## Sample playback — not implemented
 
+Implemented native subset: bounded in-memory PCM decoding, 48 kHz conversion,
+64 shared assets / 32 MiB retained samples, eight one-shot voices, volume/pan,
+10 ms gain/stop ramps and the common cartridge lifecycle. Handles never recycle
+within a device lifetime. The native diagnostic exercises generated samples;
+desktop and Pi checks passed per the user at `b292f82`. See
+[native WAV contract and checks](../../tests/audio-wav.md).
+
+The Lua API, cartridge lookup, and loops below remain planned. Native load
+currently needs a device; the standalone decoder is device-independent. Lua
+asset preparation during unavailable audio remains part of the next checkpoint.
+
 Use eight WAV playback voices, separate from the nine synth voices. These are
 initial budgets to validate on hardware, not measured Pi performance claims.
 A loaded asset holds shared decoded data; each successful playback receives a
@@ -305,7 +316,7 @@ Implemented now: startup failure permits silent gameplay with one diagnostic;
 the host retains the device across cartridge sessions and closes it after
 eligible Lua shutdown on host exit. Native control calls return false when
 audio is unavailable. Device access is serialized with SDL locking. There is
-no Lua audio query or WAV loading. Minimal Lua synth controls are implemented.
+no Lua audio query or Lua WAV loading. Native buffer-based WAV loading is implemented. Minimal Lua synth controls are implemented.
 
 Native cartridge lifecycle is implemented: fresh default banks on launch,
 10 ms pause fade followed by complete bank freeze, and 10 ms resume fade.
@@ -336,9 +347,11 @@ must be implemented without an unbounded wait.
 
 ## Target mixing policy
 
-Implemented subset: floating-point mixing, per-voice volume and equal-power pan,
-fixed 1/9 synth headroom, and separate diagnostic gain. Group/master controls,
-WAV mixing, final clamp, and clipping diagnostics below remain unimplemented.
+Implemented subset: floating-point mixing, per-voice volume/pan, fixed 1/9
+synth headroom with existing 0.790569415 gain, plus fixed WAV gain 0.025 per
+playback (eight voices, 0.2 total). Combined bounds are documented in
+[native WAV checks](../../tests/audio-wav.md). Group/master controls, final clamp,
+and clipping diagnostics below remain unimplemented.
 
 
 - Mix using floating-point accumulation.
@@ -416,7 +429,9 @@ The user also confirmed a successful Pi build and zero test failures at
    then the Pong Lab audio update (desktop/Pi validated at `db58306`): one short wall-hit
    blip and a distinguishable paddle-reflection blip. Keep gameplay unchanged;
    this is an API-use/acceptance exercise, not a soundtrack or game redesign.
-6. Bounded WAV playback as a separate milestone.
+6. Native bounded WAV foundation (desktop/Pi validated at `b292f82`), then
+   Lua loading and a small WAV Lab as a separate checkpoint. One-shot playback
+   only initially; looping and streaming are deferred.
 
 Each stage needs its own scope/acceptance review; this sequence is not permission
 to implement all stages at once. Saw integration retains the bounded pitch range;

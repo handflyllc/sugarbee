@@ -1,9 +1,10 @@
-/* Host-owned audio output. No Lua or asset API yet. */
+/* Host-owned synth and native WAV output; Lua synth adaptation is separate. */
 #ifndef SB_AUDIO_H
 #define SB_AUDIO_H
 #include <stdbool.h>
 #include <stdint.h>
 #include "sb_audio_waveform.h"
+#include "sb_wav.h"
 
 typedef struct sb_audio sb_audio_t;
 
@@ -45,6 +46,24 @@ sb_audio_voice_settings_t sb_audio_voice_defaults(void);
  * including when a conflicting waveform transition is in progress. */
 bool sb_audio_voice_apply_settings(sb_audio_t *audio, unsigned voice,
                           const sb_audio_voice_settings_t *settings);
+
+/* Native one-shot WAV API. Host control thread only; no Lua binding yet.
+ * load borrows WAV bytes for the call, decodes outside the device lock, then
+ * transfers decoded storage into the session. Output handles are zero on error.
+ * NULL audio returns UNAVAILABLE; no implicit device reconnection. */
+sb_wav_result_t sb_audio_wav_load(sb_audio_t *audio, const void *bytes, size_t length,
+                                 sb_wav_handle_t *asset);
+sb_wav_result_t sb_audio_wav_unload(sb_audio_t *audio, sb_wav_handle_t asset);
+sb_wav_result_t sb_audio_wav_play(sb_audio_t *audio, sb_wav_handle_t asset,
+                                 double volume, double pan, sb_wav_handle_t *playback);
+/* Unknown/ended/stale playback IDs return false. Stop fades over 480 frames;
+ * stopping retains its slot until the fade or file ends. Repeated stop and
+ * controls on stopping playbacks return false. Gain edits ramp over 480 frames.
+ * Begin/end clear playbacks and assets; old IDs cannot control reused slots. */
+bool sb_audio_wav_playing(sb_audio_t *audio, sb_wav_handle_t playback);
+bool sb_audio_wav_stop(sb_audio_t *audio, sb_wav_handle_t playback);
+bool sb_audio_wav_controls(sb_audio_t *audio, sb_wav_handle_t playback,
+                            double volume, double pan);
 
 /* Native diagnostic only: request one quiet, one-second 440 Hz tone.
  * False if unavailable or already active (does not restart). Call on the host
