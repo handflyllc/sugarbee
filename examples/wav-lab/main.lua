@@ -1,12 +1,12 @@
 -- Generated assets are packed by tests/wav-lab/prepare-fixture.sh.
 local audio=sugarbee.audio
 local sounds={}
-local names={"Mono chime", "Stereo: low left / high right"}
+local names={"Mono chime", "Stereo: low left / high right", "Loop: steady mono tone"}
 local selected, volume, pan = 1, .8, 0
 local playing={}
 local status="A / J: play"
 function init()
-    for i,path in ipairs({"assets/mono.wav","assets/stereo.wav"}) do
+    for i,path in ipairs({"assets/mono.wav","assets/stereo.wav","assets/loop.wav"}) do
         local sound,why=audio.load(path)
         if not sound then error("WAV load failed: " .. why) end
         sounds[i]=sound
@@ -16,7 +16,8 @@ function update(dt)
     for i=#playing,1,-1 do
         if not audio.is_playing(playing[i]) then table.remove(playing,i) end
     end
-    if sugarbee.btnp("up") or sugarbee.btnp("down") then selected=3-selected end
+    if sugarbee.btnp("up") then selected=(selected-2)%#sounds+1 end
+    if sugarbee.btnp("down") then selected=selected%#sounds+1 end
     local newpan=pan
     if sugarbee.btnp("left") then newpan=math.max(-1,pan-1) end
     if sugarbee.btnp("right") then newpan=math.min(1,pan+1) end
@@ -32,7 +33,7 @@ function update(dt)
         for _,handle in ipairs(playing) do audio.stop(handle) end
         status="Stopping"
     elseif sugarbee.btnp("a") then
-        local handle,why=audio.play(sounds[selected],{volume=volume,pan=pan})
+        local handle,why=audio.play(sounds[selected],{volume=volume,pan=pan,loop=selected==3})
         if handle then
             playing[#playing+1]=handle; status="Playing"
         else status=why end

@@ -78,8 +78,8 @@ int main(void) {
     CHECK(sb_wav_insert(&pool,&d,&asset)==SB_WAV_ASSETS_FULL); sb_wav_free(&d);
     asset=pool.assets[0].id;
     sb_wav_handle_t ids[8],id;
-    for (unsigned i=0;i<8;++i) CHECK(sb_wav_play(&pool,asset,1,0,&ids[i])==SB_WAV_OK);
-    CHECK(sb_wav_play(&pool,asset,1,0,&id)==SB_WAV_VOICES_FULL && id==0);
+    for (unsigned i=0;i<8;++i) CHECK(sb_wav_play(&pool,asset,1,0,false,&ids[i])==SB_WAV_OK);
+    CHECK(sb_wav_play(&pool,asset,1,0,false,&id)==SB_WAV_VOICES_FULL && id==0);
     CHECK(sb_wav_unload(&pool,asset)==SB_WAV_IN_USE);
     float out[2048]; sb_wav_render(&pool,out,1);
     CHECK(fabs(out[0]-.2*32767/32768)<1e-7 && out[0]==out[1]);
@@ -88,13 +88,41 @@ int main(void) {
     CHECK(!sb_wav_controls(&pool,ids[1],NAN,0));
     sb_wav_render(&pool,out,479); CHECK(sb_wav_playing(&pool,ids[0]));
     sb_wav_render(&pool,out,1); CHECK(!sb_wav_playing(&pool,ids[0]));
-    CHECK(sb_wav_play(&pool,asset,.5,-1,&id)==SB_WAV_OK && id!=ids[0]);
+    CHECK(sb_wav_play(&pool,asset,.5,-1,false,&id)==SB_WAV_OK && id!=ids[0]);
     CHECK(!sb_wav_stop(&pool,ids[0]));
     sb_wav_render(&pool,out,1024);
     for (unsigned i=0;i<8;++i) CHECK(!sb_wav_playing(&pool,ids[i]));
     CHECK(!sb_wav_playing(&pool,id)); CHECK(sb_wav_unload(&pool,asset)==SB_WAV_OK);
     CHECK(sb_wav_unload(&pool,asset)==SB_WAV_BAD_HANDLE);
     sb_wav_pool_reset(&pool);
+    /* Tiny mono/stereo loops: exact wrap, callback partitioning, and stop
+     * across many boundaries. Include the one-frame edge case. */
+    for (unsigned channels=1;channels<=2;++channels) for (unsigned length=1;length<=3;length+=2) {
+        sb_wav_data_t loopdata={calloc(length*channels,sizeof(float)),length,channels};
+        CHECK(loopdata.samples);
+        for (unsigned i=0;i<length*channels;++i) loopdata.samples[i]=(float)(i+1)/8;
+        CHECK(sb_wav_insert(&pool,&loopdata,&asset)==SB_WAV_OK);
+        CHECK(sb_wav_play(&pool,asset,1,-1,true,&id)==SB_WAV_OK);
+        sb_wav_render(&pool,out,17);
+        for (unsigned i=0;i<17;++i) {
+            CHECK(fabs(out[2*i]-.025*((i%length)*channels+1)/8)<1e-8);
+            CHECK(out[2*i+1]==0);
+        }
+        CHECK(sb_wav_playing(&pool,id));
+        CHECK(sb_wav_unload(&pool,asset)==SB_WAV_IN_USE);
+        CHECK(sb_wav_controls(&pool,id,.3,1));
+        sb_wav_pool_t copy=pool; float whole[2000],parts[2000];
+        sb_wav_render(&pool,whole,1000);
+        for (unsigned i=0;i<1000;++i) sb_wav_render(&copy,parts+2*i,1);
+        CHECK(!memcmp(whole,parts,sizeof whole));
+        CHECK(!memcmp(pool.playbacks,copy.playbacks,sizeof pool.playbacks));
+        CHECK(sb_wav_stop(&pool,id));
+        sb_wav_render(&pool,out,479); CHECK(sb_wav_playing(&pool,id));
+        sb_wav_render(&pool,out,1); CHECK(!sb_wav_playing(&pool,id));
+        sb_wav_render(&pool,out,1); CHECK(out[0]==0 && out[1]==0);
+        CHECK(sb_wav_unload(&pool,asset)==SB_WAV_OK);
+        sb_wav_pool_reset(&pool);
+    }
     pool.serial=UINT64_MAX;
     CHECK(sb_wav_decode(b,n,&d)==SB_WAV_OK);
     CHECK(sb_wav_insert(&pool,&d,&asset)==SB_WAV_IDS_EXHAUSTED); sb_wav_free(&d);

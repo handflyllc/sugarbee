@@ -56,6 +56,11 @@ sb_wav_result_t sb_audio_wav_load(sb_audio_t *audio, const void *bytes, size_t l
 sb_wav_result_t sb_audio_wav_unload(sb_audio_t *audio, sb_wav_handle_t asset);
 sb_wav_result_t sb_audio_wav_play(sb_audio_t *audio, sb_wav_handle_t asset,
                                  double volume, double pan, sb_wav_handle_t *playback);
+/* Repeat the complete decoded asset, retaining one slot until stopped.
+ * No boundary crossfade; assets must be authored for seamless repetition.
+ * The existing sb_audio_wav_play entry point remains one-shot. */
+sb_wav_result_t sb_audio_wav_play_loop(sb_audio_t *audio, sb_wav_handle_t asset,
+                                      double volume, double pan, sb_wav_handle_t *playback);
 /* Unknown/ended/stale playback IDs return false. Stop fades over 480 frames;
  * stopping retains its slot until the fade or file ends. Repeated stop and
  * controls on stopping playbacks return false. Gain edits ramp over 480 frames.

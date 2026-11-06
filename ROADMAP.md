@@ -227,8 +227,10 @@ checkpoint. The user confirmed samples, overlap, pause/resume, exit and
 relaunch on coastline; Pi validation passed at `604ae3b` on
 2026-11-06 per the user: all 89 tests, the WAV Lab/game regression checklist,
 and Exit to system status 0. See
-[WAV API](docs/api/wav.md) and [WAV Lab](examples/wav-lab/README.md). Looping and streaming
-are deferred. No composition format or music-authoring system is added.
+[WAV API](docs/api/wav.md) and [WAV Lab](examples/wav-lab/README.md). Whole-sound looping is now implemented as the next checkpoint; all 89 tests and
+desktop/Pi acceptance passed, with Pi validation at `026aa2c` on 2026-11-06
+per the user. See the WAV Lab README for the checks.
+Streaming remains deferred. No composition format or music-authoring system is added.
 
 ## Labs alongside engine work
 

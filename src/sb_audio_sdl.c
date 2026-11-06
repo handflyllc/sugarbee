@@ -481,14 +481,20 @@ sb_wav_result_t sb_audio_wav_unload(sb_audio_t *audio,sb_wav_handle_t asset) {
     SDL_UnlockAudioDevice(audio->device);
     return r;
 }
-sb_wav_result_t sb_audio_wav_play(sb_audio_t *audio,sb_wav_handle_t asset,double volume,double pan,sb_wav_handle_t *playback) {
+static sb_wav_result_t wav_play(sb_audio_t *audio,sb_wav_handle_t asset,double volume,double pan,bool loop,sb_wav_handle_t *playback) {
     if (!playback) return SB_WAV_INVALID;
     *playback=0;
     if (!audio) return SB_WAV_UNAVAILABLE;
     SDL_LockAudioDevice(audio->device);
-    sb_wav_result_t r=bank_controls_allowed(audio) ? sb_wav_play(&audio->wav,asset,volume,pan,playback) : SB_WAV_REJECTED;
+    sb_wav_result_t r=bank_controls_allowed(audio) ? sb_wav_play(&audio->wav,asset,volume,pan,loop,playback) : SB_WAV_REJECTED;
     SDL_UnlockAudioDevice(audio->device);
     return r;
+}
+sb_wav_result_t sb_audio_wav_play(sb_audio_t *audio,sb_wav_handle_t asset,double volume,double pan,sb_wav_handle_t *playback) {
+    return wav_play(audio,asset,volume,pan,false,playback);
+}
+sb_wav_result_t sb_audio_wav_play_loop(sb_audio_t *audio,sb_wav_handle_t asset,double volume,double pan,sb_wav_handle_t *playback) {
+    return wav_play(audio,asset,volume,pan,true,playback);
 }
 bool sb_audio_wav_playing(sb_audio_t *audio,sb_wav_handle_t playback) {
     if (!audio) return false;

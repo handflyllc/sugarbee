@@ -95,7 +95,7 @@ static int play(lua_State *L) {
     int argc=lua_gettop(L);
     if (argc!=1 && argc!=2) return luaL_error(L,"audio.play: expected 1 or 2 arguments");
     handle_t *asset=check_handle(L,ASSET_MT);
-    double volume=.5,pan=0;
+    double volume=.5,pan=0; bool loop=false;
     if (argc==2) {
         if (lua_type(L,2)!=LUA_TTABLE) return luaL_error(L,"audio.play: options must be a table");
         lua_pushnil(L);
@@ -104,8 +104,9 @@ static int play(lua_State *L) {
             if (key(L,-2,"volume")) volume=number(L,-1,"volume",0,1);
             else if (key(L,-2,"pan")) pan=number(L,-1,"pan",-1,1);
             else if (key(L,-2,"loop")) {
-                if (lua_type(L,-1)!=LUA_TBOOLEAN || lua_toboolean(L,-1))
-                    return luaL_error(L,"audio.play: only loop=false is supported");
+                if (lua_type(L,-1)!=LUA_TBOOLEAN)
+                    return luaL_error(L,"audio.play: loop must be a boolean");
+                loop=lua_toboolean(L,-1);
             } else return luaL_error(L,"audio.play: unknown option");
             lua_pop(L,1);
         }
@@ -114,7 +115,7 @@ static int play(lua_State *L) {
     if (!usable(c)) return failure(L,SB_WAV_REJECTED,false);
     if (!c->audio) return failure(L,SB_WAV_UNAVAILABLE,false);
     handle_t *h=new_handle(L,PLAY_MT);
-    sb_wav_result_t r=sb_audio_wav_play(c->audio,asset->id,volume,pan,&h->id);
+    sb_wav_result_t r=(loop ? sb_audio_wav_play_loop : sb_audio_wav_play)(c->audio,asset->id,volume,pan,&h->id);
     if (r!=SB_WAV_OK) { lua_pop(L,1); return failure(L,r,false); }
     h->volume=volume; h->pan=pan;
     return 1;

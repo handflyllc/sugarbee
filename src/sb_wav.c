@@ -112,7 +112,7 @@ static void gains(unsigned channels,double volume,double pan,double out[2]) {
         out[1]=pan==-1 ? 0 : volume*sin(angle);
     } else { out[0]=volume*(pan>0 ? 1-pan : 1); out[1]=volume*(pan<0 ? 1+pan : 1); }
 }
-sb_wav_result_t sb_wav_play(sb_wav_pool_t *p,sb_wav_handle_t asset,double volume,double pan,sb_wav_handle_t *id) {
+sb_wav_result_t sb_wav_play(sb_wav_pool_t *p,sb_wav_handle_t asset,double volume,double pan,bool loop,sb_wav_handle_t *id) {
     *id=0;
     if (!valid_controls(volume,pan)) return SB_WAV_INVALID;
     unsigned a=0;
@@ -124,7 +124,7 @@ sb_wav_result_t sb_wav_play(sb_wav_pool_t *p,sb_wav_handle_t asset,double volume
     if (p->serial==UINT64_MAX) return SB_WAV_IDS_EXHAUSTED;
     sb_wav_playback_t next={0};
     next.id=++p->serial; next.asset=a; next.active=true;
-    next.volume=volume; next.pan=pan;
+    next.volume=volume; next.pan=pan; next.loop=loop;
     gains(p->assets[a].data.channels,volume,pan,next.gain);
     memcpy(next.target,next.gain,sizeof next.gain);
     p->playbacks[v]=next; *id=next.id;
@@ -171,7 +171,11 @@ void sb_wav_render(sb_wav_pool_t *p,float *out,size_t frames) {
                     v->gain[ch]=v->ramp ? v->from[ch]+(v->target[ch]-v->from[ch])*(480-v->ramp)/480 : v->target[ch];
                 if (!v->ramp && v->stopping) v->active=false;
             }
-            if (++v->position==d->frames) v->active=false;
+            if (++v->position==d->frames) {
+                /* Wrap while fading too; never reactivate a finished stop. */
+                if (v->loop) v->position=0;
+                else v->active=false;
+            }
         }
         out[2*i]=(float)(sum[0]*.025); out[2*i+1]=(float)(sum[1]*.025);
     }
