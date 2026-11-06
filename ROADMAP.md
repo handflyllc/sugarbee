@@ -222,8 +222,10 @@ all requested checks, all 83 tests, and Exit to system 0; see [Pong Lab](example
 bounded PCM decoding, shared assets, eight one-shot playbacks, fixed mixing
 headroom, controls and lifecycle. Desktop checks passed on coastline per the
 user. Pi validation passed at `b292f82` on 2026-11-04: all 86 tests, WAV
-listening, gameplay/lifecycle checks, and Exit to system 0; see [native WAV checks](tests/audio-wav.md). Lua loading and a cartridge
-WAV Lab remain the next separately scoped checkpoint. Looping and streaming
+listening, gameplay/lifecycle checks, and Exit to system 0; see [native WAV checks](tests/audio-wav.md). Lua loading and a cartridge WAV Lab are now implemented as a separate
+checkpoint. The user confirmed samples, overlap, pause/resume, exit and
+relaunch on coastline; Pi validation is pending. See
+[WAV API](docs/api/wav.md) and [WAV Lab](examples/wav-lab/README.md). Looping and streaming
 are deferred. No composition format or music-authoring system is added.
 
 ## Labs alongside engine work

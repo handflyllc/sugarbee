@@ -2,6 +2,15 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added one-shot cartridge WAV loading/playback through `sugarbee.audio`, with
+  opaque asset/playback handles, strict arguments, volume/pan, stop/unload,
+  session cleanup, and asset preparation when output is unavailable. Added a
+  generated-sample WAV Lab and real-host regression coverage, including Lua
+  allocation failures. Debug build and all 89 tests pass; desktop
+  results on coastline confirm samples, overlap, pause/resume, exit and
+  relaunch pass. Pi validation is pending.
+  Looping and streaming remain deferred; native mix gains are unchanged.
+
 - Added the native WAV foundation: bounded 16-bit PCM mono/stereo decoding at
   22.05/44.1/48 kHz, load-time conversion, shared assets, eight one-shot voices,
   volume/pan and stop fades, stale-handle protection, and cartridge lifecycle

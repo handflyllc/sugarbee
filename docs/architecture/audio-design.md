@@ -22,7 +22,7 @@ not current limitations.
 | Filter | Per-voice one-pole low-pass/bypass, 20–20,000 Hz cutoff, 10 ms coefficient/bypass ramps | Resonance deferred |
 | Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
 | Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables, minimal Lua synth API and basic Synth Lab | Bounded WAV playback |
-| WAV | Native bounded PCM decoder/storage, eight one-shot voices, controls, fixed mixing and lifecycle | Lua/asset integration, looping/streaming |
+| WAV | Native bounded PCM decoder/storage, eight one-shot voices, controls, fixed mixing and lifecycle | Lua/WAV Lab Pi validation, looping/streaming |
 
 Current bank diagnostic attenuation is separately 0.790569415, chosen for
 listening audibility. Legacy single-triangle and sine diagnostics retain their
@@ -213,7 +213,7 @@ and modulation routing are deferred; they are not prerequisites for cartridge
 lifecycle, minimal Lua controls, and the two Pong blips. Add complexity only
 when a practical game need justifies it.
 
-## Sample playback — not implemented
+## Sample playback — native validated, Lua checkpoint awaiting validation
 
 Implemented native subset: bounded in-memory PCM decoding, 48 kHz conversion,
 64 shared assets / 32 MiB retained samples, eight one-shot voices, volume/pan,
@@ -222,16 +222,19 @@ within a device lifetime. The native diagnostic exercises generated samples;
 desktop and Pi checks passed per the user at `b292f82`. See
 [native WAV contract and checks](../../tests/audio-wav.md).
 
-The Lua API, cartridge lookup, and loops below remain planned. Native load
-currently needs a device; the standalone decoder is device-independent. Lua
-asset preparation during unavailable audio remains part of the next checkpoint.
+One-shot Lua loading and playback are implemented; see [WAV API](../api/wav.md)
+for the exact argument/error contract. The generated [WAV Lab](../../examples/wav-lab/README.md)
+exercises cartridge assets and overlapping playback. When output is unavailable,
+the per-cartridge binding context retains decoded assets under the same limits;
+playback returns audio_unavailable. The user confirmed desktop sample playback, overlap, pause/resume, exit and
+relaunch; Pi validation of this Lua checkpoint is pending. Loops and streaming remain planned, not implemented.
 
 Use eight WAV playback voices, separate from the nine synth voices. These are
 initial budgets to validate on hardware, not measured Pi performance claims.
 A loaded asset holds shared decoded data; each successful playback receives a
 separate opaque handle with its own position, volume, and pan.
 
-Illustrative API:
+Current one-shot API example:
 
 ```lua
 local sound = sugarbee.audio.load("assets/laser.wav")
@@ -269,8 +272,8 @@ descriptive Lua errors. Ended playback handles are treated differently:
 A stopping playback retains its slot and keeps its asset in use until the fade
 finishes. Exact fade duration and control changes during stopping remain open.
 
-One-shot playback frees its slot at the end. Whole-sound loops retain one slot
-until stopped or the session ends. Loop boundaries are not automatically
+One-shot playback frees its slot at the end. Planned whole-sound loops would retain one slot
+until stopped or the session ends. Looping is not implemented. Loop boundaries are not automatically
 crossfaded; authors should prepare seamless loops. Seeking, pause/resume,
 playback-speed changes, and custom loop regions are deferred.
 
@@ -316,7 +319,7 @@ Implemented now: startup failure permits silent gameplay with one diagnostic;
 the host retains the device across cartridge sessions and closes it after
 eligible Lua shutdown on host exit. Native control calls return false when
 audio is unavailable. Device access is serialized with SDL locking. There is
-no Lua audio query or Lua WAV loading. Native buffer-based WAV loading is implemented. Minimal Lua synth controls are implemented.
+no Lua audio availability query. Native and Lua WAV loading are implemented. Minimal Lua synth controls are implemented.
 
 Native cartridge lifecycle is implemented: fresh default banks on launch,
 10 ms pause fade followed by complete bank freeze, and 10 ms resume fade.
@@ -430,7 +433,7 @@ The user also confirmed a successful Pi build and zero test failures at
    blip and a distinguishable paddle-reflection blip. Keep gameplay unchanged;
    this is an API-use/acceptance exercise, not a soundtrack or game redesign.
 6. Native bounded WAV foundation (desktop/Pi validated at `b292f82`), then
-   Lua loading and a small WAV Lab as a separate checkpoint. One-shot playback
+   Lua loading and a small WAV Lab (desktop playback checked; Pi pending). One-shot playback
    only initially; looping and streaming are deferred.
 
 Each stage needs its own scope/acceptance review; this sequence is not permission

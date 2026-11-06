@@ -186,6 +186,10 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sugarbee_audio PRIVATE sugarbee_synth sugarbee_wav PkgConfig::SDL2 m)
     sugarbee_warnings(sugarbee_audio)
 
+    add_executable(generate_wav_lab tests/wav-lab/generate.c)
+    target_link_libraries(generate_wav_lab PRIVATE m)
+    sugarbee_warnings(generate_wav_lab)
+
     add_executable(sbee-wav-test tools/sbee-wav-test.c)
     target_link_libraries(sbee-wav-test PRIVATE sugarbee_audio PkgConfig::SDL2 m)
     sugarbee_warnings(sbee-wav-test)
@@ -239,10 +243,16 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sugarbee_lua_synth PUBLIC sugarbee_audio PkgConfig::LUA54)
     sugarbee_warnings(sugarbee_lua_synth)
 
+    add_library(sugarbee_lua_audio STATIC src/sb_lua_audio.c)
+    target_include_directories(sugarbee_lua_audio PUBLIC "${PROJECT_SOURCE_DIR}/include")
+    target_link_libraries(sugarbee_lua_audio PUBLIC sugarbee_audio sugarbee_assets sugarbee_wav PkgConfig::LUA54)
+    sugarbee_warnings(sugarbee_lua_audio)
+
     add_executable(sugarbee src/main.c)
     target_link_libraries(sugarbee PRIVATE
         sugarbee_save
         sugarbee_lua_synth
+        sugarbee_lua_audio
         sugarbee_audio
         sugarbee_graphics
         sugarbee_input
@@ -340,6 +350,10 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     set_tests_properties(audio_tone_output PROPERTIES TIMEOUT 10
         ENVIRONMENT "SDL_AUDIODRIVER=dummy")
 
+    add_executable(test_lua_wav tests/test_lua_wav.c)
+    target_link_libraries(test_lua_wav PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    sugarbee_warnings(test_lua_wav)
+
     add_executable(test_lua_synth tests/test_lua_synth.c)
     target_link_libraries(test_lua_synth PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
     sugarbee_warnings(test_lua_synth)
@@ -347,6 +361,20 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     set_tests_properties(lua_synth PROPERTIES TIMEOUT 5 ENVIRONMENT "SDL_AUDIODRIVER=dummy")
 
     if(SUGARBEE_BUILD_PACKER)
+        add_test(NAME wav_lab_pack COMMAND "${CMAKE_COMMAND}"
+            "-DSOURCE=${PROJECT_SOURCE_DIR}/examples/wav-lab"
+            "-DSTAGE=${CMAKE_CURRENT_BINARY_DIR}/wav-lab/source"
+            "-DGENERATOR=$<TARGET_FILE:generate_wav_lab>"
+            "-DPACKER=$<TARGET_FILE:sbee-pack>"
+            "-DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/wav-lab/wav-lab.vcart"
+            -P "${PROJECT_SOURCE_DIR}/tests/wav-lab/prepare.cmake")
+        set_tests_properties(wav_lab_pack PROPERTIES FIXTURES_SETUP wav_lab TIMEOUT 10)
+        foreach(mode IN ITEMS output unavailable)
+            add_test(NAME lua_wav_${mode} COMMAND test_lua_wav
+                "${CMAKE_CURRENT_BINARY_DIR}/wav-lab/wav-lab.vcart" ${mode})
+            set_tests_properties(lua_wav_${mode} PROPERTIES FIXTURES_REQUIRED wav_lab TIMEOUT 10
+                ENVIRONMENT "SDL_AUDIODRIVER=dummy;SDL_VIDEODRIVER=dummy")
+        endforeach()
         add_test(NAME pong_audio_pack COMMAND sbee-pack
             -i "${PROJECT_SOURCE_DIR}/examples/pong-lab"
             -o "${CMAKE_CURRENT_BINARY_DIR}/pong-audio-test.vcart" -t "Pong Lab")

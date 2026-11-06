@@ -30,6 +30,8 @@ See [dependencies](docs/development/dependencies.md) and
 - [Interactive Save Lab](examples/save-lab/README.md)
 - [Synth audio API](docs/api/audio.md)
 - [Native WAV foundation and listening checks](tests/audio-wav.md)
+- [Cartridge WAV API](docs/api/wav.md)
+- [WAV Lab](examples/wav-lab/README.md)
 - [Interactive Synth Lab](examples/synth-lab/README.md)
 - [Musical Synth Lab](examples/musical-synth-lab/README.md)
 - [Current architecture](docs/architecture/overview.md)
