@@ -22,7 +22,7 @@ not current limitations.
 | Filter | Per-voice one-pole low-pass/bypass, 20–20,000 Hz cutoff, 10 ms coefficient/bypass ramps | Resonance deferred |
 | Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
 | Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables, minimal Lua synth API and basic Synth Lab | Bounded WAV playback |
-| WAV | Native bounded PCM decoder/storage, eight one-shot voices, controls, fixed mixing and lifecycle | Looping/streaming |
+| WAV | Native bounded PCM decoder/storage, eight one-shot/looping voices, controls, fixed mixing and lifecycle | Loop Pi validation; streaming |
 
 Current bank diagnostic attenuation is separately 0.790569415, chosen for
 listening audibility. Legacy single-triangle and sine diagnostics retain their
@@ -228,7 +228,8 @@ exercises cartridge assets and overlapping playback. When output is unavailable,
 the per-cartridge binding context retains decoded assets under the same limits;
 playback returns audio_unavailable. The user confirmed desktop sample playback, overlap, pause/resume, exit and
 relaunch; Pi validation passed at `604ae3b` on 2026-11-06 per the user:
-all 89 tests, the WAV Lab/game regression checklist, and Exit to system status 0. Loops and streaming remain planned, not implemented.
+all 89 tests, the WAV Lab/game regression checklist, and Exit to system status 0. Whole-sound looping is implemented in the follow-up checkpoint; coastline listening passed per the user on 2026-11-06; Pi
+validation is pending. Streaming remains deferred.
 
 Use eight WAV playback voices, separate from the nine synth voices. These are
 initial budgets to validate on hardware, not measured Pi performance claims.
@@ -271,10 +272,10 @@ descriptive Lua errors. Ended playback handles are treated differently:
 | Finished | false | Returns false |
 
 A stopping playback retains its slot and keeps its asset in use until the fade
-finishes. Exact fade duration and control changes during stopping remain open.
+finishes. The fade lasts 480 frames; controls on stopping playbacks return false.
 
-One-shot playback frees its slot at the end. Planned whole-sound loops would retain one slot
-until stopped or the session ends. Looping is not implemented. Loop boundaries are not automatically
+One-shot playback frees its slot at the end. Whole-sound loops retain one slot
+until stopped or the session ends. A stop fade continues across loop boundaries. Loop boundaries are not automatically
 crossfaded; authors should prepare seamless loops. Seeking, pause/resume,
 playback-speed changes, and custom loop regions are deferred.
 
@@ -435,7 +436,8 @@ The user also confirmed a successful Pi build and zero test failures at
    this is an API-use/acceptance exercise, not a soundtrack or game redesign.
 6. Native bounded WAV foundation (desktop/Pi validated at `b292f82`), then
    Lua loading and a small WAV Lab (desktop and Pi validated at `604ae3b`). One-shot playback
-   only initially; looping and streaming are deferred.
+   only initially; whole-sound looping is implemented in the follow-up checkpoint
+   with coastline acceptance complete and Pi validation pending. Streaming remains deferred.
 
 Each stage needs its own scope/acceptance review; this sequence is not permission
 to implement all stages at once. Saw integration retains the bounded pitch range;

@@ -1,8 +1,8 @@
 # Cartridge WAV playback (experimental v0.1)
 
-`sugarbee.audio` plays bounded, one-shot PCM WAV assets from the current cartridge.
+`sugarbee.audio` plays bounded one-shot or whole-sound looping PCM WAV assets from the current cartridge.
 It is separate from `sugarbee.synth`; both share the existing pause/failure/exit
-lifecycle and fixed mixing headroom. No loops, streaming, or automatic device
+lifecycle and fixed mixing headroom. No streaming or automatic device
 reconnection are included.
 
 ```lua
@@ -37,7 +37,10 @@ end
 
 `play` options default to volume **0.5**, pan **0**, and `loop=false`. Options
 must be a table when supplied; nil is not a table. Only volume, pan, and
-`loop=false` are accepted. True looping is explicitly rejected. Only raw table
+`loop` (strict boolean) are accepted. `loop=true` repeats the complete decoded
+sound until stopped or the session ends, retaining one playback slot. The
+default remains one-shot. No automatic boundary crossfade is applied; authors
+should prepare seamless samples. Stop fades continue across loop boundaries. Only raw table
 entries are read; no inherited options or metamethods run. Values are copied.
 
 All numeric controls require actual finite numbers: volume 0–1, pan −1–1.

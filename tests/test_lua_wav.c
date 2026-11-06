@@ -53,6 +53,10 @@ int main(int argc,char **argv) {
     CHECK(init_engine()); CHECK((g_engine.audio==NULL)==unavailable);
     if (g_engine.audio) SDL_PauseAudioDevice(g_engine.audio->device,1);
     CHECK(start_cartridge(argv[1])); CHECK(bytes()>0);
+    /* Select the looping sample through actual lab input. */
+    for (unsigned i=0;i<2;++i) {
+        CHECK(keypress(SDL_KEYDOWN,SDL_SCANCODE_S)); CHECK(keypress(SDL_KEYUP,SDL_SCANCODE_S));
+    }
     /* Actual lab input, including overlap, pan, volume and stop. */
     CHECK(keypress(SDL_KEYDOWN,SDL_SCANCODE_J)); CHECK(keypress(SDL_KEYUP,SDL_SCANCODE_J));
     CHECK(keypress(SDL_KEYDOWN,SDL_SCANCODE_J)); CHECK(keypress(SDL_KEYUP,SDL_SCANCODE_J));
@@ -72,7 +76,7 @@ int main(int argc,char **argv) {
     CHECK(bytes()==retained);
     if (!unavailable) {
         sb_wav_pool_t snapshot=g_engine.audio->wav;
-        CHECK(memory_failure("return sugarbee.audio.play(s)"));
+        CHECK(memory_failure("return sugarbee.audio.play(s,{loop=true})"));
         CHECK(!memcmp(&snapshot,&g_engine.audio->wav,sizeof snapshot));
     }
     CHECK(run(
@@ -84,14 +88,14 @@ int main(int argc,char **argv) {
         "bad(function() a.is_playing(s) end); bad(function() a.unload(1) end); "
         "bad(function() a.play(s,{volume='1'}) end); bad(function() a.play(s,{volume=0/0}) end); "
         "bad(function() a.play(s,{pan=math.huge}) end); bad(function() a.play(s,{pan=-2}) end); "
-        "bad(function() a.play(s,{loop=true}) end); bad(function() a.play(s,{loop=0}) end); "
+        "bad(function() a.play(s,{loop=0}) end); "
         "bad(function() a.play(s,{oops=1}) end); bad(function() a.play(s,{[1]=1}) end); "
         "bad(function() a.play(s,{['volume'..string.char(0)]=.5}) end); "
         "bad(function() a.play(s,nil) end); bad(function() a.play(s,{},true) end); "
         "assert(getmetatable(s)=='protected audio handle')"));
     CHECK(bytes()==retained);
     if (unavailable) {
-        CHECK(run("local p,why=a.play(s); assert(p==nil and why=='audio_unavailable'); assert(a.unload(s)); assert(not pcall(a.play,s))"));
+        CHECK(run("local p,why=a.play(s,{loop=true}); assert(p==nil and why=='audio_unavailable'); assert(a.unload(s)); assert(not pcall(a.play,s))"));
     } else {
         CHECK(run("p=assert(a.play(s,{volume=.8,pan=-1,loop=false})); assert(a.is_playing(p)); "
             "local ok,why=a.unload(s); assert(not ok and why=='asset_in_use'); "
@@ -111,19 +115,36 @@ int main(int argc,char **argv) {
         render(96000);
         CHECK(run("for i=1,8 do assert(not a.is_playing(slots[i])) end; assert(a.unload(s))"));
     }
+    /* Looping uses the same slots and lifecycle as one-shots. */
+    if (!unavailable) {
+        CHECK(run("s=assert(a.load('assets/loop.wav')); slots={}; "
+            "for i=1,8 do slots[i]=assert(a.play(s,{loop=true})) end; "
+            "local p,why=a.play(s); assert(p==nil and why=='voices_full')"));
+        render(192017);
+        CHECK(run("for i=1,8 do assert(a.is_playing(slots[i])) end; "
+            "assert(not a.unload(s)); assert(a.set_volume(slots[1],.3)); assert(a.set_pan(slots[1],1))"));
+        set_cartridge_paused(true); render(480);
+        sb_wav_pool_t frozen=g_engine.audio->wav; render(1024);
+        CHECK(!memcmp(&frozen,&g_engine.audio->wav,sizeof frozen));
+        set_cartridge_paused(false); render(480);
+        CHECK(run("for i=1,8 do assert(a.stop(slots[i])) end"));
+        render(480);
+        CHECK(run("for i=1,8 do assert(not a.is_playing(slots[i])) end; assert(a.unload(s))"));
+    }
     /* Real shutdown can use assets; errors are contained and cleanup follows. */
-    CHECK(run("function shutdown() local h=assert(a.load('assets/stereo.wav')); shutdown_ok=true; a.play(h) end"));
+    CHECK(run("function shutdown() local h=assert(a.load('assets/stereo.wav')); shutdown_ok=true; a.play(h,{loop=true}) end"));
     call_lua_shutdown(); CHECK(run("assert(shutdown_ok)"));
     end_cartridge(); CHECK(!g_engine.lua_audio && !g_engine.L);
     if (!unavailable) CHECK(!g_engine.audio->wav.bytes);
     CHECK(start_cartridge(argv[1]));
-    CHECK(run("a=sugarbee.audio; handles={}; for i=1,62 do handles[i]=assert(a.load('assets/mono.wav')) end; "
+    CHECK(run("a=sugarbee.audio; handles={}; for i=1,61 do handles[i]=assert(a.load('assets/mono.wav')) end; "
         "local h,why=a.load('assets/mono.wav'); assert(h==nil and why=='assets_full'); "
         "assert(a.unload(handles[1])); assert(a.load('assets/mono.wav'))"));
     end_cartridge();
     CHECK(start_cartridge(argv[1]));
-    CHECK(run("a=sugarbee.audio; for i=1,42 do assert(a.load('assets/stereo.wav')) end; "
+    CHECK(run("a=sugarbee.audio; for i=1,41 do assert(a.load('assets/stereo.wav')) end; "
         "local h,why=a.load('assets/stereo.wav'); assert(h==nil and why=='audio_budget')"));
+    if (!unavailable) CHECK(run("failure_loop=assert(a.play(assert(a.load('assets/loop.wav')),{loop=true}))"));
     /* Guru after assets exist: refuse further acquisition and clean on exit. */
     CHECK(run("function update() error('expected WAV failure') end"));
     call_lua_global_function("update",true,.016); CHECK(g_engine.guru_active);

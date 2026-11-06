@@ -2,6 +2,13 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Added whole-sound WAV looping through `loop=true`, retaining one existing
+  playback slot and the normal controls, stop fade and cartridge lifecycle.
+  WAV Lab includes an original seamless 48 kHz tone. Existing one-shot calls
+  remain unchanged. All 89 tests pass with expanded loop coverage. On 2026-11-06
+  the user confirmed coastline looping, controls/lifecycle, game regression
+  checks and Exit to system 0. Pi validation remains pending.
+
 - Added one-shot cartridge WAV loading/playback through `sugarbee.audio`, with
   opaque asset/playback handles, strict arguments, volume/pan, stop/unload,
   session cleanup, and asset preparation when output is unavailable. Added a

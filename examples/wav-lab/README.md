@@ -1,8 +1,10 @@
 # WAV Lab
 
-Two deterministic generated WAVs exercise cartridge loading and playback:
+Three deterministic generated WAVs exercise cartridge loading and playback:
 a 22.05 kHz mono 440 Hz chime and a 44.1 kHz stereo sound with a low tone on the
 left and a higher tone on the right. Each lasts two seconds and decays to silence.
+The third is a steady 48 kHz mono 440 Hz tone, authored with an integer number
+of cycles over two seconds and played in a whole-sound loop.
 They are original generated samples, not external recordings. Source is
 `tests/wav-lab/generate.c`; generated files remain under ignored `build/wav-lab/`.
 The prepared cartridge includes the audio assets; no generator runs on launch.
@@ -15,7 +17,7 @@ bash tests/wav-lab/prepare-fixture.sh
 
 | Control | Action |
 | --- | --- |
-| Up/Down or W/S | Select mono/stereo sound |
+| Up/Down or W/S | Select mono/stereo one-shot or looping tone |
 | A button / J | Play selected sound; repeat for overlap |
 | B button / K | Stop all current playbacks |
 | Left/Right or A/D | Set left/center/right pan on current and future playbacks |
@@ -54,6 +56,25 @@ result is claimed. Lua allocation-failure injection is covered separately.
 Desktop results (2026-11-04), user-reported on coastline: all samples play,
 overlap works, and pause/resume, exit, and relaunch pass. Pi validation passed on 2026-11-06 at `604ae3b`, user-reported: all 89 tests
 passed, all acceptance checks above passed, and Exit to system returned 0. See
-[WAV API](../../docs/api/wav.md) for the full contract. Looping and streaming remain
+[WAV API](../../docs/api/wav.md) for the full contract. Those results cover the prior one-shot checkpoint. Streaming remains
 deferred; this checkpoint adds cartridge integration to the validated native
 foundation without changing synthesis or playback gains.
+
+## Whole-sound looping checkpoint
+
+Looping is implemented. On 2026-11-06 the user confirmed all four coastline
+check groups pass: sustained seamless looping, overlap/pan/volume/stop,
+pause/resume/exit/silent relaunch, and original one-shots plus Pong/Synth Labs/
+Pac-Man with Exit to system status 0. Pi validation remains pending.
+Development verification (2026-11-06): build completed without compiler warnings;
+all 89 tests passed, including expanded native and Lua WAV loop coverage.
+Select the third sample, then play. Listen for at least ten seconds: the tone
+should continue through several two-second boundaries without a repeating click
+or gap. Trigger another copy to overlap, adjust volume/pan, and stop all. Repeat
+with host pause/resume, exit while looping, and silent relaunch. Check the two
+one-shot sounds still end normally and the eight-slot limit still refuses extra
+plays. Repeat the existing gameplay and Exit to system checks.
+
+The engine repeats decoded frames without crossfading. The generated loop uses
+48 kHz to avoid resampling at its seam; arbitrary source files are not guaranteed
+to loop seamlessly.

@@ -19,7 +19,9 @@ int main(void) {
     CHECK(sb_audio_wav_load(a,b,n,&asset)==SB_WAV_REJECTED && !asset);
     sb_audio_session_begin(a);
     CHECK(sb_audio_wav_load(a,b,n,&asset)==SB_WAV_OK);
-    CHECK(sb_audio_wav_play(a,asset,1,-1,&id)==SB_WAV_OK);
+    CHECK(sb_audio_wav_play_loop(a,asset,1,-1,&id)==SB_WAV_OK);
+    for (unsigned i=0;i<21;++i) render(a,1000);
+    CHECK(sb_audio_wav_playing(a,id));
     render(a,1); CHECK(fabs(out[0]-.025*32767/32768)<1e-8 && out[1]==0);
     CHECK(sb_audio_wav_controls(a,id,1,1)); render(a,120);
     CHECK(a->wav.playbacks[0].ramp==360);
@@ -39,7 +41,9 @@ int main(void) {
     render(a,1); CHECK(silent(1));
     CHECK(sb_audio_wav_unload(a,asset)==SB_WAV_OK);
     CHECK(sb_audio_wav_load(a,b,n,&asset)==SB_WAV_OK);
-    CHECK(sb_audio_wav_play(a,asset,1,0,&id)==SB_WAV_OK);
+    CHECK(sb_audio_wav_play_loop(a,asset,1,0,&id)==SB_WAV_OK);
+    for (unsigned i=0;i<9;++i) render(a,1000);
+    render(a,990);
     /* Callback partitioning during a control ramp. Shallow copy is render-only. */
     CHECK(sb_audio_wav_controls(a,id,.2,-.5));
     sb_audio_t copy=*a; float whole[2000],parts[2000];
@@ -58,7 +62,7 @@ int main(void) {
     sb_audio_session_begin(a);
     CHECK(sb_audio_wav_play(a,asset,1,0,&id)==SB_WAV_BAD_HANDLE);
     CHECK(sb_audio_wav_load(a,b,n,&asset)==SB_WAV_OK);
-    CHECK(sb_audio_wav_play(a,asset,1,0,&id)==SB_WAV_OK);
+    CHECK(sb_audio_wav_play_loop(a,asset,1,0,&id)==SB_WAV_OK);
     sb_audio_session_pause(a,true); render(a,20);
     sb_audio_session_prepare_shutdown(a); render(a,1024); CHECK(silent(1024));
     sb_audio_session_fail(a); CHECK(!sb_audio_wav_playing(a,id));

@@ -7,7 +7,7 @@ typedef struct {
     sb_wav_handle_t id;
     unsigned asset;
     size_t position;
-    bool active, stopping;
+    bool active, stopping, loop;
     double volume, pan, gain[2], from[2], target[2];
     unsigned ramp;
 } sb_wav_playback_t;
@@ -23,7 +23,7 @@ void sb_wav_pool_reset(sb_wav_pool_t *pool);
 void sb_wav_stop_all(sb_wav_pool_t *pool);
 sb_wav_result_t sb_wav_insert(sb_wav_pool_t *pool, sb_wav_data_t *data, sb_wav_handle_t *id);
 sb_wav_result_t sb_wav_unload(sb_wav_pool_t *pool, sb_wav_handle_t id);
-sb_wav_result_t sb_wav_play(sb_wav_pool_t *pool, sb_wav_handle_t asset, double volume, double pan, sb_wav_handle_t *id);
+sb_wav_result_t sb_wav_play(sb_wav_pool_t *pool, sb_wav_handle_t asset, double volume, double pan, bool loop, sb_wav_handle_t *id);
 bool sb_wav_playing(const sb_wav_pool_t *pool, sb_wav_handle_t id);
 bool sb_wav_stop(sb_wav_pool_t *pool, sb_wav_handle_t id);
 bool sb_wav_controls(sb_wav_pool_t *pool, sb_wav_handle_t id, double volume, double pan);
