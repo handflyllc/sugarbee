@@ -7,7 +7,8 @@
   WAV Lab includes an original seamless 48 kHz tone. Existing one-shot calls
   remain unchanged. All 89 tests pass with expanded loop coverage. On 2026-11-06
   the user confirmed coastline looping, controls/lifecycle, game regression
-  checks and Exit to system 0. Pi validation remains pending.
+  checks and Exit to system 0. Pi validation passed at `026aa2c` on
+  2026-11-06 per the user: all 89 tests, all four manual check groups and exit 0.
 
 - Added one-shot cartridge WAV loading/playback through `sugarbee.audio`, with
   opaque asset/playback handles, strict arguments, volume/pan, stop/unload,

@@ -22,7 +22,7 @@ not current limitations.
 | Filter | Per-voice one-pole low-pass/bypass, 20–20,000 Hz cutoff, 10 ms coefficient/bypass ramps | Resonance deferred |
 | Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
 | Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables, minimal Lua synth API and basic Synth Lab | Bounded WAV playback |
-| WAV | Native bounded PCM decoder/storage, eight one-shot/looping voices, controls, fixed mixing and lifecycle | Loop Pi validation; streaming |
+| WAV | Native bounded PCM decoder/storage, eight one-shot/looping voices, controls, fixed mixing and lifecycle | Streaming |
 
 Current bank diagnostic attenuation is separately 0.790569415, chosen for
 listening audibility. Legacy single-triangle and sine diagnostics retain their
@@ -229,7 +229,8 @@ the per-cartridge binding context retains decoded assets under the same limits;
 playback returns audio_unavailable. The user confirmed desktop sample playback, overlap, pause/resume, exit and
 relaunch; Pi validation passed at `604ae3b` on 2026-11-06 per the user:
 all 89 tests, the WAV Lab/game regression checklist, and Exit to system status 0. Whole-sound looping is implemented in the follow-up checkpoint; coastline listening passed per the user on 2026-11-06; Pi
-validation is pending. Streaming remains deferred.
+validation passed at `026aa2c` on 2026-11-06 per the user (89 tests, all four
+manual check groups, Exit to system 0). Streaming remains deferred.
 
 Use eight WAV playback voices, separate from the nine synth voices. These are
 initial budgets to validate on hardware, not measured Pi performance claims.
@@ -437,7 +438,7 @@ The user also confirmed a successful Pi build and zero test failures at
 6. Native bounded WAV foundation (desktop/Pi validated at `b292f82`), then
    Lua loading and a small WAV Lab (desktop and Pi validated at `604ae3b`). One-shot playback
    only initially; whole-sound looping is implemented in the follow-up checkpoint
-   with coastline acceptance complete and Pi validation pending. Streaming remains deferred.
+   with coastline acceptance and Pi validation complete at `026aa2c`. Streaming remains deferred.
 
 Each stage needs its own scope/acceptance review; this sequence is not permission
 to implement all stages at once. Saw integration retains the bounded pitch range;

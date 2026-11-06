@@ -65,7 +65,8 @@ foundation without changing synthesis or playback gains.
 Looping is implemented. On 2026-11-06 the user confirmed all four coastline
 check groups pass: sustained seamless looping, overlap/pan/volume/stop,
 pause/resume/exit/silent relaunch, and original one-shots plus Pong/Synth Labs/
-Pac-Man with Exit to system status 0. Pi validation remains pending.
+Pac-Man with Exit to system status 0. Pi validation passed at `026aa2c` on 2026-11-06 per the user: all 89
+tests, all four listening/gameplay/lifecycle check groups, and Exit to system 0.
 Development verification (2026-11-06): build completed without compiler warnings;
 all 89 tests passed, including expanded native and Lua WAV loop coverage.
 Select the third sample, then play. Listen for at least ten seconds: the tone
