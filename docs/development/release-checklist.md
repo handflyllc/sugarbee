@@ -1,0 +1,100 @@
+# SugarBee 0.1 release-readiness checklist
+
+Status: in progress, 2026-11-06. Runtime baseline: `b304a00`. Readiness changes
+remain uncommitted at the user's request until the checklist is complete.
+No release candidate has been tagged or published. The proposed artifact is a
+source release, `v0.1.0-rc1`; contents and compatibility policy need acceptance.
+
+| Item | Evidence / remaining work |
+| --- | --- |
+| Current documentation | Reconciled with baseline; local links and whitespace checked |
+| Coastline fresh Release build | `build-rc-release`, Release, full 89 tests pass, no compiler warnings (2026-11-06) |
+| Coastline Release manual acceptance | User-reported 2026-11-06: all six check groups pass; Exit to system 0 |
+| Pi fresh Release build | Pending; confirm baseline hash and full 89 tests |
+| Pi Release manual acceptance | Pending checklist below |
+| Two physical controllers | User confirms both work on coastline; disconnect/reconnect result not separately reported |
+| Release contents and provisional API policy | Draft in root release notes; user acceptance pending |
+| Source distribution contents | Final committed-tree archive check pending |
+| Final commit / tag / publication | Pending acceptance; user performs Git writes/pushes |
+
+The existing Debug and hardware results remain valid historical evidence.
+They do not replace acceptance of the Release executable. This is a finite
+baseline check, not a new feature phase or a full hostile-cartridge audit.
+
+## Clean Release build
+
+On each host, from the repository root:
+
+```sh
+git rev-parse --short HEAD
+cmake -S . -B build-rc-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+cmake --build build-rc-release -j4
+ctest --test-dir build-rc-release --output-on-failure
+```
+
+Use a new build directory for the initial check. Coastline's fresh build has
+already completed. If `build-rc-release` exists on the Pi, choose another unused
+directory and substitute it throughout; do not delete prior work or saves.
+Install the standalone `lua5.4` interpreter to enable all cartridge smoke tests.
+Expect 89 tests for this baseline, rather than accepting a smaller skipped suite.
+
+## Prepare and launch the acceptance set
+
+```sh
+bash tests/release/prepare-fixtures.sh ./build-rc-release
+./build-rc-release/sugarbee --console --save-dir ./build-rc-release/acceptance-saves --cartridges ./build-rc-release/acceptance
+echo $?
+```
+
+The script uses only binaries from the selected build. It packages Pong,
+Pac-Man, sprite-sheet, Save Lab, basic/musical Synth Labs, WAV Lab, and a deliberate
+runaway-update cartridge for Guru recovery. No test source selector is edited.
+Generated packages remain in the build tree; rerunning preserves saves. Save
+Lab retains its established UUID. These are test saves, not production backups.
+
+Because readiness files are not yet committed, the Pi will not receive the new
+helper through Git. The user may copy this helper and checklist to the Pi for
+validation, or use existing packaging commands with the Release binaries. This
+does not authorize committing on the Pi. Runtime source must match `b304a00`;
+record any local changes instead of discarding them.
+
+## Compact manual acceptance — coastline and Pi
+
+1. **Launcher and graphics:** navigate the list, launch the sprite-sheet demo,
+   check movement, transparency, animation and flipped sprites; pause/resume,
+   exit to launcher, rescan with X/U, and launch another cartridge.
+2. **Gameplay and input:** play Pong and Pac-Man with keyboard and an available
+   controller; verify pause, resume, exit and relaunch. No stuck inputs or Gurus.
+3. **Saves:** in Save Lab change and save the counter, exit/relaunch and confirm
+   it reloads. Exit the host completely, relaunch with the same save directory
+   and confirm persistence. Do not infer power-loss durability from this check.
+4. **Recovery:** launch Execution Limit, confirm a Guru, dismiss with B/K, then
+   launch Pong and verify normal play. The runaway cartridge is intentionally bad.
+5. **Audio:** exercise basic Synth Lab controls and musical playback; in WAV Lab
+   check both one-shots, sustained looping, overlap, pan/volume/stop, pause/resume
+   and silent relaunch. A loop should continue beyond ten seconds without a
+   recurring seam click or gap. Use the individual lab READMEs for key mappings.
+6. **Exit:** use Exit to system and confirm status 0. Relaunch the host once to
+   confirm normal startup. Record device/output and anything unexpected.
+
+## Two-controller coverage
+
+With two physical controllers connected, move both Pong paddles independently
+and simultaneously. Check each paddle's bounds and restart after a win using
+B on each controller in separate runs. Disconnect/reconnect a controller and
+check recovery without a crash or stuck movement; verify the assigned players
+against the discovery-order policy in the input API. Record device models and
+host. If hardware is unavailable, keep the gap explicit and agree whether it
+is acceptable for the RC; do not silently mark it passed.
+
+## Finalization
+
+Once acceptance and release contents are agreed, commit the readiness changes
+on a focused branch. Inspect a source archive from that exact commit: include
+source, tests, tools, examples, docs, LICENSE and third-party notices; exclude
+local builds, saves, credentials and ignored handoff material. Verify the archive
+build instructions in a fresh extraction before tagging. If runtime source
+changes during readiness, repeat affected checks and refresh acceptance evidence.
+Tag the accepted commit only after remaining gates are resolved; publish/push
+through the user's normal terminal workflow. No binary or appliance distribution
+is implied by the source-release proposal.

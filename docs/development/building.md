@@ -24,6 +24,7 @@ The same source can be built with release optimization:
 ```sh
 cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release
 cmake --build build-release --parallel
+ctest --test-dir build-release --output-on-failure
 ```
 
 CMake Debug/Release is **not yet** the final SugarBee developer/release
@@ -41,7 +42,7 @@ ctest --test-dir build-tools --output-on-failure
 
 ## Cartridge smoke tests (no SDL required)
 
-`ctest` runs every example under `examples/` through
+`ctest` runs the examples selected in `CMakeLists.txt` through
 [`tests/cartridge_smoke.lua`](../../tests/cartridge_smoke.lua) when a `lua5.4`
 interpreter is installed (`sudo apt install lua5.4`). The script replaces the
 `sugarbee` table with a stand-in that performs the same argument validation as
@@ -104,7 +105,8 @@ On normal exit after successful cartridge initialization, the host invokes an
 optional Lua `shutdown()` before closing Lua and destroying input/graphics
 services. It skips that callback while Guru Meditation is active. Errors in
 `shutdown()` are reported to the console and native cleanup continues. The
-callback has no execution time limit. See the [lifecycle reference](../api/timing.md)
+callback has a provisional budget of 1,000,000 Lua instructions. This is
+not a wall-clock timeout and cannot interrupt blocked native calls. See the [lifecycle reference](../api/timing.md)
 and [manual shutdown regression procedure](../../tests/shutdown/README.md).
 
 ### Launcher
@@ -140,8 +142,10 @@ files onto the host filesystem. See [asset limits](../api/assets.md) for details
 
 These are safeguards against excessive ZIP expansion, not comprehensive
 ZIP-bomb protection or process isolation. There is no decompression-time
-budget or aggregate per-game memory budget. Lua still opens its standard
-libraries; sandboxing and complete script execution limits are unimplemented.
+budget or aggregate per-game memory budget. Cartridges receive a restricted library set and instruction budgets for ordinary
+runaway Lua loops. These do not form a hostile-cartridge sandbox or guarantee
+recovery from native blocking, memory exhaustion, or repeatedly caught errors.
+See the [supported libraries and execution limits](../api/timing.md).
 Avoid running untrusted cartridges.
 
 ## Graphics regression check
@@ -260,8 +264,9 @@ idle startup and Guru recovery paths. The new CTest cases `asset_smoke` and
 
 The built-in image loader supports PNG only in this milestone; it is limited
 to 2048 × 2048 pixels and applies ZIP entry and archive resource limits.
-Cartridges should be treated as untrusted code: Lua currently opens its normal
-standard libraries, so these limits do **not** constitute a Lua sandbox.
+Cartridges receive the [documented restricted libraries](../api/timing.md#supported-lua-libraries),
+but these asset limits and Lua instruction budgets do **not** constitute a
+hostile-code sandbox. Run cartridges from sources you trust.
 See [cartridge asset reference](../api/assets.md).
 
 ## Sprite-sheet demo (Milestone 3C)

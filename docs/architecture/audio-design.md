@@ -1,17 +1,18 @@
 # SugarBee audio — settled initial design
 
-Status reconciled with the implementation on 2026-11-03. The initial design was
+Status reconciled with merged implementation `b304a00` on 2026-11-06. The initial design was
 settled on 2026-10-18; implementation decisions below refine that design.
 This document separates the current native/Lua synth implementation from
 remaining synthesis/WAV work. The current Lua contract is in
-[the audio API](../api/audio.md); later WAV/mixer examples remain planned. Historical checkpoint notes at the end describe their state at the time,
+[the synth API](../api/audio.md) and [WAV API](../api/wav.md).
+Group/master mixer examples below are deferred design sketches, not callable APIs. Historical checkpoint notes at the end describe their state at the time,
 not current limitations.
 
 ## Current implementation
 
 | Area | Implemented now | Still pending |
 | --- | --- | --- |
-| Output | Host-owned SDL2 device, 48 kHz float stereo, silent fallback, clean close | Live failure detection/reconnection, measured end-to-end latency |
+| Output | Host-owned SDL2 device, 48 kHz float stereo, silent fallback, clean close | Live device-failure detection/reconnection and measured end-to-end latency |
 | Voice bank | Nine explicit native slots, triangle, white noise, saw, or pulse, independent state; 10 ms transitions including noise | Broader pitch |
 | Triangle | Direct waveform, 110–880 Hz, phase-preserving pitch/retrigger | Aliasing control and broader supported pitch range |
 | Saw | PolyBLEP, 110–880 Hz, native bank/SDL integration and automated checks | Broader pitch |
@@ -20,8 +21,8 @@ not current limitations.
 | Envelope | Linear ADSR, captured per note, current-level active retrigger | No additional envelope model planned for this checkpoint |
 | Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Group/master controls |
 | Filter | Per-voice one-pole low-pass/bypass, 20–20,000 Hz cutoff, 10 ms coefficient/bypass ramps | Resonance deferred |
-| Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
-| Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables, minimal Lua synth API and basic Synth Lab | Bounded WAV playback |
+| Mixing | Fixed synth headroom and gain; eight WAV voices at 0.025 each; floating-point accumulation | Group/master controls, resonance gain policy, final clamp/clip diagnostics |
+| Integration | Native/Lua synth and WAV controls; shared cartridge pause/failure/cleanup; synth, musical and WAV labs | Streaming and additional authoring tools |
 | WAV | Native bounded PCM decoder/storage, eight one-shot/looping voices, controls, fixed mixing and lifecycle | Streaming |
 
 Current bank diagnostic attenuation is separately 0.790569415, chosen for
@@ -53,7 +54,7 @@ The SID is an inspiration, not an emulation or file-compatibility target.
 SugarBee is not intended to become a DAW or a music composition editor.
 External tools may eventually author compositions targeting SugarBee.
 
-## Target synthesis model
+## Current synthesis model
 
 - Initially provide exactly nine explicitly addressed synth voices.
 - Each voice has independent waveform, envelope, filter, volume, and stereo pan.
@@ -82,7 +83,7 @@ and update timing use the existing API. Desktop and Pi validation passed per the
 
 ## Current native voice lifecycle
 
-- Triangle, noise, and saw share linear ADSR, volume, pan, and short-stop behavior.
+- Triangle, noise, saw, and pulse share linear ADSR, volume, pan, and short-stop behavior.
 - Idle saw start begins at phase 0.5. Active saw retrigger and pitch-only edits
   preserve phase, with the same envelope/retrigger rules as triangle.
 - Idle triangle start begins at phase 0.25. Active triangle note-on preserves
@@ -118,7 +119,8 @@ remain deferred; current native restrictions above remain in force.
   it replaces the pitch and retriggers the envelope using the current-level,
   full-attack-duration rule implemented natively. Noise uses `note_on(voice)`
   with no frequency.
-- `set_pitch` changes frequency without retriggering the envelope.
+- Native `sb_audio_voice_pitch` changes frequency without retriggering the
+  envelope; there is no corresponding Lua pitch-only setter.
 - Each `note_on` captures attack, decay, sustain, and release settings for that
   note, including its later release. Envelope configuration edits apply to the
   next note; a sustained note may continue indefinitely until released or stopped.
@@ -137,7 +139,7 @@ remain deferred; current native restrictions above remain in force.
 - Releasing or stopping an already silent voice is harmless. Neither operation
   erases its configuration.
 
-## Target starting settings
+## Current starting settings
 
 | Setting | Default |
 | --- | --- |
@@ -174,11 +176,11 @@ Envelope, volume, pan, and the native low-pass filter apply to noise.
 | Triangle pitch | 110–880 Hz | 20–20,000 Hz, strictly below half the sample rate; requires aliasing work |
 | White noise | New value every sample at 48 kHz; no pitch argument | Rate-controlled noise deferred; original 20–20,000 Hz change-rate proposal is not implemented |
 | Noise seed | uint32; zero selects a distinct fixed default per bank slot | Lua seed exposure undecided |
-| Pulse width | Native bank/SDL: 0.05–0.95, 10 ms live ramps | Lua controls pending |
+| Pulse width | Native and Lua: 0.05–0.95, 10 ms live ramps | No extension scheduled |
 | Attack, decay, release | 0–10 seconds each | Same |
 | Sustain and voice volume | 0–1 | Same |
 | Pan | -1–1, equal-power stereo | Same |
-| Filter cutoff | 20–20,000 Hz, default 2000; bypassed by default | Lua controls pending |
+| Filter cutoff | Native and Lua: 20–20,000 Hz, default 2000; bypassed by default | Resonance remains deferred |
 | Resonance | Not implemented | Deferred unless a practical need justifies it |
 
 Reject non-finite values (NaN and infinity), invalid voice indices, and values
@@ -188,7 +190,7 @@ Zero envelope duration is implemented as an immediate stage transition; this
 deliberately does not promise click-free arbitrary settings. The
 10-second limit applies to transitions, not total note duration.
 
-The planned WAV path will support longer ambience through whole-sound loops; externally authored scores remain deferred.
+WAV playback supports whole-sound loops; externally authored scores remain deferred.
 The foundation uses a 48,000 Hz internal sample rate.
 
 ## Filtering — first native checkpoint
@@ -213,10 +215,10 @@ and modulation routing are deferred; they are not prerequisites for cartridge
 lifecycle, minimal Lua controls, and the two Pong blips. Add complexity only
 when a practical game need justifies it.
 
-## Sample playback — native validated, Lua checkpoint awaiting validation
+## Sample playback — native and Lua validated
 
 Implemented native subset: bounded in-memory PCM decoding, 48 kHz conversion,
-64 shared assets / 32 MiB retained samples, eight one-shot voices, volume/pan,
+64 shared assets / 32 MiB retained samples, eight one-shot or looping voices, volume/pan,
 10 ms gain/stop ramps and the common cartridge lifecycle. Handles never recycle
 within a device lifetime. The native diagnostic exercises generated samples;
 desktop and Pi checks passed per the user at `b292f82`. See
@@ -233,7 +235,7 @@ validation passed at `026aa2c` on 2026-11-06 per the user (89 tests, all four
 manual check groups, Exit to system 0). Streaming remains deferred.
 
 Use eight WAV playback voices, separate from the nine synth voices. These are
-initial budgets to validate on hardware, not measured Pi performance claims.
+bounded budgets exercised on hardware, not measured Pi capacity or latency claims.
 A loaded asset holds shared decoded data; each successful playback receives a
 separate opaque handle with its own position, volume, and pan.
 
@@ -292,7 +294,8 @@ playbacks and releases its assets.
 - Load the complete decoded sound into memory; streaming is deferred.
 - Mono pan distributes sound between stereo outputs. Stereo pan acts as balance:
   center preserves both channels, left attenuates right, and right attenuates left.
-  The exact pan/balance gain curves remain to be specified.
+  Mono uses equal-power pan; stereo uses linear balance (unity in both channels
+at center, attenuating only the opposite channel as pan moves).
 
 Missing, malformed, or unsupported files raise descriptive Lua errors.
 
@@ -307,12 +310,13 @@ Missing, malformed, or unsupported files raise descriptive Lua errors.
 
 Size limits apply after conversion to the internal format. Overlapping playbacks
 share the asset data. Exceeding the total memory or asset-count budget returns
-`nil` and a checkable reason (reason strings remain to be chosen). Exceeding the
+`nil, "audio_budget"` or `nil, "assets_full"`, respectively. Exceeding the
 per-asset limit raises an error identifying that limit.
 
 These memory budgets are for initial testing, not permanent platform limits.
-Incoming file-size limits, temporary conversion-memory bounds, and compatibility
-with the existing cartridge asset-reader limits must be checked before coding.
+Source WAVs are limited to 16 MiB; decoding may temporarily hold up to 4 MiB
+of new samples alongside the retained pool. The binding uses the bounded
+cartridge asset reader. See [WAV loading bounds](../api/wav.md#loading-and-bounds).
 Longer WAV background music is a future use case: evaluate increased limits
 versus streaming rather than assuming every track fits the initial budget.
 
@@ -320,8 +324,8 @@ versus streaming rather than assuming every track fits the initial budget.
 
 Implemented now: startup failure permits silent gameplay with one diagnostic;
 the host retains the device across cartridge sessions and closes it after
-eligible Lua shutdown on host exit. Native control calls return false when
-audio is unavailable. Device access is serialized with SDL locking. There is
+eligible Lua shutdown on host exit. Native synth controls return false when
+audio is unavailable; native WAV calls use `SB_WAV_UNAVAILABLE`. Device access is serialized with SDL locking. There is
 no Lua audio availability query. Native and Lua WAV loading are implemented. Minimal Lua synth controls are implemented.
 
 Native cartridge lifecycle is implemented: fresh default banks on launch,
@@ -332,32 +336,33 @@ immediately without waiting for callback progress, and may truncate a failure
 fade. Already queued device samples cannot be retracted. See
 [session checks](../../tests/audio-session.md) for validation and limits.
 
-The remaining Lua availability and WAV behavior below is the target contract.
+The Lua availability and WAV behavior below is implemented. See the
+[WAV API](../api/wav.md) for result codes and ownership.
 
 
 Unavailable audio allows silent gameplay and produces one explanatory diagnostic.
-Expose availability to Lua; the query name remains undecided. Asset loading still
+There is no separate availability query. Asset loading still
 validates and prepares sounds, and synth configuration remains usable.
 WAV playback returns `nil, "audio_unavailable"`; synth note-on returns
 `false, "audio_unavailable"`. Automatic device reconnection is deferred;
 restoring audio initially requires restarting SugarBee.
 
 When Guru Meditation activates, stop WAV and synth voices with a brief fade and
-reject new playback while the cartridge is failed. Exact refusal results remain
-open. This prevents sounds from continuing indefinitely after game logic fails.
+reject new playback while the cartridge is failed. Synth commands return
+`false, "audio_rejected"`; WAV load/play return `nil, "audio_rejected"`. This prevents sounds from continuing indefinitely after game logic fails.
 
 On normal application exit, keep audio available during Lua's `shutdown()` callback.
 Then stop voices and release assets in native teardown; do not wait for sounds
-started by that callback to finish. Fade completion and device teardown ordering
-must be implemented without an unbounded wait.
+started by that callback to finish. Native cleanup does not wait for fade completion or callback progress.
 
-## Target mixing policy
+## Current mixing and deferred mixer controls
 
 Implemented subset: floating-point mixing, per-voice volume/pan, fixed 1/9
 synth headroom with existing 0.790569415 gain, plus fixed WAV gain 0.025 per
 playback (eight voices, 0.2 total). Combined bounds are documented in
 [native WAV checks](../../tests/audio-wav.md). Group/master controls, final clamp,
-and clipping diagnostics below remain unimplemented.
+and clipping diagnostics below remain unimplemented. They are deferred ideas,
+not release requirements.
 
 
 - Mix using floating-point accumulation.
@@ -387,34 +392,29 @@ sugarbee.audio.set_master_volume(0.7)
 ```
 
 Fixed headroom does not guarantee that arbitrary resonant signals cannot exceed
-the output range. Synth equal-power panning is implemented; WAV pan/balance,
-filter gain handling, and combined-output attenuation remain to be specified. A more sophisticated limiter is deferred.
+the output range. Synth equal-power pan, WAV pan/balance, non-resonant filtering, and
+combined-output attenuation are implemented. Any future resonance would require
+a fresh gain review. A more sophisticated limiter is deferred.
 
-## Remaining implementation questions
+## Deferred decisions — not release blockers
 
-- Native pulse bank/SDL integration with explicit DC conditioning is validated
-  on desktop/Pi. Measure quality before expanding pitch ranges.
-- Native switching including noise is validated on desktop/Pi.
-  White noise versus any future rate-controlled noise API.
-- Simple low-pass desktop/Pi validation is complete. Resonance and other filter
-  modes remain deferred.
-- Lua result/error contracts, atomic configuration, and noise call shape are
-  implemented; seed exposure remains deferred.
-  The minimal Lua contract is now implemented; desktop and Pi validation passed per the user at `7f28fbd`.
-- Cartridge voice ownership, pause/resume, Guru recovery, and bounded teardown
-  are implemented and validated.
-- Group/master controls, WAV balance, combined headroom, final clamp, and clipping
-  diagnostic access/reset rules.
-- WAV decoding, asset/playback handles, validation/refusal precedence, stopping
-  controls, and bounded source/temporary memory compatible with asset limits.
-- Live audio-device failure handling; reconnection remains deferred. Measure
-  latency and Pi performance for each added slice rather than assuming them.
+- Broader synth pitch and its aliasing/quality requirements.
+- Noise seed exposure or rate-controlled noise, if a game needs them.
+- Filter resonance or other modes, with a separate gain review.
+- Group/master mixer controls, clamp policy and clipping diagnostics.
+- WAV streaming, custom loop regions, crossfades and playback-speed changes.
+- Automatic audio-device reconnection; measured latency and platform performance.
 
-Implemented decisions are no longer open: 48 kHz internal output, linear ADSR,
-per-note capture, current-level retrigger, 10 ms stop and volume/pan ramps,
-equal-power synth pan, fixed 1/9 current synth headroom, and noise seed rules.
+The existing decoding, handle ownership, refusal/error contracts, source and
+decoded memory limits, stereo balance and combined headroom are implemented.
+These are not open design questions. The bounded synth/WAV baseline is
+validated on desktop and Pi; further features need their own scope decision.
 
 ## Agreed next sequence — checkpoint by checkpoint
+
+This sequence is a completed milestone record as of 2026-11-06, not a list of
+remaining work. Later whole-sound looping passed Pi validation at `026aa2c`
+and merged as `b304a00`; all 89 post-merge tests passed per the user.
 
 1. PolyBLEP saw and bank/SDL integration were validated at 220–660 Hz.
    The current 110–880 Hz extension has separate validation below.

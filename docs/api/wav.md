@@ -98,8 +98,8 @@ there is no second full archive or conversion copy in the binding.
 
 Overlapping plays are independent. When eight voices are occupied, play returns
 `nil, "voices_full"` without stealing or changing an existing voice. Stopping
-voices still occupy slots and keep their asset in use until their fade or file
-ends. Stop fades for 10 ms; repeating stop does not prolong it. Natural completion
+voices still occupy slots and keep their asset in use until their fade completes
+or a one-shot reaches its end. Loops wrap during the fade without restarting it. Stop fades for 10 ms; repeating stop does not prolong it. Natural completion
 releases the slot. Unload never interrupts playback.
 
 Mono pan uses equal-power endpoints; stereo uses balance, preserving both
@@ -119,4 +119,6 @@ See [native WAV details](../../tests/audio-wav.md) and the
 relaunch on coastline; Pi validation passed at `604ae3b` on
 2026-11-06 per the user: all 89 tests, sample playback/overlap, voice-limit
 refusal, pan/volume/stop, pause/resume, exit/relaunch, Pong, both Synth Labs
-and Pac-Man. Exit to system returned 0.
+and Pac-Man. Exit to system returned 0. Whole-sound looping was subsequently
+validated on Pi at `026aa2c`: all 89 tests and the four manual check groups passed
+with exit status 0; merged as `b304a00`. See the WAV Lab for the full record.
