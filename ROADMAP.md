@@ -224,7 +224,9 @@ headroom, controls and lifecycle. Desktop checks passed on coastline per the
 user. Pi validation passed at `b292f82` on 2026-11-04: all 86 tests, WAV
 listening, gameplay/lifecycle checks, and Exit to system 0; see [native WAV checks](tests/audio-wav.md). Lua loading and a cartridge WAV Lab are now implemented as a separate
 checkpoint. The user confirmed samples, overlap, pause/resume, exit and
-relaunch on coastline; Pi validation is pending. See
+relaunch on coastline; Pi validation passed at `604ae3b` on
+2026-11-06 per the user: all 89 tests, the WAV Lab/game regression checklist,
+and Exit to system status 0. See
 [WAV API](docs/api/wav.md) and [WAV Lab](examples/wav-lab/README.md). Looping and streaming
 are deferred. No composition format or music-authoring system is added.
 

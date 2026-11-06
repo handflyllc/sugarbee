@@ -52,8 +52,8 @@ because the environment's tracing prevents LeakSanitizer operation; no leak-chec
 result is claimed. Lua allocation-failure injection is covered separately.
 
 Desktop results (2026-11-04), user-reported on coastline: all samples play,
-overlap works, and pause/resume, exit, and relaunch pass. Pi validation is
-deferred until the next session. See
+overlap works, and pause/resume, exit, and relaunch pass. Pi validation passed on 2026-11-06 at `604ae3b`, user-reported: all 89 tests
+passed, all acceptance checks above passed, and Exit to system returned 0. See
 [WAV API](../../docs/api/wav.md) for the full contract. Looping and streaming remain
 deferred; this checkpoint adds cartridge integration to the validated native
 foundation without changing synthesis or playback gains.

@@ -8,7 +8,9 @@
   generated-sample WAV Lab and real-host regression coverage, including Lua
   allocation failures. Debug build and all 89 tests pass; desktop
   results on coastline confirm samples, overlap, pause/resume, exit and
-  relaunch pass. Pi validation is pending.
+  relaunch pass. Pi validation passed at `604ae3b` on 2026-11-06 per the user:
+  all 89 tests, WAV controls/overlap/lifecycle and game regression checks pass;
+  Exit to system returns 0.
   Looping and streaming remain deferred; native mix gains are unchanged.
 
 - Added the native WAV foundation: bounded 16-bit PCM mono/stereo decoding at

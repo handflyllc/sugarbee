@@ -22,7 +22,7 @@ not current limitations.
 | Filter | Per-voice one-pole low-pass/bypass, 20–20,000 Hz cutoff, 10 ms coefficient/bypass ramps | Resonance deferred |
 | Mixing | Fixed 1/9 synth headroom with double-precision accumulation | WAV mixing, resonance gain policy, final clamp/clip diagnostics |
 | Integration | Locked native controls, cartridge bank reset/pause/failure/cleanup, listening executables, minimal Lua synth API and basic Synth Lab | Bounded WAV playback |
-| WAV | Native bounded PCM decoder/storage, eight one-shot voices, controls, fixed mixing and lifecycle | Lua/WAV Lab Pi validation, looping/streaming |
+| WAV | Native bounded PCM decoder/storage, eight one-shot voices, controls, fixed mixing and lifecycle | Looping/streaming |
 
 Current bank diagnostic attenuation is separately 0.790569415, chosen for
 listening audibility. Legacy single-triangle and sine diagnostics retain their
@@ -227,7 +227,8 @@ for the exact argument/error contract. The generated [WAV Lab](../../examples/wa
 exercises cartridge assets and overlapping playback. When output is unavailable,
 the per-cartridge binding context retains decoded assets under the same limits;
 playback returns audio_unavailable. The user confirmed desktop sample playback, overlap, pause/resume, exit and
-relaunch; Pi validation of this Lua checkpoint is pending. Loops and streaming remain planned, not implemented.
+relaunch; Pi validation passed at `604ae3b` on 2026-11-06 per the user:
+all 89 tests, the WAV Lab/game regression checklist, and Exit to system status 0. Loops and streaming remain planned, not implemented.
 
 Use eight WAV playback voices, separate from the nine synth voices. These are
 initial budgets to validate on hardware, not measured Pi performance claims.
@@ -433,7 +434,7 @@ The user also confirmed a successful Pi build and zero test failures at
    blip and a distinguishable paddle-reflection blip. Keep gameplay unchanged;
    this is an API-use/acceptance exercise, not a soundtrack or game redesign.
 6. Native bounded WAV foundation (desktop/Pi validated at `b292f82`), then
-   Lua loading and a small WAV Lab (desktop playback checked; Pi pending). One-shot playback
+   Lua loading and a small WAV Lab (desktop and Pi validated at `604ae3b`). One-shot playback
    only initially; looping and streaming are deferred.
 
 Each stage needs its own scope/acceptance review; this sequence is not permission

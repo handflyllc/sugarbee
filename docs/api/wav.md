@@ -113,4 +113,7 @@ context before Lua closing callbacks, and finally destroys that context after
 
 See [native WAV details](../../tests/audio-wav.md) and the
 [WAV Lab](../../examples/wav-lab/README.md) for validation. The user confirmed samples, overlap, pause/resume, exit and
-relaunch on coastline; Pi validation of this Lua checkpoint is pending.
+relaunch on coastline; Pi validation passed at `604ae3b` on
+2026-11-06 per the user: all 89 tests, sample playback/overlap, voice-limit
+refusal, pan/volume/stop, pause/resume, exit/relaunch, Pong, both Synth Labs
+and Pac-Man. Exit to system returned 0.
