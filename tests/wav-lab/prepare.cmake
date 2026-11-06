@@ -1,0 +1,11 @@
+file(MAKE_DIRECTORY "${STAGE}/assets")
+configure_file("${SOURCE}/main.lua" "${STAGE}/main.lua" COPYONLY)
+execute_process(COMMAND "${GENERATOR}" "${STAGE}/assets" RESULT_VARIABLE result)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "WAV fixture generation failed")
+endif()
+execute_process(COMMAND "${PACKER}" -i "${STAGE}" -o "${OUTPUT}" -t "WAV Lab"
+    --uuid 87a84a28-8804-48ad-94d9-cbf68860e35d RESULT_VARIABLE result)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "WAV fixture packaging failed")
+endif()
