@@ -12,9 +12,9 @@ is the first cartridge language. Source targets Debian x86_64 and Raspberry
 Pi 4 ARM64; native binaries are platform-specific.
 
 At merge `b304a00`, all 89 tests passed after merge per the user. The audio
-checkpoints have desktop and Pi listening/lifecycle acceptance. Release
-preparation is in progress; this is not yet a tagged release candidate or
-a bootable console image. See the [roadmap](ROADMAP.md) for outstanding work.
+checkpoints have desktop and Pi listening/lifecycle acceptance. The `v0.1.0-rc1` release target provides source and native Linux x86_64/ARM64
+packages; see the [release notes](RELEASE_NOTES.md) for scope and compatibility.
+No bootable console image is included. See the [roadmap](ROADMAP.md) for outstanding work.
 
 ## Build
 
@@ -25,7 +25,7 @@ See [dependencies](docs/development/dependencies.md) and
 ## Documentation
 
 - [Release-readiness checklist](docs/development/release-checklist.md)
-- [Draft release notes](RELEASE_NOTES.md)
+- [Release notes](RELEASE_NOTES.md)
 - [Build and testing](docs/development/building.md)
 - [Dependencies](docs/development/dependencies.md)
 - [Current `.vcart` format](docs/specifications/cartridge-format.md)

@@ -39,14 +39,16 @@ checkpoint awaits commit; no runtime or API behavior changed.
   passed Pi acceptance per the user.
 - Source plus x86_64/ARM64 binary contents and provisional API policy accepted.
   x86_64 preview automated and manual extraction checks pass, exit 0;
-  ARM64 packaging and extracted-package acceptance remain.
+  ARM64 extracted-package acceptance passed at `409c505` per the user.
+  Final same-commit artifacts, merge/tag and publication remain.
 - Prepare release notes and tag the exact accepted commit; `v0.1.0-rc1` is the
   accepted target name, not an existing release.
 
 Track evidence and exact remaining gates in the
-[release checklist](docs/development/release-checklist.md). Draft release notes
+[release checklist](docs/development/release-checklist.md). Release notes
 are in [RELEASE_NOTES.md](RELEASE_NOTES.md). Preparation was committed as `f99583a` so the Pi could fetch the helper.
-Acceptance record updates remain uncommitted; no tag or publication yet.
+Release finalization is authorized. Commit the acceptance record and use the
+same tagged commit for all final artifacts; publication follows artifact verification.
 
 ## Limits and deferred work
 

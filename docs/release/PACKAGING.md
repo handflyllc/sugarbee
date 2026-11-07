@@ -61,8 +61,12 @@ The user subsequently confirmed all six extracted x86_64 preview cartridges
 passed manual checks and the host returned status 0 (2026-11-06). The tested
 preview was generated under `build-rc-release/package.sfkTI3`, based on
 `f99583a` plus the uncommitted packaging/readiness changes. Final artifacts must
-be regenerated from the accepted clean commit. ARM64 packaging and extracted
-acceptance remain pending.
+be regenerated from the accepted clean commit.
+
+ARM64 extracted-package acceptance, user-reported 2026-11-06 at `409c505`:
+all libraries resolve and all cartridge checks pass. Repacked Pong launches,
+pauses and restarts. Synth Labs sound correct and resume where supported after
+pause. This is Pi package acceptance, not a claim about other ARM64 distributions.
 
 ## Final artifact identity
 

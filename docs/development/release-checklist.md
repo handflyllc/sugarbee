@@ -3,7 +3,8 @@
 Status: in progress, 2026-11-06. Runtime baseline: `b304a00`. Readiness preparation was committed/pushed as `f99583a` on
 `docs/release-readiness` to make the same helper available on the Pi. Subsequent
 acceptance records remain uncommitted.
-No release candidate has been tagged or published. Accepted scope is `v0.1.0-rc1`: source plus Linux x86_64 and ARM64 binary
+Finalization is authorized; the release tag and artifact BUILD-INFO establish
+the published identity. Accepted scope is `v0.1.0-rc1`: source plus Linux x86_64 and ARM64 binary
 archives, with provisional APIs and documented system dependencies.
 
 | Item | Evidence / remaining work |
@@ -17,9 +18,9 @@ archives, with provisional APIs and documented system dependencies.
 | Release contents and provisional API policy | Accepted: source plus two native Linux archives, provisional API; see release notes |
 | Binary package tooling | Native build, examples, notices, build identity and checksums implemented; preview guard verified |
 | x86_64 extracted package | Preview automated checks pass; user confirmed all six extracted cartridges and exit 0 (2026-11-06) |
-| ARM64 extracted package | Packaging and manual acceptance pending on Pi |
+| ARM64 extracted package | User-reported at `409c505` (2026-11-06): libraries resolve, all cartridges pass, repacked Pong launches/pauses/restarts, synth listening and applicable pause/resume pass |
 | Source distribution contents | `git archive` of `f99583a` inspected; fresh extracted Release build has no warnings, 89 tests pass, acceptance fixture helper succeeds; recheck final tagged-tree contents after documentation commits |
-| Final commit / tag / publication | Pending acceptance; user performs Git writes/pushes |
+| Final commit / tag / publication | Authorized after acceptance; user performs Git writes/pushes, builds from `v0.1.0-rc1`, verifies final archives before publication |
 
 The existing Debug and hardware results remain valid historical evidence.
 They do not replace acceptance of the Release executable. This is a finite

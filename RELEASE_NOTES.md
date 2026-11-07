@@ -1,7 +1,10 @@
-# SugarBee 0.1.0-rc1 — draft release notes
+# SugarBee 0.1.0-rc1 — release notes
 
-**Not tagged or published.** Accepted scope: source plus Linux x86_64 and ARM64 binaries.
-Final package acceptance and tagging are pending. See the [readiness checklist](docs/development/release-checklist.md).
+Release candidate for the experimental 0.1 baseline: source plus Linux x86_64
+and ARM64 binaries. Package acceptance is complete. Official artifacts must be
+built from tag `v0.1.0-rc1`; binary BUILD-INFO files identify the exact commit.
+See the [readiness checklist](docs/development/release-checklist.md) for evidence
+and the final artifact verification procedure.
 
 SugarBee is an experimental 2D-first virtual console runtime for Debian x86_64
 and Raspberry Pi 4 ARM64 Linux. Cartridges contain Lua 5.4 code and assets in
@@ -46,13 +49,13 @@ The runtime baseline is `b304a00`. Coastline's fresh Release build passed all
 89 tests without compiler warnings on 2026-11-06. The user confirmed all
 coastline manual acceptance checks, both controllers working, and exit status 0.
 The user reported Pi Release acceptance complete on 2026-11-06, including
-simultaneous two-controller operation. The tested Pi commit is `f99583a`, with all 89 Release tests passing. Final RC acceptance and tagging
-remain pending; no final RC commit is identified yet.
+simultaneous two-controller operation. The tested Pi commit is `f99583a`, with all 89 Release tests passing. Release finalization was authorized after package acceptance. The release tag
+identifies the final commit; runtime source is unchanged from the tested baseline.
 
 A source archive of `f99583a` was extracted independently of the checkout:
 its clean Release build completed without warnings, all 89 tests passed, and
-the acceptance-fixture helper succeeded. Final tagged-tree contents still need
-a check after the acceptance-documentation commit.
+the acceptance-fixture helper succeeded. Final artifacts are regenerated after the acceptance-documentation commit;
+verify their contents and checksums using the packaging procedure.
 
 ## Distribution and attribution
 
@@ -64,4 +67,7 @@ in `third_party/font8x8/`; the musical lab records its score source in its READM
 WAV Lab samples are generated from original test code. System dependencies are
 installed separately and retain their own licenses. Binary package preparation and acceptance are described in
 [packaging](docs/release/PACKAGING.md). The x86_64 preview passed all six extracted-cartridge manual checks with exit
-status 0 per the user. ARM64 package validation remains pending.
+status 0 per the user. ARM64 extracted-package acceptance passed at `409c505`:
+all libraries resolve, all cartridge checks pass, repacked Pong launches/pauses/
+restarts, and synth listening and applicable pause/resume pass. Both final native
+archives must be regenerated from the same accepted release commit.
