@@ -1,20 +1,24 @@
 # SugarBee 0.1 release-readiness checklist
 
-Status: in progress, 2026-11-06. Runtime baseline: `b304a00`. Readiness changes
-remain uncommitted at the user's request until the checklist is complete.
-No release candidate has been tagged or published. The proposed artifact is a
-source release, `v0.1.0-rc1`; contents and compatibility policy need acceptance.
+Status: in progress, 2026-11-06. Runtime baseline: `b304a00`. Readiness preparation was committed/pushed as `f99583a` on
+`docs/release-readiness` to make the same helper available on the Pi. Subsequent
+acceptance records remain uncommitted.
+No release candidate has been tagged or published. Accepted scope is `v0.1.0-rc1`: source plus Linux x86_64 and ARM64 binary
+archives, with provisional APIs and documented system dependencies.
 
 | Item | Evidence / remaining work |
 | --- | --- |
 | Current documentation | Reconciled with baseline; local links and whitespace checked |
 | Coastline fresh Release build | `build-rc-release`, Release, full 89 tests pass, no compiler warnings (2026-11-06) |
 | Coastline Release manual acceptance | User-reported 2026-11-06: all six check groups pass; Exit to system 0 |
-| Pi fresh Release build | Pending; confirm baseline hash and full 89 tests |
-| Pi Release manual acceptance | Pending checklist below |
-| Two physical controllers | User confirms both work on coastline; disconnect/reconnect result not separately reported |
-| Release contents and provisional API policy | Draft in root release notes; user acceptance pending |
-| Source distribution contents | Final committed-tree archive check pending |
+| Pi fresh Release build | User-confirmed `f99583a`, all 89 Release tests pass (2026-11-06) |
+| Pi Release manual acceptance | User-reported complete on 2026-11-06, including two controllers simultaneously |
+| Two physical controllers | Both work on coastline; simultaneous operation accepted on Pi |
+| Release contents and provisional API policy | Accepted: source plus two native Linux archives, provisional API; see release notes |
+| Binary package tooling | Native build, examples, notices, build identity and checksums implemented; preview guard verified |
+| x86_64 extracted package | Preview automated checks pass; user confirmed all six extracted cartridges and exit 0 (2026-11-06) |
+| ARM64 extracted package | Packaging and manual acceptance pending on Pi |
+| Source distribution contents | `git archive` of `f99583a` inspected; fresh extracted Release build has no warnings, 89 tests pass, acceptance fixture helper succeeds; recheck final tagged-tree contents after documentation commits |
 | Final commit / tag / publication | Pending acceptance; user performs Git writes/pushes |
 
 The existing Debug and hardware results remain valid historical evidence.
@@ -52,11 +56,9 @@ runaway-update cartridge for Guru recovery. No test source selector is edited.
 Generated packages remain in the build tree; rerunning preserves saves. Save
 Lab retains its established UUID. These are test saves, not production backups.
 
-Because readiness files are not yet committed, the Pi will not receive the new
-helper through Git. The user may copy this helper and checklist to the Pi for
-validation, or use existing packaging commands with the Release binaries. This
-does not authorize committing on the Pi. Runtime source must match `b304a00`;
-record any local changes instead of discarding them.
+The helper is available in preparation commit `f99583a`. Runtime source is
+unchanged from `b304a00`; record the actual tested commit and any local changes.
+The Pi remains a receive-only validation target.
 
 ## Compact manual acceptance — coastline and Pi
 
@@ -96,5 +98,9 @@ local builds, saves, credentials and ignored handoff material. Verify the archiv
 build instructions in a fresh extraction before tagging. If runtime source
 changes during readiness, repeat affected checks and refresh acceptance evidence.
 Tag the accepted commit only after remaining gates are resolved; publish/push
-through the user's normal terminal workflow. No binary or appliance distribution
-is implied by the source-release proposal.
+through the user's normal terminal workflow. Source and both native binary archives are accepted scope; no installer or
+appliance image. See [packaging](../release/PACKAGING.md) for artifact identity
+and extracted-package acceptance.
+
+The basic and musical Synth Labs use the default player index 0 (Player 1).
+Player 2 not operating their sound controls is expected, not an input failure.

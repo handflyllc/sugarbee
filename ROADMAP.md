@@ -33,17 +33,20 @@ checkpoint awaits commit; no runtime or API behavior changed.
 
 - Coastline fresh Release build: all 89 tests pass, no compiler warnings.
   Coastline manual checks passed per the user, including both controllers and
-  Exit to system 0. Pi Release build/manual acceptance remain.
-- Both controllers work on coastline per the user; confirm disconnect/reconnect
-  recovery during the remaining hardware checks.
-- Agree release contents, provisional API compatibility and known limitations.
+  Exit to system 0. Pi Release acceptance is complete at `f99583a`, with all 89 tests
+  passing per the user.
+- Both controllers work on coastline; simultaneous two-controller operation
+  passed Pi acceptance per the user.
+- Source plus x86_64/ARM64 binary contents and provisional API policy accepted.
+  x86_64 preview automated and manual extraction checks pass, exit 0;
+  ARM64 packaging and extracted-package acceptance remain.
 - Prepare release notes and tag the exact accepted commit; `v0.1.0-rc1` is the
-  proposed name, not an existing release.
+  accepted target name, not an existing release.
 
 Track evidence and exact remaining gates in the
 [release checklist](docs/development/release-checklist.md). Draft release notes
-are in [RELEASE_NOTES.md](RELEASE_NOTES.md). The user requested one combined
-readiness commit after the checks are complete; no tag or publication yet.
+are in [RELEASE_NOTES.md](RELEASE_NOTES.md). Preparation was committed as `f99583a` so the Pi could fetch the helper.
+Acceptance record updates remain uncommitted; no tag or publication yet.
 
 ## Limits and deferred work
 
