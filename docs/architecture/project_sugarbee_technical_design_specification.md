@@ -1,3 +1,8 @@
+> **Historical reference — not current implementation guidance.** This archived
+> draft/template predates the working engine. Use the [current architecture](overview.md),
+> [cartridge format](../specifications/cartridge-format.md) and API references
+> for supported behavior. Code below is not a maintained build target.
+
 # PROJECT SUGARBEE: TECHNICAL DESIGN SPECIFICATION
 
 **Codename:** SugarBee  

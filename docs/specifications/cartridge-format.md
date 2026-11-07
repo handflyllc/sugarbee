@@ -7,8 +7,10 @@ The agreed magic is **`SBEE`**.
 
 A file is a **64-byte binary header** followed immediately by a **ZIP archive**.
 The 64-byte prefix is not part of the normal ZIP specification. The current
-loader uses minizip's `unzOpen` on the complete file; offset handling and
-robust archive validation still need to be made explicit.
+loader uses minizip's `unzOpen` on the complete prefixed file. The bounded
+asset reader validates the archive directory and requested member; see
+[asset limits and validation](../api/assets.md). This path has been exercised
+on Debian x86_64 and Raspberry Pi ARM64.
 
 | Offset | Bytes | Name | Encoding |
 | --- | ---: | --- | --- |
@@ -30,9 +32,10 @@ version and runtime implementation version should be separated.
 
 `payload_size` is the **compressed ZIP archive length**, not the sum of
 uncompressed contents. Per-file uncompressed sizes are described by ZIP
-entries. Uncompressed limits, file-count/path limits, CRC/integrity checks,
-and bounded decompression are required before cartridges can be treated as
-untrusted inputs.
+entries. The asset reader enforces archive/member size limits, declared total
+uncompressed size, entry-count/path rules and requested-member CRC/read-length
+checks. These are defensive bounds, not permission to execute hostile Lua;
+there is no decompression-time or aggregate per-game memory budget.
 
 ## Persistent game identity
 

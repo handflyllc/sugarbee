@@ -1,24 +1,78 @@
-# Project SugarBee — Preliminary Roadmap
+# Project SugarBee — Roadmap
 
-Last reviewed: 2026-11-03.
+Reviewed 2026-11-06 against merged baseline `b304a00`. This is a revisable
+plan, not a release schedule or a promise of additional features.
 
-This is a preliminary, revisable plan, not a release schedule or a promise of
-features. Review it at each major checkpoint. Choose the next small, testable
-step together; new ideas do not automatically become requirements.
+## Current baseline
 
-## Working foundation
+Implemented and validated on desktop and Raspberry Pi:
 
-SugarBee currently provides cartridge loading and bounded asset validation,
-2D graphics, controller and keyboard input, fixed-step timing, Lua lifecycle
-callbacks, a host pause/exit menu, and cartridge discovery and launching.
-Invaders Lab, Pong Lab, and the Pac-Man demo help exercise the engine.
-The launcher has passed desktop and Raspberry Pi checks.
+- Cartridge loading, bounded asset reads, PNG sprites and 2D graphics.
+- Keyboard/controller input, fixed-step timing, launcher, pause and exit.
+- Restricted Lua libraries and instruction budgets for ordinary runaway loops.
+- Explicit UUID-based saves with bounded reads and synchronized replacement.
+- Nine synth voices: triangle, saw, pulse and noise; ADSR, pan/volume, transitions
+  and simple low-pass filtering. Pitched notes support 110–880 Hz.
+- Eight WAV playbacks with shared loaded assets, one-shots, whole-sound loops,
+  pan/volume/stop, and cartridge-owned cleanup.
 
-Designed, implemented, and validated are separate states. In particular, native synth audio is implemented; minimal Lua synth controls are implemented, validated on desktop and Pi. Execution limits are
-implemented and validated on desktop and Pi for the documented accidental-loop
-cases. The budgets remain provisional, with explicit coverage limitations.
+All 89 post-merge tests passed at `b304a00` per the user. Pi looping validation
+at `026aa2c` passed all 89 tests, manual checks and Exit to system status 0.
+This evidence does not establish every hardware/input combination or a fresh
+Release-build acceptance run. The user confirmed both controllers work during coastline Release acceptance;
+disconnect/reconnect coverage has not been separately reported.
 
-## Preliminary priority order
+## Release documentation cleanup — prepared
+
+Current guidance and API references are reconciled with the implemented
+baseline. Historical checkpoints are labeled separately from current behavior.
+Local documentation links and whitespace checks pass. This documentation-only
+checkpoint awaits commit; no runtime or API behavior changed.
+
+## Active work — release preparation
+
+- Coastline fresh Release build: all 89 tests pass, no compiler warnings.
+  Coastline manual checks passed per the user, including both controllers and
+  Exit to system 0. Pi Release acceptance is complete at `f99583a`, with all 89 tests
+  passing per the user.
+- Both controllers work on coastline; simultaneous two-controller operation
+  passed Pi acceptance per the user.
+- Source plus x86_64/ARM64 binary contents and provisional API policy accepted.
+  x86_64 preview automated and manual extraction checks pass, exit 0;
+  ARM64 extracted-package acceptance passed at `409c505` per the user.
+  Final same-commit artifacts, merge/tag and publication remain.
+- Prepare release notes and tag the exact accepted commit; `v0.1.0-rc1` is the
+  accepted target name, not an existing release.
+
+Track evidence and exact remaining gates in the
+[release checklist](docs/development/release-checklist.md). Release notes
+are in [RELEASE_NOTES.md](RELEASE_NOTES.md). Preparation was committed as `f99583a` so the Pi could fetch the helper.
+Release finalization is authorized. Commit the acceptance record and use the
+same tagged commit for all final artifacts; publication follows artifact verification.
+
+## Limits and deferred work
+
+The runtime is not a hostile-cartridge sandbox. Native blocking, compilation,
+memory exhaustion and repeatedly caught errors are outside general recovery
+guarantees. Use trusted cartridges; see [lifecycle limits](docs/api/timing.md).
+Save validation does not establish hardware power-loss durability.
+
+Streaming, resonance, broader synth pitch, music-authoring formats, MIDI,
+master/group controls and additional game labs are not RC prerequisites.
+Actual OS shutdown, bootable appliance images, update/recovery deployment,
+analog input and configurable logical resolutions remain separate work.
+Persistent logging is deferred unless a concrete need emerges.
+
+Further features require a small agreed scope, automated checks and appropriate
+desktop/Pi acceptance. Keep working functionality and cartridge compatibility
+intact; do not turn exploratory ideas into requirements.
+
+## Historical milestone record
+
+The entries below preserve the state and test counts at each checkpoint.
+“Pending”, “next”, and “future” within this record describe that time, not the
+current baseline above. Current behavior belongs in the API documentation;
+new milestones should update the summary rather than extend a second roadmap.
 
 ### 1. Lua execution-limit validation — completed
 
@@ -95,7 +149,7 @@ including repack persistence and Exit to system returning status 0.
 This completes the agreed bounded save milestone. Actual power-loss testing
 remains deferred; these checks do not establish hardware durability guarantees.
 
-### 4. Audio implementation — native triangle/noise validated
+### 4. Audio implementation — incremental validation history
 
 Audio is the next major creative milestone after the bounded reliability and
 minimal-save phases. A custom console OS image is not a prerequisite.
@@ -155,7 +209,7 @@ Done when: each selected audio slice meets its agreed behavior and resource
 constraints with automated checks where appropriate and listening tests.
 Do not treat the entire audio design as a single implementation step.
 
-### Next audio checkpoints
+### Audio checkpoint continuation
 
 The design is reconciled against implemented behavior. A standalone PolyBLEP
 saw at 220–660 Hz now has sample/spectral checks, native bank/SDL integration,
@@ -231,44 +285,3 @@ and Exit to system status 0. See
 desktop/Pi acceptance passed, with Pi validation at `026aa2c` on 2026-11-06
 per the user. See the WAV Lab README for the checks.
 Streaming remains deferred. No composition format or music-authoring system is added.
-
-## Labs alongside engine work
-
-Continue small labs to reinforce concepts and expose real engine needs. Select
-each independently, preferably to exercise the current engine milestone.
-A lab is a fundamentals exercise, not a commitment to reproduce a full game.
-
-Possible later exercises include Snake, vertical and horizontal scrolling, and
-a small four-panel world with movement in any direction. These are options,
-not scheduled projects. Needs discovered in a lab become discussion points;
-they do not automatically expand engine scope.
-
-## Later deployment evaluation
-
-Debian/Raspberry Pi OS remains the working foundation. When deployment becomes
-the active milestone, define requirements for boot behavior, graphics, input,
-audio, storage, updates, recovery, and maintenance before choosing an OS or
-image-building approach. No alternative distribution is selected or scheduled.
-
-Actual OS shutdown and its deployment permissions are later work, alongside
-repeatable development and console images. They must not become
-an open-ended prerequisite for starting audio on the existing foundation.
-
-## Ideas and deferred discussions — not scheduled
-
-- Splash artwork, cartridge icons, and directory configuration UI/files.
-- Persistent diagnostic logging, unless validation exposes a concrete need
-  within the bounded reliability baseline.
-- Additional drawing primitives and framerate diagnostics.
-- The Invaders firing-rate Easter egg; its exact behavior remains undecided.
-- External compositions targeting SugarBee, MIDI integration, and evaluating
-  twelve or more synth voices. Consult the audio design before revisiting these.
-
-## At each major checkpoint
-
-1. Record what is implemented, tested, merged, and still outstanding.
-2. Review the next priority and give it a small scope and acceptance criteria.
-3. Update this roadmap when decisions change; keep detailed specifications and
-   test procedures in their existing documents rather than duplicating them here.
-4. Keep exploratory ideas separate from agreed work, and use the scope alarm
-   before a small milestone grows into a larger project.

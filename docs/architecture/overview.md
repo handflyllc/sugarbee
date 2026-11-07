@@ -4,19 +4,9 @@ SugarBee is an experimental, **2D-first** game console runtime. Game code
 should target SugarBee services, not the operating system or SDL. The initial
 game language is Lua 5.4; a language-independent core is the goal.
 
-Current data flow for graphics:
-
-```text
-.vcart / main.lua
-        |
-Lua API bindings (src/main.c)
-        |
-Language-neutral C graphics interface (include/sb_graphics.h)
-        |
-SDL2 backend (src/sb_graphics_sdl.c)
-        |
-OS-provided display and input drivers
-```
+Graphics flow from cartridge Lua through the bindings in `src/main.c`, the
+language-neutral `sb_graphics.h` interface, and the SDL2 backend to the host
+display. Cartridge code does not receive SDL objects.
 
 The SDL2 graphics backend owns its window, renderer, and RGBA sprite
 textures. Games receive opaque numeric texture handles, never SDL texture
@@ -65,7 +55,8 @@ and cleanup continues.
 The host pause menu offers Resume and Exit Game. Exit Game requests a
 transition that the main loop handles after finishing its current input
 step. `end_cartridge()` invokes the eligible shutdown callback, closes Lua,
-releases cartridge textures, and clears session and pause state.
+releases cartridge textures and audio assets, resets audio voices, and clears
+session and pause state. The audio device remains host-owned until system exit.
 
 The host then displays an idle screen without calling cartridge update or
 draw callbacks. Its window, renderer, retained-frame texture, and controllers
@@ -106,7 +97,9 @@ Lua shutdown), clears the Guru flag, and resets timing before returning to the
 host. Main-thread Lua instruction budgets now catch ordinary runaway loops in
 main.lua execution, init, update, draw, and shutdown. Shutdown limit failures
 report to the console and continue cleanup without Guru. These limits do not
-cover blocked native calls, state-closure finalizers, or deliberate bypasses;
+cover blocked native calls, compilation, memory exhaustion, or deliberate bypasses.
+Cartridge `__gc` registration is excluded; supported `__close` paths have bounded
+regression coverage, not a guarantee for every closing pattern;
 see [execution limits and lifecycle](../api/timing.md).
 
 X/U requests a rescan while the launcher is idle. The host performs it after
@@ -119,13 +112,33 @@ See [launcher usage](../development/launcher.md).
 
 
 
+## Saves and audio
+
+The [save API](../api/saves.md) stores one explicit opaque string up to 64 KiB
+per cartridge UUID under a host-selected save root. The C storage layer handles
+bounded reads and synchronized temporary-file replacement; Lua owns serialization
+and decides when to save. Saves are separate from cartridge files. Automatic
+saving and hardware power-loss guarantees are not provided.
+
+The host owns one SDL2 audio device across cartridge sessions. The
+[synth API](../api/audio.md) controls nine voices with triangle/saw/pulse/noise,
+ADSR, volume/pan, waveform transitions and a simple low-pass filter. Pitched
+notes support 110–880 Hz. The [WAV API](../api/wav.md) loads bounded PCM assets
+and exposes eight independent one-shot or whole-sound looping playbacks.
+`sb_wav` decodes and mixes samples; `sb_lua_audio` owns the cartridge binding
+context. Repeated playback shares decoded asset storage.
+
+Pause fades and freezes synth and WAV playback together. Guru failure rejects
+new commands and fades playback out; native teardown releases cartridge audio
+without waiting for loops or notes to finish. Failed device initialization permits
+silent gameplay. There is no automatic device reconnection or streaming.
+
 ## Agreed design goals that are not yet features
 
 - Manifest-defined logical resolutions (default 1280 x 720), aspect-preserving
   scaling, and pixel-art integer scaling.
 - A full input event router, analog controls, and lossless input-event queues.
   Basic button-press delivery across zero/multiple simulation updates works.
-- Save APIs tied to persistent cartridge UUIDs.
 - A minimal Linux appliance image and a development image from shared build
   configuration.
 - Language adapters beyond Lua and an extensible plugin system (deferred).

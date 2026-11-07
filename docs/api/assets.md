@@ -43,14 +43,14 @@ The whole directory is scanned before an asset is accepted.
 
 The current host reads `main.lua` through the same bounded reader as assets.
 minizip 1.x is used on the prefixed cartridge file. This has been exercised on
-Linux, but compatibility with other minizip versions and the Pi 4 environment
-still needs testing. The reader does not unpack ZIP members onto the host
+Debian x86_64 and Raspberry Pi 4 ARM64 during cartridge validation. Other
+minizip versions and platforms are not established by those checks. The reader does not unpack ZIP members onto the host
 filesystem; it allocates memory and reads only the selected entry.
 
-These checks are defensive limits, **not** a security sandbox. Lua currently
-opens standard `io` and `os` libraries, and game-supplied Lua remains trusted
-code in the current prototype. A complete untrusted-cartridge security model
-and per-game memory budget are future work.
+These checks are defensive limits, **not** a security sandbox. Lua uses the
+[restricted library set and instruction budgets](timing.md#supported-lua-libraries);
+`io` and `os` are not exposed. A complete hostile-cartridge security model and
+aggregate per-game memory budget are not implemented. Use trusted cartridges.
 
 ## Implementation boundaries
 

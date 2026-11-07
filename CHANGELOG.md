@@ -2,6 +2,15 @@
 
 ## Unreleased (SugarBee 0.1 baseline)
 
+- Reconciled current build, architecture, asset, save and audio documentation
+  with the validated baseline; separated historical checkpoints and deferred
+  design sketches from current guidance. Added a release acceptance checklist,
+  draft source-release notes and a helper that packages acceptance cartridges
+  using the selected build. No runtime or API changes.
+
+The entries below record individual checkpoints. Statements about deferred
+features describe that checkpoint; later entries above may supersede them.
+
 - Added whole-sound WAV looping through `loop=true`, retaining one existing
   playback slot and the normal controls, stop fade and cartridge lifecycle.
   WAV Lab includes an original seamless 48 kHz tone. Existing one-shot calls

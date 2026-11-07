@@ -9,7 +9,7 @@ Install build dependencies on Debian 12:
 sudo apt update
 sudo apt install --no-install-recommends \
   build-essential cmake pkg-config \
-  libsdl2-dev liblua5.4-dev libminizip-dev libpng-dev zlib1g-dev zip
+  libsdl2-dev liblua5.4-dev libminizip-dev libpng-dev zlib1g-dev zip lua5.4
 ```
 
 | Package | Why it is needed |
@@ -24,6 +24,11 @@ sudo apt install --no-install-recommends \
 | `zlib1g-dev` | Compression support |
 | `zip` | External CLI currently used by `sbee-pack` |
 | `lua5.4` (optional) | Standalone interpreter for the headless `cartridge_smoke` tests; CMake skips them when it is absent |
+
+The installation command includes the standalone Lua 5.4 interpreter so the
+full test suite is enabled. It is optional for running the compiled host, but
+omitting it skips cartridge smoke tests; a smaller passing count is not
+equivalent coverage.
 
 No KDE, X11 development stack, desktop environment, Node.js, or npm dependency
 is required by SugarBee's current C build. SDL2 may have desktop-oriented

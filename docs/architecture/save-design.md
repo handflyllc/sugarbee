@@ -65,8 +65,7 @@ are invalid and ignored, following the XDG specification. This is persistent
 user data worth backing up, separate from cartridge files and caches.
 
 A host command-line option, `--save-dir DIRECTORY`, overrides the root for Pi
-deployment and isolated tests. Selection is implemented, but not yet connected
-to storage operations. The storage layer generates
+deployment and isolated tests. Selection is connected to host load/save operations and Lua bindings. The storage layer generates
 one canonical UUID filename, `<uuid>.sav`, within the selected root. There is
 no directory or filename selection from Lua.
 
@@ -153,6 +152,12 @@ deployment work; a completed save is not permission to remove console power.
   atomic destination replacement on the same filesystem.
 - [Linux fsync](https://man7.org/linux/man-pages/man2/fsync.2.html) distinguishes
   synchronizing file contents from synchronizing the containing directory.
+
+## Historical implementation record
+
+The checkpoints below preserve what was available at each stage. Statements
+such as “bindings remain unimplemented” describe that stage, not the current
+engine. The current contract is summarized above and in the [save API](../api/saves.md).
 
 ## First storage checkpoint: bounded reader
 

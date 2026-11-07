@@ -83,8 +83,8 @@ back in. Failure rejects controls and fades out. Eligible shutdown retains audio
 access; paused shutdown stays silent. Teardown clears voices immediately without
 waiting for notes to finish. See [lifecycle checks](../../tests/audio-session.md).
 
-Separate pitch-only controls, WAV playback, music-file formats, and sequencing
-helpers are not exposed here. The basic [Synth Lab](../../examples/synth-lab/README.md)
+Separate pitch-only controls, music-file formats, and sequencing helpers are
+not exposed here. WAV playback uses the separate [sugarbee.audio API](wav.md). The basic [Synth Lab](../../examples/synth-lab/README.md)
 demonstrates the current API. The [Musical Synth Lab](../../examples/musical-synth-lab/README.md) uses a
 local Lua note/duration table for four Mozart bars; desktop and Pi
 validation passed at `683badf`, as recorded in its README.
