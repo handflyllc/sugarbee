@@ -1,8 +1,8 @@
 # Prepared native music sequencing checkpoint
 
 2026-11-07, based on RC1 `cca7c62`. Experimental internal interface; no new
-cartridge API. This checkpoint needs desktop listening and Pi acceptance before
-advancing to music loading or production engine integration.
+cartridge API. Desktop and Pi acceptance are complete as recorded below. SugarBeats should
+exercise this interface before further engine expansion.
 
 ## Implemented scope
 
@@ -107,13 +107,13 @@ tell the user when switching projects is the next useful step.
   no leak-sanitizer result is claimed.
 - Full Debug suite: 91/91 passed. Complete five-section diagnostic passed with
   SDL dummy output; exit status 0. These are not listening results.
-- Desktop validation/listening passed per the user on 2026-11-07, against
-  the uncommitted candidate based on RC1 `cca7c62`. Pi was not tested: hardware
-  is unavailable today. Queue the full suite and listening procedure above for
-  the next Pi validation batch, recording the exact transferred commit.
-- Pi acceptance remains a gate for shared-sequencer adoption and further engine
-  layers. SugarBeats bank-only Phase 0B may proceed independently against its
-  reviewed clean baseline; do not bypass its source-pin/clean-tree guard.
-- Working changes are now on `feature/native-music-sequencer`, uncommitted.
-  Earlier branch creation failed because `.git` was read-only in this environment;
-  the branch now exists. No candidate commit or Pi acceptance is claimed.
+- Desktop validation/listening passed per the user on 2026-11-07 against the
+  candidate later committed in `a870687` plus completeness fix `49d6a8e`.
+- Pi acceptance passed per the user on 2026-11-07 at
+  `49d6a8e9baf35feea638c6345375ac4ba8704b83`: 91 tests passed, listening test
+  passed, exit status 0. These hardware/listening results are user-reported.
+- Checkpoint accepted. The feature branch contains the tested candidate; no
+  merge is authorized or claimed. Validation bookkeeping is documentation-only.
+- Next development priority is SugarBeats: review its pin and complete the
+  bounded bank-only Phase 0B listening host before prepared-sequence integration.
+  Preserve the clean-source/pin guard; do not change SugarBeats code here.

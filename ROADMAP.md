@@ -3,15 +3,16 @@
 Reviewed 2026-11-06 against merged baseline `b304a00`. This is a revisable
 plan, not a release schedule or a promise of additional features.
 
-## Active checkpoint — prepared native music sequencing
+## Accepted checkpoint — prepared native music sequencing
 
 2026-11-07: engine edits authorized for a small isolated sequencer, native
 timing tests, and early interval/chord listening. See
 [checkpoint and acceptance steps](tests/music-sequence.md). Production music
 loading, looping, reservations and Lua integration remain later checkpoints.
-Desktop listening passed per the user on 2026-11-07; Pi acceptance is queued
-for a later hardware-validation batch. After that gate, SugarBeats
-should exercise the shared interface before either project advances too far.
+Desktop listening and Pi acceptance passed per the user on 2026-11-07.
+Pi commit `49d6a8e`: 91 tests passed, listening passed, exit status 0.
+Next development priority is SugarBeats: complete its bounded preview-host
+prerequisite, then exercise the shared interface before further engine layers.
 
 ## Validated RC1 baseline
 
