@@ -33,6 +33,8 @@ typedef struct {
 typedef enum { SB_MUSIC_IDLE = 0, SB_MUSIC_PLAYING, SB_MUSIC_FINISHING } sb_music_state_t;
 typedef struct {
     sb_audio_bank_t bank; /* Exclusive private bank for this checkpoint. */
+    sb_audio_bank_t initial_bank; /* Prepared silent snapshot for looping. */
+    bool loop;
     const sb_music_song_t *song;
     uint64_t frame;
     size_t next_event;
@@ -46,10 +48,18 @@ void sb_music_sequence_reset(sb_music_sequence_t *sequence);
  * and events alive and immutable until idle/reset. Ordinary C pointer/array
  * validity is a caller obligation; this is not a parser for untrusted bytes.
  * Start refuses busy or invalid songs without changing sequence. Empty event
- * arrays/unused tracks are allowed in this prototype (asset policy undecided).
+ * arrays/unused tracks are allowed.
  * pulse_width is required only for pulse (otherwise ignored).
- * No loop, gain API, mapping, pause control, or cartridge integration yet. */
+ * No gain API, mapping, pause control, or cartridge integration yet. */
 bool sb_music_sequence_start(sb_music_sequence_t *sequence, const sb_music_song_t *song);
+/* Validate and analyze a prepared song; false for invalid/ineligible songs.
+ * Preparation only, never call from the callback. Used by the asset loader. */
+bool sb_music_sequence_loop_eligible(const sb_music_song_t *song);
+/* Explicit looping start, same lifetime/atomic-refusal contract as start.
+ * Ineligible songs are refused. Snapshot is prepared before playback. Each
+ * iteration restores it with no inserted samples. Remains PLAYING until reset;
+ * no audible stop API yet. Reset/release ownership only with callback excluded. */
+bool sb_music_sequence_start_loop(sb_music_sequence_t *sequence, const sb_music_song_t *song);
 /* Replace interleaved float stereo output. Buffer must hold 2*frames floats,
  * not alias sequence/song data. NULL output allowed only for zero frames.
  * Invalid buffer arguments do not advance state. All boundary events apply

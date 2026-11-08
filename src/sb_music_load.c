@@ -201,28 +201,6 @@ static bool events(yyjson_val *array, sb_music_asset_t *a, sb_music_load_result_
     }
     return true;
 }
-/* Valid paired events and fixed per-track instruments are prerequisites.
- * Only the last release survives on a track: a subsequent on retriggers the
- * existing envelope, replacing any earlier tail. No sample rendering needed. */
-static bool loop_eligible(const sb_music_song_t *song) {
-    uint64_t last_off[SB_AUDIO_BANK_VOICES] = {0};
-    bool used[SB_AUDIO_BANK_VOICES] = {false};
-    for (size_t n = 0; n < song->event_count; ++n) {
-        const sb_music_event_t *e = &song->events[n];
-        if (e->kind == SB_MUSIC_NOTE_OFF) {
-            last_off[e->track - 1] = e->frame;
-            used[e->track - 1] = true;
-        }
-    }
-    for (unsigned n = 0; n < song->track_count; ++n) if (used[n]) {
-        sb_envelope_t envelope = {0};
-        /* Reuse the synth's validated conversion, including positive minimum
-         * one frame and half-up rounding, without duplicating its arithmetic. */
-        if (!sb_envelope_start(&envelope, &song->instruments[n].envelope)) return false;
-        if (envelope.release_frames > song->end_frame - last_off[n]) return false;
-    }
-    return true;
-}
 sb_music_asset_t *sb_music_load(const char *json, size_t length, sb_music_load_result_t *result) {
     sb_music_load_result_t local = {0};
     sb_music_load_result_t *r = result ? result : &local;
@@ -282,7 +260,7 @@ sb_music_asset_t *sb_music_load(const char *json, size_t length, sb_music_load_r
     if (!sb_music_sequence_start(&probe, &a->song)) {
         fail(r, SB_MUSIC_LOAD_SCHEMA, "$", "prepared core refused song"); goto done;
     }
-    a->loop_eligible = loop_eligible(&a->song);
+    a->loop_eligible = sb_music_sequence_loop_eligible(&a->song);
     r->prepared_bytes = bytes;
 done:
     yyjson_doc_free(doc);

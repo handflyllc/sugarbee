@@ -23,8 +23,12 @@ including input-buffer independence, repeated playback and balanced allocations.
 Accepted checkpoint: cached loop-eligibility analysis on loaded assets.
 Desktop 93/93 and targeted ASan/UBSan checks pass. Pi acceptance reported by user
 2026-11-08 for `93c598c`: eligibility checks passed; full suite 93/93 passed.
-Next priority is SugarBeats: bounded offline consumer validation of eligibility.
-Actual loop playback stays deferred. Feature remains unmerged.
+SugarBeats eligibility consumer accepted at `d4e2a84`: 7/7 checks, eight boundary
+cases, no mismatch. Current authorized checkpoint: native whole-song looping
+with deterministic bank reset and authored seams. See [validation](tests/music-loop.md).
+Desktop 95/95 and native ASan/UBSan checks pass. User confirmed all desktop
+listening checks, 95 passing tests and exit 0 on 2026-11-08. Pi automated and
+listening validation remain pending. Feature remains unmerged.
 
 ## Validated RC1 baseline
 

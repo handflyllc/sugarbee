@@ -65,9 +65,9 @@ internal C interface. No code reads parser objects during rendering.
 
 Loading alone does not imply loop eligibility. Query
 `sb_music_asset_loop_eligible(asset)` for the cached boundary analysis; NULL
-returns false. One-shot playback remains valid for ineligible songs. Actual loop
-playback, shared voice reservations, runtime handles, Lua and cartridge reads
-remain separate checkpoints.
+returns false. One-shot playback remains valid for ineligible songs. Explicit native loop playback is now available through the separate core start
+operation; see [loop checkpoint](../music-loop.md). Shared voice reservations,
+runtime handles, Lua and cartridge reads remain separate checkpoints.
 
 ## Loop eligibility follow-up — 2026-11-08
 

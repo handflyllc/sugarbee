@@ -66,6 +66,44 @@ bool sb_music_sequence_start(sb_music_sequence_t *s, const sb_music_song_t *song
     return true;
 }
 
+/* Valid paired events and fixed per-track instruments are prerequisites.
+ * Only the last release survives on a track: a subsequent on retriggers the
+ * existing envelope, replacing any earlier tail. No sample rendering needed. */
+static bool valid_song_loop_eligible(const sb_music_song_t *song) {
+    uint64_t last_off[SB_AUDIO_BANK_VOICES] = {0};
+    bool used[SB_AUDIO_BANK_VOICES] = {false};
+    for (size_t n = 0; n < song->event_count; ++n) {
+        const sb_music_event_t *e = &song->events[n];
+        if (e->kind == SB_MUSIC_NOTE_OFF) {
+            last_off[e->track - 1] = e->frame;
+            used[e->track - 1] = true;
+        }
+    }
+    for (unsigned n = 0; n < song->track_count; ++n) if (used[n]) {
+        sb_envelope_t envelope = {0};
+        /* Reuse the synth's validated conversion, including positive minimum
+         * one frame and half-up rounding, without duplicating its arithmetic. */
+        if (!sb_envelope_start(&envelope, &song->instruments[n].envelope)) return false;
+        if (envelope.release_frames > song->end_frame - last_off[n]) return false;
+    }
+    return true;
+}
+/* Both operations validate outside rendering; no caller-provided eligibility
+ * flag can bypass the core checks. One-shot start retains its existing API. */
+bool sb_music_sequence_loop_eligible(const sb_music_song_t *song) {
+    sb_music_sequence_t probe = {0};
+    return sb_music_sequence_start(&probe, song) && valid_song_loop_eligible(song);
+}
+bool sb_music_sequence_start_loop(sb_music_sequence_t *s, const sb_music_song_t *song) {
+    if (!s || s->state != SB_MUSIC_IDLE) return false;
+    sb_music_sequence_t next = {0};
+    if (!sb_music_sequence_start(&next, song) || !valid_song_loop_eligible(song)) return false;
+    next.loop = true;
+    next.initial_bank = next.bank;
+    *s = next;
+    return true;
+}
+
 static void dispatch(sb_music_sequence_t *s) {
     while (s->next_event < s->song->event_count &&
            s->song->events[s->next_event].frame == s->frame) {
@@ -95,7 +133,13 @@ bool sb_music_sequence_render(sb_music_sequence_t *s, float *output, size_t fram
             ++s->frame;
             if (s->frame == s->song->end_frame) {
                 dispatch(s);
-                s->state = SB_MUSIC_FINISHING;
+                if (s->loop) {
+                    /* Fixed-size snapshot copy only: no setup, allocation or
+                     * event scan. Frame-zero events precede the next sample. */
+                    s->bank = s->initial_bank;
+                    s->frame = 0;
+                    s->next_event = 0;
+                } else s->state = SB_MUSIC_FINISHING;
             }
         }
         finish_if_silent(s);

@@ -139,3 +139,36 @@ disabled under the existing tracing limitation. Pi acceptance reported by the us
 loop eligibility checks passed; full suite 93/93 passed. No new local test run
 or Pi allocation measurements are claimed. Next priority is SugarBeats to verify
 the cached query through its offline consumer; actual loop playback stays deferred.
+
+## Native loop playback — 2026-11-08 checkpoint
+
+Authorized deterministic reset at every whole-song boundary. Explicit
+`sb_music_sequence_start_loop(sequence, song)` is additive: existing `start`
+remains one-shot. Both reject invalid/busy requests without mutation. Loop start
+also rejects ineligible songs, even when supplied directly as C fixtures.
+Eligibility analysis now lives in the core; the loader caches that same result.
+
+Start validates/prepares a silent configured bank and captures a value snapshot.
+At end_frame, ending events are dispatched, the snapshot is restored, and frame
+and event cursor return to zero. Next iteration's frame-zero events are dispatched
+before its first sample, including when a render buffer ends at the boundary.
+There is no inserted sample, fade, gap, crossfade or accumulating total-frame
+counter. Callback boundary work is a fixed bank copy and cursor reset, not
+configuration, allocation, parsing or a full event scan.
+
+Snapshot restores oscillator/filter state, instrument controls and deterministic
+noise initialization. Authors shape seams with releases, attacks and silence
+inside the declared song duration. This policy promises repeatable initialization,
+not click-free music. Continuous-state loops and automatic fade/gap controls are
+deferred. The native test checks equality to concatenated fresh one-shot renders.
+
+While looping, state remains PLAYING and the immutable song/asset must stay alive
+until reset. Reset remains immediate cleanup with callback exclusion; no audible
+stop, gain, pause, reservation or cartridge/Lua integration is introduced.
+Internal sequence layout changes: desktop bank snapshot 3640 bytes, total
+sequence 7320 bytes. Consumers must rebuild against their reviewed source pin;
+this is not a stable binary ABI. Prepared asset allocation sizes are unchanged.
+
+See [loop validation](../../tests/music-loop.md) for commands, fixtures and manual
+acceptance. User confirmed desktop listening, 95 passing tests and exit 0 on
+2026-11-08. Pi listening and automated acceptance remain pending.
