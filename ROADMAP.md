@@ -13,17 +13,18 @@ Desktop listening and Pi acceptance passed per the user on 2026-11-07.
 Pi commit `49d6a8e`: 91 tests passed, listening passed, exit status 0.
 SugarBeats follower checkpoints 0B, 1A and 1B are accepted per the shared
 passdown: 6/6 automated checks and user-reported desktop listening acceptance.
-Next development priority returns to SugarBee: the authorized bounded in-memory
-JSON loader. See [loading contract](docs/specifications/music-loading.md).
+The bounded in-memory JSON loader is implemented. See [loading contract](docs/specifications/music-loading.md).
 The memory-only loader and fixtures are implemented with vendored yyjson 0.13.0.
 Desktop full suite passes 92/92; targeted and sanitizer checks pass. Pi acceptance
 reported 2026-11-08 for `10c3d80`: loader exit 0, full suite 92/92, exit 0.
 SugarBeats offline loader follower passed 7/7 checks at engine pin `8325d9c`,
 including input-buffer independence, repeated playback and balanced allocations.
 
-Current authorized checkpoint: cached loop-eligibility analysis on loaded assets.
-Desktop 93/93 and targeted ASan/UBSan checks pass; loop playback remains deferred. Pi validation
-and the next follower source pin are pending. Feature remains unmerged.
+Accepted checkpoint: cached loop-eligibility analysis on loaded assets.
+Desktop 93/93 and targeted ASan/UBSan checks pass. Pi acceptance reported by user
+2026-11-08 for `93c598c`: eligibility checks passed; full suite 93/93 passed.
+Next priority is SugarBeats: bounded offline consumer validation of eligibility.
+Actual loop playback stays deferred. Feature remains unmerged.
 
 ## Validated RC1 baseline
 

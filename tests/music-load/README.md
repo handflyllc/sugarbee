@@ -75,6 +75,9 @@ Run `ctest --test-dir build -R '^music_loop_eligibility$' --output-on-failure`.
 The test compares the result against real sequencer lifecycle at exact boundaries
 and with split buffers; no listening check is needed for this metadata-only API.
 Desktop full suite passed 93/93; targeted loader/eligibility ASan/UBSan checks
-passed with leak detection disabled under tracing. Pi validation is pending.
+passed with leak detection disabled under tracing. Pi acceptance reported by the
+user 2026-11-08 for prepared candidate `93c598c80489577c3a7595154785f1f547dda8e3`:
+loop eligibility checks passed; full suite 93/93 passed. This update records
+user-reported evidence, not a new local run.
 Current desktop prepared storage is 960 bytes for chord, 99072 for 4096 events;
 the earlier figures above describe the accepted loader baseline before metadata.

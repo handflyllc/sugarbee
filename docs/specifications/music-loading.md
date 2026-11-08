@@ -1,7 +1,7 @@
 # Music loading checkpoint
 
 Accepted loader baseline 2026-11-08; desktop and Pi validation accepted.
-Loop-eligibility follow-up implemented; its Pi validation remains pending.
+Loop-eligibility follow-up implemented; Pi acceptance reported 2026-11-08.
 Canonical coordination: [shared PASSDOWN](../../../sugarbeats/docs/PASSDOWN.md).
 Detailed musical plan: [asset plan](../../../sugarbeats/docs/SUGARBEE_MUSIC_ASSET_PLAN.md).
 
@@ -134,5 +134,8 @@ retrigger, mute, filter, noise, unused tracks, silent and maximum-duration songs
 and a multi-track final release crossing the boundary. Ineligible songs still
 play once and finish. Desktop full suite passed **93/93** (104.21 seconds), with no new build
 warnings; loader and eligibility ASan/UBSan checks passed with leak detection
-disabled under the existing tracing limitation. Pi acceptance and a follower
-source pin are pending.
+disabled under the existing tracing limitation. Pi acceptance reported by the user
+2026-11-08 for prepared candidate `93c598c80489577c3a7595154785f1f547dda8e3`:
+loop eligibility checks passed; full suite 93/93 passed. No new local test run
+or Pi allocation measurements are claimed. Next priority is SugarBeats to verify
+the cached query through its offline consumer; actual loop playback stays deferred.
