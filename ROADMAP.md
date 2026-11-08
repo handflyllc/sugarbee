@@ -3,7 +3,17 @@
 Reviewed 2026-11-06 against merged baseline `b304a00`. This is a revisable
 plan, not a release schedule or a promise of additional features.
 
-## Current baseline
+## Active checkpoint — prepared native music sequencing
+
+2026-11-07: engine edits authorized for a small isolated sequencer, native
+timing tests, and early interval/chord listening. See
+[checkpoint and acceptance steps](tests/music-sequence.md). Production music
+loading, looping, reservations and Lua integration remain later checkpoints.
+Desktop listening passed per the user on 2026-11-07; Pi acceptance is queued
+for a later hardware-validation batch. After that gate, SugarBeats
+should exercise the shared interface before either project advances too far.
+
+## Validated RC1 baseline
 
 Implemented and validated on desktop and Raspberry Pi:
 
@@ -29,7 +39,10 @@ baseline. Historical checkpoints are labeled separately from current behavior.
 Local documentation links and whitespace checks pass. This documentation-only
 checkpoint awaits commit; no runtime or API behavior changed.
 
-## Active work — release preparation
+## Historical release preparation record
+
+Superseded by RC1 `cca7c62` / `v0.1.0-rc1`; publication was user-reported on
+2026-11-06. The following records preparation, not current remaining work.
 
 - Coastline fresh Release build: all 89 tests pass, no compiler warnings.
   Coastline manual checks passed per the user, including both controllers and

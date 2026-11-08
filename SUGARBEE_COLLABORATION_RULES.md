@@ -60,6 +60,14 @@ When an interesting tangent arises, discuss it as requested, capture its implica
 
 Flag scope creep, premature abstraction, speculative optimization, and unnecessary dependencies. Provide constructive pushback rather than automatically endorsing every proposal.
 
+Keep SugarBee and SugarBeats on a short feedback loop. The lead changes with
+the dependency: prove a small capability in its owning project, have the other
+exercise it, resolve mismatches, and refresh both handoffs before building
+several layers further. Explicitly flag when the user should switch projects;
+do not let enthusiasm substitute for the other project's validation. Keep code
+changes in their respective authorized development sessions. Relevant cross-project
+documentation updates are permitted; preserve concurrent work and scope boundaries.
+
 Prefer extending existing systems over introducing new frameworks or architectural layers without demonstrated need.
 
 Do not create detailed roadmaps, refactor unrelated subsystems, or introduce infrastructure merely because it might be useful later.

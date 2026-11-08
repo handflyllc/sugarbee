@@ -10,6 +10,12 @@ not current limitations.
 
 ## Current implementation
 
+2026-11-07 experimental addition: the isolated prepared-song sequencer and
+`sbee-music-test` exercise the existing bank without changing the production
+host. See [native music checkpoint](../../tests/music-sequence.md) for its
+internal contract, timing tests, limits, and pending desktop/Pi listening gate.
+This is not yet native cartridge music playback or a `sugarbee.music` API.
+
 | Area | Implemented now | Still pending |
 | --- | --- | --- |
 | Output | Host-owned SDL2 device, 48 kHz float stereo, silent fallback, clean close | Live device-failure detection/reconnection and measured end-to-end latency |
