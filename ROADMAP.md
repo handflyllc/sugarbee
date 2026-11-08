@@ -11,8 +11,13 @@ timing tests, and early interval/chord listening. See
 loading, looping, reservations and Lua integration remain later checkpoints.
 Desktop listening and Pi acceptance passed per the user on 2026-11-07.
 Pi commit `49d6a8e`: 91 tests passed, listening passed, exit status 0.
-Next development priority is SugarBeats: complete its bounded preview-host
-prerequisite, then exercise the shared interface before further engine layers.
+SugarBeats follower checkpoints 0B, 1A and 1B are accepted per the shared
+passdown: 6/6 automated checks and user-reported desktop listening acceptance.
+Next development priority returns to SugarBee: the authorized bounded in-memory
+JSON loader. See [loading contract](docs/specifications/music-loading.md).
+The memory-only loader and fixtures are implemented with vendored yyjson 0.13.0.
+Desktop full suite passes 92/92; targeted and sanitizer checks pass. Pi validation and the next follower
+pin are pending. The feature remains unmerged.
 
 ## Validated RC1 baseline
 
