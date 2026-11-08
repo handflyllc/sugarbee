@@ -36,7 +36,11 @@ all six music-focused checks passed, no new build warnings. Four native music
 ASan/UBSan checks passed in the host-free build with leak detection disabled
 under tracing. SDL dummy loop smoke passed.
 Desktop acceptance reported by user 2026-11-08: all listening checks passed,
-95 tests passed, exit status 0. Pi automated/listening acceptance remains pending.
+95 tests passed, exit status 0.
+Pi acceptance reported by user 2026-11-08 at synchronized commit
+`cc281aa185e7dab7b3c0cabcd8d410dc5395a7a8`: 95 tests passed and listening
+checks passed. Desktop commit/push and listening also confirmed at this hash.
+Pi native size figures were not supplied; no fresh local test run is claimed.
 
 ## Desktop and Pi listening acceptance
 

@@ -171,4 +171,7 @@ this is not a stable binary ABI. Prepared asset allocation sizes are unchanged.
 
 See [loop validation](../../tests/music-loop.md) for commands, fixtures and manual
 acceptance. User confirmed desktop listening, 95 passing tests and exit 0 on
-2026-11-08. Pi listening and automated acceptance remain pending.
+2026-11-08. User confirmed synchronized desktop/Pi candidate
+`cc281aa185e7dab7b3c0cabcd8d410dc5395a7a8`, Pi 95 passing tests and listening
+acceptance on 2026-11-08. Next priority: SugarBeats native loop consumer checks.
+Pi size figures were not supplied; desktop figures above remain desktop-only.

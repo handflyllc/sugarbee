@@ -27,8 +27,10 @@ SugarBeats eligibility consumer accepted at `d4e2a84`: 7/7 checks, eight boundar
 cases, no mismatch. Current authorized checkpoint: native whole-song looping
 with deterministic bank reset and authored seams. See [validation](tests/music-loop.md).
 Desktop 95/95 and native ASan/UBSan checks pass. User confirmed all desktop
-listening checks, 95 passing tests and exit 0 on 2026-11-08. Pi automated and
-listening validation remain pending. Feature remains unmerged.
+listening checks, 95 passing tests and exit 0 on 2026-11-08. Pi acceptance
+reported at synchronized `cc281aa`: 95 tests passed, listening checks passed.
+Next priority: SugarBeats bounded native loop consumer validation. Feature remains
+unmerged; no additional lifecycle or cartridge/Lua scope yet.
 
 ## Validated RC1 baseline
 
