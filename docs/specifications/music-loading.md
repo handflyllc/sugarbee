@@ -1,6 +1,6 @@
 # Music loading checkpoint
 
-Accepted 2026-11-08; memory-only loader implemented, Pi validation pending.
+Accepted 2026-11-08; memory-only loader implemented, desktop and Pi validation accepted.
 Canonical coordination: [shared PASSDOWN](../../../sugarbeats/docs/PASSDOWN.md).
 Detailed musical plan: [asset plan](../../../sugarbeats/docs/SUGARBEE_MUSIC_ASSET_PLAN.md).
 
@@ -91,6 +91,11 @@ Desktop full suite passes **92/92**; targeted and ASan/UBSan checks pass
 (LeakSanitizer disabled under tracing).
 Measured chord parser/prepared bytes: 6202 / 952; maximum-event fixture:
 1271499 / 99064. These do not establish final asset capacity or Pi performance.
-Pi validation and a source commit for the next SugarBeats pin remain pending.
+Pi acceptance reported by the user on 2026-11-08 for prepared candidate
+`10c3d805188adc17d95a7f22192986d38951d34c`: loader exit 0; full suite 92/92,
+exit 0. Pi allocation figures were not supplied. Next priority is SugarBeats:
+exercise this loader through a bounded offline consumer probe before more engine
+layers. Review any subsequent documentation-only commit when updating its clean
+source pin; the runtime validation baseline is the candidate above.
 Dependency acquisition is no longer blocked. No merge or follower implementation
 is authorized by this document.

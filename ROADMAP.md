@@ -16,8 +16,11 @@ passdown: 6/6 automated checks and user-reported desktop listening acceptance.
 Next development priority returns to SugarBee: the authorized bounded in-memory
 JSON loader. See [loading contract](docs/specifications/music-loading.md).
 The memory-only loader and fixtures are implemented with vendored yyjson 0.13.0.
-Desktop full suite passes 92/92; targeted and sanitizer checks pass. Pi validation and the next follower
-pin are pending. The feature remains unmerged.
+Desktop full suite passes 92/92; targeted and sanitizer checks pass. Pi acceptance
+reported 2026-11-08 for `10c3d80`: loader exit 0, full suite 92/92, exit 0.
+Next priority is SugarBeats: bounded offline loader integration and parity/error/
+ownership checks. No further engine layer until follower validation. The feature
+remains unmerged.
 
 ## Validated RC1 baseline
 

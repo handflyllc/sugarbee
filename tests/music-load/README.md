@@ -47,7 +47,10 @@ that the loaded fixtures produce the same samples as the native fixtures.
 - Figures are requested allocation bytes, not process RSS or final Pi measurements.
 - Full desktop suite: **92/92 passed**, 104.17 seconds. Additional track-boundary
   test cases added during that run passed the targeted and sanitizer reruns.
-- Pi validation pending.
+- Pi acceptance reported by the user on 2026-11-08 for the prepared candidate
+  `10c3d805188adc17d95a7f22192986d38951d34c`: direct loader check exit 0;
+  full suite 92/92 passed, exit 0. Pi allocation figures were not supplied.
+  This is user-reported hardware evidence, not a new local test run.
 
 ## Consumer usage
 
