@@ -63,6 +63,18 @@ alive and immutable until playback is idle or reset. Then call
 `sb_music_asset_free(asset)`. There is no runtime active-unload guard in this
 internal C interface. No code reads parser objects during rendering.
 
-Do not treat a successfully loaded song as loop-eligible; loop analysis and
+Loading alone does not imply loop eligibility. Query
+`sb_music_asset_loop_eligible(asset)` for the cached boundary analysis; NULL
+returns false. One-shot playback remains valid for ineligible songs. Actual loop
 playback, shared voice reservations, runtime handles, Lua and cartridge reads
 remain separate checkpoints.
+
+## Loop eligibility follow-up — 2026-11-08
+
+Run `ctest --test-dir build -R '^music_loop_eligibility$' --output-on-failure`.
+The test compares the result against real sequencer lifecycle at exact boundaries
+and with split buffers; no listening check is needed for this metadata-only API.
+Desktop full suite passed 93/93; targeted loader/eligibility ASan/UBSan checks
+passed with leak detection disabled under tracing. Pi validation is pending.
+Current desktop prepared storage is 960 bytes for chord, 99072 for 4096 events;
+the earlier figures above describe the accepted loader baseline before metadata.

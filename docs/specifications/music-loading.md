@@ -1,6 +1,7 @@
 # Music loading checkpoint
 
-Accepted 2026-11-08; memory-only loader implemented, desktop and Pi validation accepted.
+Accepted loader baseline 2026-11-08; desktop and Pi validation accepted.
+Loop-eligibility follow-up implemented; its Pi validation remains pending.
 Canonical coordination: [shared PASSDOWN](../../../sugarbeats/docs/PASSDOWN.md).
 Detailed musical plan: [asset plan](../../../sugarbeats/docs/SUGARBEE_MUSIC_ASSET_PLAN.md).
 
@@ -34,7 +35,8 @@ and the upstream-verification limitation. Parser types stay private to loader.
   of the same event kind on one track at one frame. Each on pairs with a later
   off; no overlapping held notes per track. Retrigger during release is allowed.
 - Positive end_frame; no events after it. One-shot release tails may extend
-  beyond end_frame. Loop eligibility is explicitly deferred, not implied by load.
+  beyond end_frame. Successful loading alone does not imply loop eligibility;
+  query the cached analysis described below.
 
 ## Provisional limits
 
@@ -99,3 +101,38 @@ layers. Review any subsequent documentation-only commit when updating its clean
 source pin; the runtime validation baseline is the candidate above.
 Dependency acquisition is no longer blocked. No merge or follower implementation
 is authorized by this document.
+
+## Loop eligibility — 2026-11-08 checkpoint
+
+Implemented internal query: `sb_music_asset_loop_eligible(asset)` returns a cached
+boolean; NULL returns false. False is not a load failure and does not prevent
+one-shot playback. No new JSON field, playback option, or sequencer mode is added.
+This does not promise a click-free or musically seamless loop.
+
+For each used track, locate its final note-off and require:
+`release_frames <= end_frame - final_note_off_frame`. Equality is eligible.
+Obtain release_frames through the existing envelope initialization, reusing its
+half-up rounding and minimum one frame for positive durations. Never duplicate
+seconds-to-frames arithmetic. Zero release at the end is eligible; any positive
+release at the end is ineligible. Unused tracks and silent songs are eligible.
+
+Earlier releases are superseded by later retriggers on that track. Attack, decay,
+sustain, volume and output silence do not shorten the final release lifecycle.
+Current bank filtering precedes the envelope and runs only for active voices;
+it adds no independent post-envelope audible tail. Revisit the analysis if that
+synth lifecycle changes. All event validation completes before analysis.
+
+The analysis is linear in event/track count, uses fixed-size scratch storage,
+and never renders the song. The query requires no allocation or parsing. Asset
+ownership is unchanged. Prepared allocation grows by 8 bytes on the desktop:
+chord 960 bytes, maximum-event fixture 99072 bytes; parser peaks unchanged.
+
+Validation: `music_loop_eligibility` compares eligibility with actual sequencer
+state at the boundary for whole and single-frame buffers; covers equality and
+one-frame offsets, zero/tiny/half-frame releases, early note-off during attack,
+retrigger, mute, filter, noise, unused tracks, silent and maximum-duration songs,
+and a multi-track final release crossing the boundary. Ineligible songs still
+play once and finish. Desktop full suite passed **93/93** (104.21 seconds), with no new build
+warnings; loader and eligibility ASan/UBSan checks passed with leak detection
+disabled under the existing tracing limitation. Pi acceptance and a follower
+source pin are pending.

@@ -18,9 +18,12 @@ JSON loader. See [loading contract](docs/specifications/music-loading.md).
 The memory-only loader and fixtures are implemented with vendored yyjson 0.13.0.
 Desktop full suite passes 92/92; targeted and sanitizer checks pass. Pi acceptance
 reported 2026-11-08 for `10c3d80`: loader exit 0, full suite 92/92, exit 0.
-Next priority is SugarBeats: bounded offline loader integration and parity/error/
-ownership checks. No further engine layer until follower validation. The feature
-remains unmerged.
+SugarBeats offline loader follower passed 7/7 checks at engine pin `8325d9c`,
+including input-buffer independence, repeated playback and balanced allocations.
+
+Current authorized checkpoint: cached loop-eligibility analysis on loaded assets.
+Desktop 93/93 and targeted ASan/UBSan checks pass; loop playback remains deferred. Pi validation
+and the next follower source pin are pending. Feature remains unmerged.
 
 ## Validated RC1 baseline
 

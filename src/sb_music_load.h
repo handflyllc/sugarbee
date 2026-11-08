@@ -25,6 +25,10 @@ typedef struct {
 sb_music_asset_t *sb_music_load(const char *json, size_t length,
                                 sb_music_load_result_t *result);
 const sb_music_song_t *sb_music_asset_song(const sb_music_asset_t *asset);
+/* Cached preparation result: every final release ends at/before end_frame.
+ * NULL returns false. Ineligible assets still load/play once. This is boundary
+ * eligibility, not a promise of click-free looping or an implemented loop mode. */
+bool sb_music_asset_loop_eligible(const sb_music_asset_t *asset);
 /* NULL safe. Caller MUST ensure no sequencer still borrows this asset. No registry
  * or active-use tracking here; this is not the future Lua unload operation. */
 void sb_music_asset_free(sb_music_asset_t *asset);
