@@ -4,22 +4,26 @@ void sb_music_shared_init(sb_music_shared_t *s) {
     if (!s) return;
     memset(s,0,sizeof(*s));
     s->sequence.shared=true;
+    sb_music_transport_init(&s->transport);
 }
 void sb_music_shared_reset(sb_music_shared_t *s) {
-    if (s) sb_music_sequence_reset(&s->sequence);
+    if (s) sb_music_transport_reset_music(&s->transport,&s->sequence);
 }
 bool sb_music_shared_start(sb_music_shared_t *s, const sb_music_song_t *song,
                            const unsigned *voices, size_t count, bool loop) {
-    return s && sb_music_sequence_start_mapped(&s->sequence,song,voices,count,loop);
+    if (!s) return false;
+    bool ok=sb_music_sequence_start_mapped(&s->sequence,song,voices,count,loop);
+    if (ok) sb_music_transport_started(&s->transport);
+    return ok;
 }
 bool sb_music_shared_stop(sb_music_shared_t *s) {
-    return s && sb_music_sequence_stop(&s->sequence);
+    return s && sb_music_transport_stop(&s->transport,&s->sequence);
 }
 bool sb_music_shared_set_gain(sb_music_shared_t *s, double gain) {
     return s && sb_music_sequence_set_gain(&s->sequence,gain);
 }
 bool sb_music_shared_render(sb_music_shared_t *s, float *output, size_t frames) {
-    return s && sb_music_sequence_render(&s->sequence,output,frames);
+    return s && sb_music_transport_render(&s->transport,&s->sequence,output,frames);
 }
 bool sb_music_shared_reserved(const sb_music_shared_t *s, unsigned voice) {
     return s && voice>=1 && voice<=SB_AUDIO_BANK_VOICES &&
@@ -82,4 +86,8 @@ bool sb_music_shared_voice_note_off(sb_music_shared_t *s, unsigned voice) {
 }
 bool sb_music_shared_voice_stop(sb_music_shared_t *s, unsigned voice) {
     return available(s,voice) && sb_audio_bank_stop(&s->sequence.bank,voice);
+}
+
+bool sb_music_shared_pause(sb_music_shared_t *s,bool paused) {
+    return s && sb_music_transport_pause(&s->transport,paused);
 }

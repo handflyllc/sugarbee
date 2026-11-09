@@ -248,3 +248,16 @@ Lua and cartridge integration remain separate. Pi acceptance reported by the
 user on 2026-11-09 at `3f1f849698ada3a24ed0c9a3a7c8748a5161d3e4`: shared
 ownership test exit 0; full suite 102/102 passed, no failures. Next priority:
 SugarBeats bounded offline mapped-voice, refusal, parity and lifetime checks.
+
+
+## Combined shared-owner host pause — 2026-11-09 checkpoint
+
+The offline shared owner now exposes host pause directly, using the same native
+transport as the private host adapter. The host fade freezes/resumes music and
+effects together. Held music starts skip reserved slots while unreserved effects
+continue through fade-out. Music stop/reset releases only music voices and
+preserves host pause/fade state. Render each bank once through its owning API.
+
+See [combined lifecycle contract and validation](../../tests/music-shared-pause.md).
+Internal host/shared-owner layout changed; rebuild consumers. Production SDL,
+WAV, Lua and cartridge integration remain deferred. Pi validation is pending.

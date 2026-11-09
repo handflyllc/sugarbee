@@ -67,7 +67,7 @@ int main(void) {
     CHECK(sb_music_host_pause(&a,true));
     CHECK(sb_music_host_render(&a,actual,120));
     CHECK(sb_music_sequence_render(&ref,reference,120));
-    CHECK(a.fade.value==.75);
+    CHECK(a.transport.fade.value==.75);
     CHECK(sb_music_host_pause(&a,false));
     b=a;
     CHECK(sb_music_host_render(&a,actual,600));
@@ -84,10 +84,10 @@ int main(void) {
     CHECK(sb_music_host_render(&a,actual,480));
     CHECK(sb_music_host_pause(&a,false));
     CHECK(sb_music_host_render(&a,actual,420));
-    CHECK(a.fade.value==.875);
+    CHECK(a.transport.fade.value==.875);
     CHECK(sb_music_host_pause(&a,true));
     CHECK(sb_music_host_render(&a,actual,480));
-    CHECK(a.fade.value==0 && !a.fade.left);
+    CHECK(a.transport.fade.value==0 && !a.transport.fade.left);
     CHECK(sb_music_host_stop(&a));
     CHECK(a.sequence.state==SB_MUSIC_IDLE && !a.sequence.song);
     CHECK(sb_music_host_stop(&a) && sb_music_host_pause(&a,false));
@@ -99,7 +99,7 @@ int main(void) {
     frozen=a;
     CHECK(!sb_music_host_start(&a,NULL,false) && !memcmp(&a,&frozen,sizeof(a)));
     CHECK(sb_music_host_start(&a,&song,true));
-    CHECK(a.sequence.state==SB_MUSIC_PLAYING && a.held_start);
+    CHECK(a.sequence.state==SB_MUSIC_PLAYING && a.transport.held_start);
     ref=a.sequence;
     CHECK(sb_music_host_render(&a,actual,600) && silence(actual,600));
     CHECK(!memcmp(&a.sequence,&ref,sizeof(ref)));
@@ -115,7 +115,7 @@ int main(void) {
     CHECK(sb_music_host_pause(&a,true));
     CHECK(sb_music_host_render(&a,actual,350));
     CHECK(sb_music_host_stop(&a));
-    CHECK(a.stop_pending && !a.sequence.loop && a.sequence.state==SB_MUSIC_FINISHING);
+    CHECK(a.transport.stop_pending && !a.sequence.loop && a.sequence.state==SB_MUSIC_FINISHING);
     frozen=a;
     CHECK(!sb_music_host_start(&a,&song,true) && !memcmp(&a,&frozen,sizeof(a)));
     for(unsigned n=0;n<129;++n) {
@@ -123,7 +123,7 @@ int main(void) {
     }
     CHECK(a.sequence.state==SB_MUSIC_FINISHING);
     CHECK(sb_music_host_render(&a,actual,1));
-    CHECK(a.sequence.state==SB_MUSIC_IDLE && !a.sequence.song && !a.stop_pending);
+    CHECK(a.sequence.state==SB_MUSIC_IDLE && !a.sequence.song && !a.transport.stop_pending);
     CHECK(sb_music_host_pause(&a,false));
     CHECK(sb_music_host_render(&a,actual,600) && silence(actual,600));
     /* Resume before a latched stop completes: it still drains, never restarts. */
@@ -133,7 +133,7 @@ int main(void) {
     CHECK(sb_music_host_render(&a,actual,120));
     CHECK(sb_music_host_stop(&a) && sb_music_host_pause(&a,false));
     CHECK(sb_music_host_render(&a,actual,480));
-    CHECK(a.sequence.state==SB_MUSIC_IDLE && !a.sequence.song && !a.stop_pending);
+    CHECK(a.sequence.state==SB_MUSIC_IDLE && !a.sequence.song && !a.transport.stop_pending);
     /* Natural release remains frozen as well, then can stop while paused. */
     ins[0].envelope.release=ins[1].envelope.release=.1;
     CHECK(sb_music_host_start(&a,&song,false));
@@ -145,7 +145,7 @@ int main(void) {
     CHECK(sb_music_host_render(&a,actual,2048) && !memcmp(&a,&frozen,sizeof(a)));
     CHECK(sb_music_host_stop(&a) && !a.sequence.song);
     sb_music_host_reset(&a);
-    CHECK(a.fade.value==1 && !a.paused && !a.sequence.song && !a.stop_pending);
+    CHECK(a.transport.fade.value==1 && !a.transport.paused && !a.sequence.song && !a.transport.stop_pending);
     puts("Music host pause checks passed");
     return 0;
 }

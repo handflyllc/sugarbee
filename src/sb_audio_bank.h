@@ -87,4 +87,7 @@ bool sb_audio_bank_copy_voice(sb_audio_bank_t *dst, unsigned to,
  * both groups retain fixed 1/9 headroom. Invalid masks/gain refuse unchanged. */
 bool sb_audio_bank_render_music(sb_audio_bank_t *bank, unsigned mask, double gain,
                                 float *output, size_t frames);
+/* Hold music slots completely unchanged while rendering direct effects once. */
+bool sb_audio_bank_render_unreserved(sb_audio_bank_t *bank, unsigned reserved,
+                                     float *output, size_t frames);
 #endif

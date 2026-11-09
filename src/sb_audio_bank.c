@@ -221,13 +221,14 @@ static double render_source(sb_audio_bank_t *bank, unsigned slot, sb_audio_voice
     }
     return sample;
 }
-bool sb_audio_bank_render_music(sb_audio_bank_t *bank, unsigned mask, double gain,
-                                float *output, size_t frames) {
-    if (mask >= (1u << SB_AUDIO_BANK_VOICES) || !isfinite(gain) || gain < 0 || gain > 1) return false;
+static bool render_bank(sb_audio_bank_t *bank, unsigned mask, double gain, unsigned skip,
+                        float *output, size_t frames) {
+    if (skip >= (1u << SB_AUDIO_BANK_VOICES) || mask >= (1u << SB_AUDIO_BANK_VOICES) || !isfinite(gain) || gain < 0 || gain > 1) return false;
     if (!bank || frames > SIZE_MAX / (2 * sizeof(float)) || (!output && frames)) return false;
     for (size_t frame = 0; frame < frames; ++frame) {
         double left = 0, right = 0, music_left = 0, music_right = 0;
         for (unsigned slot = 0; slot < SB_AUDIO_BANK_VOICES; ++slot) {
+            if (skip & (1u<<slot)) continue;
             sb_audio_triangle_t *v = &bank->voices[slot];
             double sample = 0;
             if (v->active) {
@@ -274,4 +275,13 @@ bool sb_audio_bank_copy_voice(sb_audio_bank_t *dst, unsigned to,
     dst->destination[d] = src->destination[s];
     dst->switch_left[d] = src->switch_left[s];
     return true;
+}
+
+bool sb_audio_bank_render_music(sb_audio_bank_t *bank,unsigned mask,double gain,
+                                float *output,size_t frames) {
+    return render_bank(bank,mask,gain,0,output,frames);
+}
+bool sb_audio_bank_render_unreserved(sb_audio_bank_t *bank,unsigned reserved,
+                                     float *output,size_t frames) {
+    return render_bank(bank,0,1,reserved,output,frames);
 }

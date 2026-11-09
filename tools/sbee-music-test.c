@@ -133,10 +133,10 @@ static bool play_pause(SDL_AudioDeviceID device, host_t *host, bool smoke) {
         case 3: ok=h->sequence.state==SB_MUSIC_IDLE && sb_music_host_pause(h,false); break;
         case 4: ok=h->sequence.state==SB_MUSIC_IDLE && sb_music_host_pause(h,true) &&
                    sb_music_host_start(h,&song,true); break;
-        case 5: ok=h->sequence.frame==0 && h->sequence.next_event==0 && h->held_start &&
+        case 5: ok=h->sequence.frame==0 && h->sequence.next_event==0 && h->transport.held_start &&
                    sb_music_host_stop(h) && sb_music_host_start(h,&song,true) &&
                    sb_music_host_pause(h,false); break;
-        case 7: ok=h->paused && !h->fade.left && sb_music_host_stop(h) &&
+        case 7: ok=h->transport.paused && !h->transport.fade.left && sb_music_host_stop(h) &&
                    h->sequence.state==SB_MUSIC_IDLE && sb_music_host_pause(h,false); break;
         case 8: ok=h->sequence.state==SB_MUSIC_IDLE; break;
         }

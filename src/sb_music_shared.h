@@ -1,12 +1,19 @@
 /* Internal offline shared music/direct-synth owner. No SDL/Lua integration. */
 #ifndef SB_MUSIC_SHARED_H
 #define SB_MUSIC_SHARED_H
-#include "sb_music_sequence.h"
-typedef struct { sb_music_sequence_t sequence; } sb_music_shared_t;
+#include "sb_music_transport.h"
+typedef struct {
+    sb_music_sequence_t sequence;
+    sb_music_transport_t transport;
+} sb_music_shared_t;
 /* Initialize fresh storage; clears the entire bank. Never use init to stop music
  * in a running shared bank. Reset below clears only music-owned slots. */
 void sb_music_shared_init(sb_music_shared_t *shared);
+/* Music-only reset preserves effects and host pause/fade state. */
 void sb_music_shared_reset(sb_music_shared_t *shared);
+/* Host-wide 480-frame fade/freeze/resume applies to music and direct effects.
+ * Same lifecycle implementation as the private host adapter. */
+bool sb_music_shared_pause(sb_music_shared_t *shared, bool paused);
 /* Exactly one distinct physical voice (1..9) per track, including unused tracks.
  * All requested voices must be idle. Map is copied. Refusal changes nothing.
  * Song and arrays remain alive/immutable until idle/reset. Reservation lasts
@@ -22,8 +29,8 @@ bool sb_music_shared_voice_active(const sb_music_shared_t *shared, unsigned voic
  * calls or writes to embedded state: C struct access is not a security boundary.
  * Reserved voices refuse every mutation, even harmless/repeated commands.
  * Rendering advances music and effects once each; do not also render the bank.
- * Do not compose this experimental owner with the private sb_music_host adapter
- * yet. Production host pause/mixer integration is a separate checkpoint. */
+ * This owner includes host pause: do not wrap it in the private host adapter.
+ * Production SDL/WAV/Lua integration remains a separate checkpoint. */
 bool sb_music_shared_voice_configure(sb_music_shared_t *s, unsigned voice, const sb_envelope_settings_t *settings);
 bool sb_music_shared_voice_note_on(sb_music_shared_t *s, unsigned voice, double frequency);
 bool sb_music_shared_voice_noise_on(sb_music_shared_t *s, unsigned voice);

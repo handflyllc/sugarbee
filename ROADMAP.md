@@ -63,7 +63,14 @@ per-voice loop/cleanup operations are implemented in an offline native owner.
 Production shared-mixer/host-pause integration and cartridge/Lua remain deferred.
 Desktop 102/102 and nine native ASan/UBSan checks pass. Pi acceptance reported
 2026-11-09 at `3f1f849`: shared test exit 0; full suite 102/102, no failures.
-Next priority: SugarBeats bounded offline shared-voice consumer validation.
+SugarBeats shared consumer passed 7/7 at `c3c176a`, with 220 allocations matched
+by frees and no playback/control allocations. No contract mismatch found.
+Current authorized checkpoint: [combined native shared-owner host pause](tests/music-shared-pause.md).
+The private adapter and shared owner reuse one native lifecycle implementation.
+Held music starts preserve effect progression during fade-out; music cleanup
+preserves effects and host fade. Desktop 103/103, 19 focused checks and ten
+native ASan/UBSan checks pass. Pi validation pending.
+Production SDL/WAV/Lua/cartridge integration remains deferred.
 Feature remains unmerged.
 
 ## Validated RC1 baseline

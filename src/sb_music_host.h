@@ -3,11 +3,10 @@
 #ifndef SB_MUSIC_HOST_H
 #define SB_MUSIC_HOST_H
 #include "sb_music_sequence.h"
-#include "sb_audio_session_gain.h"
+#include "sb_music_transport.h"
 typedef struct {
     sb_music_sequence_t sequence;
-    sb_audio_session_gain_t fade;
-    bool paused, held_start, stop_pending;
+    sb_music_transport_t transport;
 } sb_music_host_t;
 /* Initialize/end with reset: silent idle, unpaused, host gain 1. All calls must
  * be serialized with rendering. Never operate the embedded sequence directly

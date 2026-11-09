@@ -45,8 +45,9 @@ are not yet connected to it. Existing private sequencer/host operations remain.
   Continue calling the shared renderer while music is idle to advance effects.
 
 Private `sb_music_host` is not a shared mixer: do not insert mapped playback into
-it or render the shared bank a second time. Composing host pause with this owner
-and routing production controls through it are later bounded checkpoints.
+it or render the shared bank a second time. The subsequent
+[combined native host checkpoint](music-shared-pause.md) adds pause directly to
+this owner using common lifecycle code. Production routing remains deferred.
 
 ## Validation
 
@@ -66,7 +67,8 @@ whole/single-frame rendering exactly. Unrelated active noise-to-pulse transition
 and filter state, plus silent retained settings, survive music loops and gain
 changes. Music mute preserves the independently rendered effect.
 
-Desktop owner/sequencer size: 7392 bytes; bank: 3640 bytes. Native sequence layout
+At the original ownership checkpoint, desktop owner/sequencer size was 7392
+bytes; bank: 3640 bytes. See the combined checkpoint for current owner size. Native sequence layout
 changed, so pinned consumers must rebuild. No stable ABI is promised. Start uses
 bounded stack scratch; rendering and controls introduce no allocations or I/O.
 
