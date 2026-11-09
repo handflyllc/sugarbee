@@ -19,7 +19,7 @@ typedef struct {
 typedef enum { SB_MUSIC_NOTE_OFF = 0, SB_MUSIC_NOTE_ON = 1 } sb_music_event_kind_t;
 typedef struct {
     uint64_t frame;
-    unsigned track; /* 1..track_count; maps to the same private bank slot. */
+    unsigned track; /* Logical 1..track_count; identity in private mode. */
     sb_music_event_kind_t kind;
     double hz; /* Zero for off/noise; 110..880 for pitched on. */
 } sb_music_event_t;
@@ -33,9 +33,11 @@ typedef struct {
 
 typedef enum { SB_MUSIC_IDLE = 0, SB_MUSIC_PLAYING, SB_MUSIC_FINISHING } sb_music_state_t;
 typedef struct {
-    sb_audio_bank_t bank; /* Exclusive private bank for this checkpoint. */
+    sb_audio_bank_t bank; /* Private player, or shared music/direct bank. */
     sb_audio_bank_t initial_bank; /* Prepared silent snapshot for looping. */
     bool loop;
+    bool shared; /* Internal shared-player mode; survives music cleanup. */
+    unsigned voice_map[SB_AUDIO_BANK_VOICES], reserved;
     double gain, gain_from, gain_target;
     unsigned gain_left;
     const sb_music_song_t *song;
@@ -45,7 +47,9 @@ typedef struct {
 } sb_music_sequence_t;
 
 /* Zero initialization is silent/idle. Caller owns all synchronization.
- * Reset is immediate cleanup, NOT an audible stop. No allocation/IO/Lua/SDL. */
+ * Reset is immediate cleanup, NOT an audible stop. Shared mode clears only
+ * reserved slots and preserves the shared bank/mode for subsequent effects.
+ * No allocation/IO/Lua/SDL. */
 void sb_music_sequence_reset(sb_music_sequence_t *sequence);
 /* Validate/setup outside the audio callback. Caller keeps song, instruments,
  * and events alive and immutable until idle/reset. Ordinary C pointer/array
@@ -84,4 +88,8 @@ bool sb_music_sequence_set_gain(sb_music_sequence_t *sequence, double gain);
  * events are processed upon reaching that boundary even at a buffer end.
  * Natural tails finish before the bank resets and song reference is released. */
 bool sb_music_sequence_render(sb_music_sequence_t *sequence, float *output, size_t frames);
+/* Internal entry used by sb_music_shared only. Do not mix host-adapter or
+ * private starts with shared playback. Map is copied; song remains borrowed. */
+bool sb_music_sequence_start_mapped(sb_music_sequence_t *sequence,
+    const sb_music_song_t *song, const unsigned *voices, size_t count, bool loop);
 #endif

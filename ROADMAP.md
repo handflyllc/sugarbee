@@ -55,9 +55,13 @@ diagnostic's wall-clock controls. Exact capture reconstruction identified the
 fixture timing, not an engine fade defect. The fixture now uses a sustained chord.
 Revised desktop listening passed without artifacts, exit 0. On 2026-11-09 the
 user confirmed all Pi validation checks passed at synchronized `4a03f4e`.
-Host pause acceptance is complete. Next priority: SugarBeats bounded offline
-host-lifecycle consumer validation. Shared voices and production music/cartridge/
-Lua integration remain separate.
+Host pause acceptance is complete. SugarBeats host consumer passed 7/7 plus
+expanded held-start checks at `dbf8735`, with 212 allocations matched by frees.
+Current authorized checkpoint: [native shared voices](tests/music-shared.md).
+Explicit mapping/reservation, guarded direct controls, music-only gain and
+per-voice loop/cleanup operations are implemented in an offline native owner.
+Production shared-mixer/host-pause integration and cartridge/Lua remain deferred.
+Desktop 102/102 and nine native ASan/UBSan checks pass. Pi validation is pending.
 Feature remains unmerged.
 
 ## Validated RC1 baseline

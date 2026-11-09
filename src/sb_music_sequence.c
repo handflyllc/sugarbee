@@ -3,7 +3,17 @@
 #include <string.h>
 
 void sb_music_sequence_reset(sb_music_sequence_t *s) {
-    if (s) memset(s, 0, sizeof(*s));
+    if (!s) return;
+    if (!s->shared) { memset(s, 0, sizeof(*s)); return; }
+    /* Music cleanup cannot reset an unrelated effect, even if it is active. */
+    sb_audio_bank_t empty={0};
+    for (unsigned v=1;v<=SB_AUDIO_BANK_VOICES;++v)
+        if (s->reserved & (1u<<(v-1)))
+            (void)sb_audio_bank_copy_voice(&s->bank,v,&empty,v);
+    sb_audio_bank_t retained=s->bank;
+    memset(s,0,sizeof(*s));
+    s->bank=retained;
+    s->shared=true;
 }
 
 static bool configure(sb_audio_bank_t *bank, unsigned track,
@@ -50,7 +60,7 @@ static bool events_valid(const sb_music_song_t *song) {
 }
 
 bool sb_music_sequence_start(sb_music_sequence_t *s, const sb_music_song_t *song) {
-    if (!s || s->state != SB_MUSIC_IDLE || !song ||
+    if (!s || s->shared || s->state != SB_MUSIC_IDLE || !song ||
         song->timeline_rate != SB_MUSIC_SEQUENCE_RATE || !song->end_frame ||
         !song->track_count || song->track_count > SB_AUDIO_BANK_VOICES ||
         !song->instruments || song->event_count > SB_MUSIC_SEQUENCE_MAX_EVENTS ||
@@ -96,7 +106,7 @@ bool sb_music_sequence_loop_eligible(const sb_music_song_t *song) {
     return sb_music_sequence_start(&probe, song) && valid_song_loop_eligible(song);
 }
 bool sb_music_sequence_start_loop(sb_music_sequence_t *s, const sb_music_song_t *song) {
-    if (!s || s->state != SB_MUSIC_IDLE) return false;
+    if (!s || s->shared || s->state != SB_MUSIC_IDLE) return false;
     sb_music_sequence_t next = {0};
     if (!sb_music_sequence_start(&next, song) || !valid_song_loop_eligible(song)) return false;
     next.loop = true;
@@ -105,22 +115,56 @@ bool sb_music_sequence_start_loop(sb_music_sequence_t *s, const sb_music_song_t 
     return true;
 }
 
+bool sb_music_sequence_start_mapped(sb_music_sequence_t *s,
+    const sb_music_song_t *song, const unsigned *voices, size_t count, bool loop) {
+    if (!s || !s->shared || s->state!=SB_MUSIC_IDLE || !song || !voices ||
+        count!=song->track_count || count>SB_AUDIO_BANK_VOICES) return false;
+    unsigned mask=0;
+    for (size_t n=0;n<count;++n) {
+        unsigned v=voices[n];
+        if (v<1 || v>SB_AUDIO_BANK_VOICES || (mask & (1u<<(v-1))) ||
+            sb_audio_bank_active(&s->bank,v)) return false;
+        mask |= 1u<<(v-1);
+    }
+    /* Reuse complete song/loop validation before touching the live bank. */
+    sb_music_sequence_t next={0};
+    if (!(loop ? sb_music_sequence_start_loop(&next,song) :
+                 sb_music_sequence_start(&next,song))) return false;
+    sb_audio_bank_t prepared=next.bank;
+    next.bank=s->bank;
+    next.initial_bank=(sb_audio_bank_t){0};
+    for (size_t n=0;n<count;++n) {
+        unsigned v=voices[n];
+        (void)sb_audio_bank_copy_voice(&next.bank,v,&prepared,(unsigned)n+1);
+        (void)sb_audio_bank_copy_voice(&next.initial_bank,v,&next.bank,v);
+        next.voice_map[n]=v;
+    }
+    next.shared=true;
+    next.reserved=mask;
+    *s=next;
+    return true;
+}
+static unsigned physical_voice(const sb_music_sequence_t *s, unsigned track) {
+    return s->shared ? s->voice_map[track-1] : track;
+}
+
 static void dispatch(sb_music_sequence_t *s) {
     while (s->next_event < s->song->event_count &&
            s->song->events[s->next_event].frame == s->frame) {
         const sb_music_event_t *e = &s->song->events[s->next_event++];
-        /* Setup validation plus exclusive bank ownership guarantee dispatch. */
-        if (e->kind == SB_MUSIC_NOTE_OFF) (void)sb_audio_bank_note_off(&s->bank, e->track);
+        unsigned voice=physical_voice(s,e->track);
+        /* Setup validation and reserved ownership guarantee dispatch. */
+        if (e->kind == SB_MUSIC_NOTE_OFF) (void)sb_audio_bank_note_off(&s->bank, voice);
         else if (s->song->instruments[e->track-1].waveform == SB_AUDIO_VOICE_NOISE)
-            (void)sb_audio_bank_start_selected_noise(&s->bank, e->track);
-        else (void)sb_audio_bank_start_selected(&s->bank, e->track, e->hz);
+            (void)sb_audio_bank_start_selected_noise(&s->bank, voice);
+        else (void)sb_audio_bank_start_selected(&s->bank, voice, e->hz);
     }
 }
 
 static void finish_if_silent(sb_music_sequence_t *s) {
     if (s->state != SB_MUSIC_FINISHING) return;
     for (unsigned v = 1; v <= s->song->track_count; ++v)
-        if (sb_audio_bank_active(&s->bank, v)) return;
+        if (sb_audio_bank_active(&s->bank, physical_voice(s,v))) return;
     sb_music_sequence_reset(s);
 }
 
@@ -132,7 +176,7 @@ bool sb_music_sequence_stop(sb_music_sequence_t *s) {
     s->loop = false;
     s->state = SB_MUSIC_FINISHING;
     for (unsigned v = 1; v <= s->song->track_count; ++v)
-        (void)sb_audio_bank_stop(&s->bank, v);
+        (void)sb_audio_bank_stop(&s->bank, physical_voice(s,v));
     finish_if_silent(s);
     return true;
 }
@@ -152,9 +196,13 @@ bool sb_music_sequence_render(sb_music_sequence_t *s, float *output, size_t fram
     if (!s || (frames && !output) || frames > SIZE_MAX / (2 * sizeof(float))) return false;
     for (size_t n = 0; n < frames; ++n) {
         if (s->state == SB_MUSIC_PLAYING) dispatch(s);
-        (void)sb_audio_bank_render(&s->bank, output + 2*n, 1);
-        output[2*n] = (float)(output[2*n] * s->gain);
-        output[2*n+1] = (float)(output[2*n+1] * s->gain);
+        if (s->shared)
+            (void)sb_audio_bank_render_music(&s->bank,s->reserved,s->gain,output+2*n,1);
+        else {
+            (void)sb_audio_bank_render(&s->bank, output + 2*n, 1);
+            output[2*n] = (float)(output[2*n] * s->gain);
+            output[2*n+1] = (float)(output[2*n+1] * s->gain);
+        }
         if (s->gain_left) {
             --s->gain_left;
             s->gain = s->gain_left ? s->gain_from + (s->gain_target - s->gain_from) *
@@ -168,7 +216,11 @@ bool sb_music_sequence_render(sb_music_sequence_t *s, float *output, size_t fram
                 if (s->loop) {
                     /* Fixed-size snapshot copy only: no setup, allocation or
                      * event scan. Frame-zero events precede the next sample. */
-                    s->bank = s->initial_bank;
+                    if (s->shared) {
+                        for (unsigned v=1;v<=SB_AUDIO_BANK_VOICES;++v)
+                            if (s->reserved & (1u<<(v-1)))
+                                (void)sb_audio_bank_copy_voice(&s->bank,v,&s->initial_bank,v);
+                    } else s->bank = s->initial_bank;
                     s->frame = 0;
                     s->next_event = 0;
                 } else s->state = SB_MUSIC_FINISHING;

@@ -231,3 +231,17 @@ all Pi validation checks passed at `4a03f4e2a2156739ba2c3d5bb12bf4d9d64121cd`.
 Acceptance is complete; next priority is bounded SugarBeats host-lifecycle
 consumer validation. See the validation record for evidence. The prior gain
 consumer passed 7/7 checks at `a6c80e7` with exact parity and balanced allocations.
+
+
+## Native shared voices — 2026-11-09 checkpoint
+
+The offline `sb_music_shared` owner maps logical tracks to distinct idle physical
+voices in the existing nine-voice bank. Start validates atomically; guarded
+controls reject music-owned voices. Loop restoration and cleanup affect only
+reserved slots. Music gain affects only their contribution to the fixed-headroom
+mix. Prior direct settings are not restored. Assets remain borrowed until idle
+or music-only reset. The private sequencer and host adapter remain available.
+
+See [shared ownership contract and validation](../../tests/music-shared.md).
+Native layout changed; rebuild consumers. Shared production audio/host pause,
+Lua and cartridge integration remain separate. Pi native validation is pending.

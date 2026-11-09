@@ -221,10 +221,12 @@ static double render_source(sb_audio_bank_t *bank, unsigned slot, sb_audio_voice
     }
     return sample;
 }
-bool sb_audio_bank_render(sb_audio_bank_t *bank, float *output, size_t frames) {
+bool sb_audio_bank_render_music(sb_audio_bank_t *bank, unsigned mask, double gain,
+                                float *output, size_t frames) {
+    if (mask >= (1u << SB_AUDIO_BANK_VOICES) || !isfinite(gain) || gain < 0 || gain > 1) return false;
     if (!bank || frames > SIZE_MAX / (2 * sizeof(float)) || (!output && frames)) return false;
     for (size_t frame = 0; frame < frames; ++frame) {
-        double left = 0, right = 0;
+        double left = 0, right = 0, music_left = 0, music_right = 0;
         for (unsigned slot = 0; slot < SB_AUDIO_BANK_VOICES; ++slot) {
             sb_audio_triangle_t *v = &bank->voices[slot];
             double sample = 0;
@@ -242,10 +244,34 @@ bool sb_audio_bank_render(sb_audio_bank_t *bank, float *output, size_t frames) {
             float stereo[2];
             sb_audio_voice_apply(v, sample, stereo);
             if (!v->active) complete_switch(bank, slot);
-            left += stereo[0]; right += stereo[1];
+            if (mask & (1u << slot)) {
+                music_left += stereo[0]; music_right += stereo[1];
+            } else { left += stereo[0]; right += stereo[1]; }
         }
-        output[2*frame] = (float)(left * SB_AUDIO_SYNTH_GAIN);
-        output[2*frame+1] = (float)(right * SB_AUDIO_SYNTH_GAIN);
+        output[2*frame] = (float)((left + music_left*gain) * SB_AUDIO_SYNTH_GAIN);
+        output[2*frame+1] = (float)((right + music_right*gain) * SB_AUDIO_SYNTH_GAIN);
     }
+    return true;
+}
+
+bool sb_audio_bank_render(sb_audio_bank_t *bank, float *output, size_t frames) {
+    return sb_audio_bank_render_music(bank, 0, 1, output, frames);
+}
+bool sb_audio_bank_copy_voice(sb_audio_bank_t *dst, unsigned to,
+                              const sb_audio_bank_t *src, unsigned from) {
+    if (!dst || !src || to<1 || to>SB_AUDIO_BANK_VOICES ||
+        from<1 || from>SB_AUDIO_BANK_VOICES) return false;
+    unsigned d=to-1, s=from-1;
+    dst->voices[d] = src->voices[s];
+    dst->noise[d] = src->noise[s];
+    dst->seeds[d] = src->seeds[s];
+    dst->saw[d] = src->saw[s];
+    dst->pulse[d] = src->pulse[s];
+    dst->filters[d] = src->filters[s];
+    dst->retained_pitch[d] = src->retained_pitch[s];
+    dst->widths[d] = src->widths[s];
+    dst->kind[d] = src->kind[s];
+    dst->destination[d] = src->destination[s];
+    dst->switch_left[d] = src->switch_left[s];
     return true;
 }
