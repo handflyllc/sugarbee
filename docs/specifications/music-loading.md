@@ -189,4 +189,7 @@ No host-pause behavior, gain, shared-voice reservations, handles or Lua/cartridg
 integration is introduced. Caller must serialize with rendering. Reset remains
 immediate cleanup. Detailed edge cases, tests and listening acceptance are in
 [native stop validation](../../tests/music-stop.md). All four desktop listening
-checks and exit 0 confirmed by user; Pi automated/listening acceptance pending.
+checks and exit 0 confirmed by user. Pi acceptance reported 2026-11-08 at
+`0412c37c47099c56793b6221c07f59666dc2eb56`: native stop check confirmed,
+97/97 tests passed with exit 0; listening passed with exit 0. Next priority is
+SugarBeats bounded offline consumer validation; no additional lifecycle scope.

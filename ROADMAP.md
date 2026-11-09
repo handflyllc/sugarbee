@@ -31,10 +31,12 @@ listening checks, 95 passing tests and exit 0 on 2026-11-08. Pi acceptance
 reported at synchronized `cc281aa`: 95 tests passed, listening checks passed.
 SugarBeats native loop consumer passed 7/7 checks at clean pin `2041086`, with
 exact repeated-render parity, refusal/ownership checks and balanced allocations.
-Current authorized checkpoint: [native audible stop](tests/music-stop.md), using
+Accepted checkpoint: [native audible stop](tests/music-stop.md), using
 the existing 10 ms fade. Desktop 97/97 and native ASan/UBSan checks pass.
 All four desktop listening checks and exit 0 confirmed by user.
-Pi automated and listening acceptance pending.
+Pi acceptance reported 2026-11-08 at `0412c37`: native stop check confirmed,
+97/97 tests passed, exit 0; listening passed, exit 0. Next priority: SugarBeats
+bounded offline stop/replay/ownership consumer validation.
 Host pause, gain, shared voices and cartridge/Lua integration remain separate.
 Feature remains unmerged.
 

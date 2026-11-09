@@ -43,7 +43,11 @@ Desktop full suite: **97/97 passed** (105.39 seconds); all eight music-focused
 checks passed. Five native music ASan/UBSan checks passed with leak detection
 disabled under tracing. Debug build had no new warnings. The complete --stop
 host also passed with SDL dummy audio. User confirmed all four desktop listening
-checks and exit status 0. Pi automated and listening validation remain pending.
+checks and exit status 0. Pi acceptance reported by user 2026-11-08 at
+`0412c37c47099c56793b6221c07f59666dc2eb56`: native stop check confirmed,
+97/97 tests passed with exit 0; listening checks passed with exit 0.
+Desktop and Pi hashes match. This records user-reported hardware acceptance;
+no new local test run was performed for this documentation update.
 
 ## Listening acceptance — desktop, then Pi
 
