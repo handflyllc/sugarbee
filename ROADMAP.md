@@ -74,16 +74,18 @@ native ASan/UBSan checks pass. Pi acceptance reported 2026-11-09 at `8d6e69e`:
 SugarBeats combined consumer completed at reviewed pin `4292b88`: 7/7 checks,
 224 allocations matched frees, no playback allocations or contract mismatch.
 
-Current authorized checkpoint: [production SDL music routing](tests/music-production.md).
+Accepted checkpoint: [production SDL music routing](tests/music-production.md).
 Prepared songs now share the production bank with guarded synth effects; WAVs
 join the mix before one common host fade. Native session controls, reservation
 checks, lifecycle tests and an audible production diagnostic are implemented.
 Desktop automated results are recorded in the checkpoint document. On 2026-11-09
 the user confirmed all three desktop diagnostics and Musical Synth Lab
 pause/exit/resume/reload passed, followed by WAV Lab lifecycle acceptance.
-Desktop acceptance is complete; Pi acceptance remains pending. No cartridge loader integration,
-asset registry or Lua music bindings. Stop at validation, then hand the tested
-pin back to SugarBeats; no preview/editor expansion is authorized here.
+Pi acceptance reported by the user on 2026-11-09 at `92946e3`: 105/105 tests
+passed, all checks exited 0, and Synth/WAV Lab lifecycle checks passed.
+Desktop and Pi acceptance are complete. Next priority: SugarBeats consumer
+rebuild/regression and production contract review. No cartridge loader
+integration, asset registry, Lua music bindings or preview/editor expansion.
 Feature remains unmerged.
 
 ## Validated RC1 baseline

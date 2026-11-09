@@ -1,7 +1,7 @@
 # Prepared music in the production SDL session
 
 2026-11-09 checkpoint: implemented; desktop diagnostics, Musical Synth Lab and
-WAV Lab lifecycle accepted by the user. Pi acceptance remains pending.
+WAV Lab lifecycle accepted by the user. Pi acceptance also passed at `92946e3`.
 No cartridge music loading, registry, Lua music API, or stable native SDK is added.
 The existing Lua synth and WAV APIs retain their signatures and behavior when
 no music owns their voices.
@@ -62,7 +62,7 @@ Existing native, Lua synth, WAV and session tests remain regression coverage.
 The listening tool also runs with SDL dummy output in CTest; this is functional
 coverage, not audible acceptance.
 
-Desktop evidence (2026-11-09, uncommitted working tree based on `4292b88`):
+Desktop evidence (2026-11-09, subsequently committed as `92946e3`):
 warning-free Debug build; **105/105 tests passed**, exit 0 (120.20 seconds).
 **15 targeted ASan/UBSan checks passed**, including production SDL mix, native
 private/shared pause, loader/loop/gain/stop, bank, session, WAV and Lua synth.
@@ -71,11 +71,16 @@ Diff/whitespace review passed. On 2026-11-09 the user reported all three desktop
 diagnostics passed (`sbee-music-session-test`, `sbee-session-test`,
 `sbee-wav-test`), along with pause/exit/resume/reload in Musical Synth Lab
 (Eine kleine Nachtmusik). The user also confirmed WAV Lab cartridge lifecycle
-checks passed on 2026-11-09;
-Pi acceptance remains pending. No engine code changed for this record update,
-and unchanged automated checks were not rerun.
-SugarBeats code and canonical passdown were not modified (read-only
-sibling location); the user must set the passdown to Waiting for validation.
+checks passed on 2026-11-09.
+
+Pi acceptance reported by the user on 2026-11-09 at engine commit
+`92946e357b5f4e7d4ede660fdc6d569f7041e64a`: **105/105 tests passed**;
+all validation checks exited 0, and Synth/WAV Lab lifecycle checks passed.
+Desktop and Pi acceptance are complete. No engine code changed for this
+acceptance record, and unchanged automated checks were not rerun.
+Next priority: SugarBeats bounded consumer rebuild/regression and production
+contract review. No preview/editor expansion is authorized by this handoff.
+The canonical passdown is outside writable roots and requires manual replacement.
 
 ## Desktop listening, then Pi
 
@@ -105,6 +110,6 @@ and cartridge checks (HDMI0 is the user's available validation path). Record
 hash, test count, exit statuses and listening observations. No Pi result is
 inferred from desktop or SDL dummy checks.
 
-Stop here for validation, then hand one tested pin back to SugarBeats. The
+Validation is complete; hand the tested pin back to SugarBeats. The
 bounded follower task is rebuild/regression plus review of the production
 contract; it does not authorize new preview/editor layers or Lua integration.

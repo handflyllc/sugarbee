@@ -279,6 +279,9 @@ The loader and JSON format are unchanged. Cartridge loading, asset registries,
 Lua music bindings and composer preview expansion remain separate checkpoints.
 Desktop acceptance reported 2026-11-09: three diagnostics and Musical Synth Lab
 pause/exit/resume/reload passed; WAV Lab lifecycle subsequently passed as well.
-Desktop acceptance is complete. Pi acceptance remains pending.
+Pi acceptance reported by the user on 2026-11-09 at
+`92946e357b5f4e7d4ede660fdc6d569f7041e64a`: 105/105 tests passed, all checks
+exited 0, and Synth/WAV Lab lifecycle checks passed. Engine acceptance is
+complete; next priority is SugarBeats consumer regression and contract review.
 SugarBeats' preceding combined consumer completed at reviewed pin `4292b88`,
 7/7 checks, 224 tracked allocations matched frees and no contract mismatch.
