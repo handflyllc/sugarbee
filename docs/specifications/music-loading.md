@@ -210,3 +210,18 @@ listening checks and exit 0 confirmed by user. Pi acceptance reported by the
 user on 2026-11-09 (UTC), at `6fe04d9e29b80eabe92ca9a73c0923de30a28fbe`:
 99/99 tests passed, exit 0; validation checks passed, exit 0. Next priority:
 SugarBeats bounded offline gain consumer validation.
+
+
+## Native host pause — 2026-11-08 checkpoint
+
+Host pause is separate from sequence playback state. The experimental native
+`sb_music_host` adapter reuses the production session fade calculation for
+fade/freeze/resume, held starts and silent paused-stop cleanup. Sequence gain and
+loop behavior are preserved. The sequence itself gains no independent pause API.
+See [host lifecycle contract and validation](../../tests/music-pause.md).
+
+The adapter is exercised by native tests and the diagnostic host only; music is
+not yet routed through the production mixer. Shared-voice reservations and
+cartridge/Lua integration remain deferred. User confirmed desktop music pause
+and existing session listening checks, exit 0 for both. Pi acceptance is pending. The prior SugarBeats gain consumer passed 7/7 checks at `a6c80e7`
+with exact sample parity and balanced allocations, per the shared passdown.

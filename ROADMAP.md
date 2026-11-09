@@ -44,8 +44,16 @@ Desktop 99/99 and native ASan/UBSan checks pass.
 All five desktop gain listening checks and exit 0 confirmed by user.
 Pi acceptance reported by the user on 2026-11-09 (UTC) at synchronized
 `6fe04d9`: 99/99 tests passed, exit 0; validation checks passed, exit 0.
-Next priority: SugarBeats bounded offline gain/parity/ownership consumer checks.
-Host pause, shared voices and cartridge/Lua integration remain separate.
+SugarBeats gain consumer completed at `a6c80e7`: 7/7 checks, exact gain parity,
+whole/single-frame equivalence and 200 tracked allocations matched frees.
+Current authorized checkpoint: [native host pause](tests/music-pause.md).
+A native adapter exercises fade/freeze/resume, held starts and paused stop using
+the existing session fade calculation, now shared with production SDL audio.
+Desktop 101/101 and seven native ASan/UBSan checks pass; 14 music/session
+checks and the full dummy pause diagnostic pass. User confirmed desktop music
+pause and existing session listening checks, exit 0 for both. Pi acceptance
+pending. Shared voices and production
+music/cartridge/Lua integration remain separate.
 Feature remains unmerged.
 
 ## Validated RC1 baseline

@@ -1,6 +1,7 @@
 /* SDL2 audio foundation: fixed callback format, host lifetime, opt-in diagnostic tone. */
 #include "sb_audio.h"
 #include "sb_audio_tone.h"
+#include "sb_audio_session_gain.h"
 #include "sb_audio_bank.h"
 #include "sb_wav_internal.h"
 #include <SDL2/SDL.h>
@@ -10,7 +11,6 @@
 
 /* Fresh devices permit native diagnostics. The host closes this mode at startup. */
 typedef enum { AUDIO_DIAGNOSTIC, AUDIO_SESSION, AUDIO_FAILED, AUDIO_CLOSED } audio_mode_t;
-#define SESSION_FADE_FRAMES 480u
 struct sb_audio {
     SDL_AudioDeviceID device;
     sb_audio_tone_t tone;
@@ -19,8 +19,7 @@ struct sb_audio {
     sb_wav_pool_t wav;
     audio_mode_t mode;
     bool paused;
-    double session_gain, gain_from, gain_target;
-    unsigned gain_left;
+    sb_audio_session_gain_t fade;
 };
 
 /* Caller holds the device lock, or is the callback itself. */
@@ -43,27 +42,22 @@ static bool bank_controls_allowed(const sb_audio_t *audio) {
     return audio->mode == AUDIO_DIAGNOSTIC || audio->mode == AUDIO_SESSION;
 }
 static void ramp_session(sb_audio_t *audio, double target) {
-    audio->gain_from = audio->session_gain;
-    audio->gain_target = target;
-    audio->gain_left = audio->session_gain == target ? 0 : SESSION_FADE_FRAMES;
+    sb_audio_session_gain_ramp(&audio->fade, target);
 }
 /* Callback only. Freeze the complete bank at silence; process a fade exactly
  * once per frame regardless of callback size. Failed sessions cannot resume. */
 static void render_session(sb_audio_t *audio, float *output, size_t frames) {
     for (size_t i=0; i<frames; ++i) {
-        if (!audio->gain_left && (audio->paused || audio->mode == AUDIO_FAILED)) continue;
+        if (!audio->fade.left && (audio->paused || audio->mode == AUDIO_FAILED)) continue;
         float sample[2];
         (void)sb_audio_bank_render(&audio->bank, sample, 1);
         float wav[2];
         sb_wav_render(&audio->wav,wav,1);
-        output[2*i] = (float)((sample[0]*bank_diagnostic_gain+wav[0])*audio->session_gain);
-        output[2*i+1] = (float)((sample[1]*bank_diagnostic_gain+wav[1])*audio->session_gain);
-        if (audio->gain_left) {
-            --audio->gain_left;
-            audio->session_gain = audio->gain_left ? audio->gain_from +
-                (audio->gain_target-audio->gain_from)*
-                (SESSION_FADE_FRAMES-audio->gain_left)/SESSION_FADE_FRAMES : audio->gain_target;
-            if (!audio->gain_left && audio->mode == AUDIO_FAILED) {
+        output[2*i] = (float)((sample[0]*bank_diagnostic_gain+wav[0])*audio->fade.value);
+        output[2*i+1] = (float)((sample[1]*bank_diagnostic_gain+wav[1])*audio->fade.value);
+        if (audio->fade.left) {
+            sb_audio_session_gain_advance(&audio->fade);
+            if (!audio->fade.left && audio->mode == AUDIO_FAILED) {
                 sb_audio_bank_reset(&audio->bank);
                 sb_wav_stop_all(&audio->wav);
             }
@@ -379,8 +373,8 @@ void sb_audio_session_begin(sb_audio_t *audio) {
     audio->triangle = (sb_audio_triangle_t){0};
     audio->mode = AUDIO_SESSION;
     audio->paused = false;
-    audio->session_gain = audio->gain_from = audio->gain_target = 1;
-    audio->gain_left = 0;
+    audio->fade.value = audio->fade.from = audio->fade.target = 1;
+    audio->fade.left = 0;
     SDL_UnlockAudioDevice(audio->device);
 }
 void sb_audio_session_pause(sb_audio_t *audio, bool paused) {
@@ -398,7 +392,7 @@ void sb_audio_session_fail(sb_audio_t *audio) {
     if (audio->mode == AUDIO_SESSION) {
         audio->mode = AUDIO_FAILED;
         ramp_session(audio, 0);
-        if (!audio->gain_left) {
+        if (!audio->fade.left) {
             sb_audio_bank_reset(&audio->bank);
             sb_wav_stop_all(&audio->wav);
         }
@@ -414,8 +408,8 @@ void sb_audio_session_end(sb_audio_t *audio) {
     audio->triangle = (sb_audio_triangle_t){0};
     audio->mode = AUDIO_CLOSED;
     audio->paused = false;
-    audio->session_gain = audio->gain_from = audio->gain_target = 0;
-    audio->gain_left = 0;
+    audio->fade.value = audio->fade.from = audio->fade.target = 0;
+    audio->fade.left = 0;
     SDL_UnlockAudioDevice(audio->device);
 }
 
@@ -425,8 +419,8 @@ void sb_audio_session_prepare_shutdown(sb_audio_t *audio) {
     /* Exit from a pause menu must not briefly play shutdown-created notes,
      * even if the pause fade has not yet reached the callback. */
     if (audio->mode == AUDIO_SESSION && audio->paused) {
-        audio->session_gain = audio->gain_from = audio->gain_target = 0;
-        audio->gain_left = 0;
+        audio->fade.value = audio->fade.from = audio->fade.target = 0;
+        audio->fade.left = 0;
     }
     SDL_UnlockAudioDevice(audio->device);
 }

@@ -1,18 +1,25 @@
 /* Listening host for prepared songs. No cartridge or production SDL backend. */
 #include "../src/sb_music_sequence.h"
+#include "../src/sb_music_host.h"
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <string.h>
 
-typedef struct { sb_music_sequence_t sequence; bool failed; uint64_t remaining; bool fade_at_limit; } host_t;
+typedef struct {
+    sb_music_sequence_t sequence;
+    sb_music_host_t music_host;
+    bool pause_mode, failed;
+    uint64_t remaining;
+    bool fade_at_limit;
+} host_t;
 static void audio_callback(void *userdata, Uint8 *stream, int length) {
     host_t *host=userdata;
     memset(stream,0,(size_t)length);
     size_t frames=(size_t)length/(2*sizeof(float));
     if(host->remaining && frames>host->remaining) frames=(size_t)host->remaining;
     if (length % (int)(2*sizeof(float)) != 0 ||
-        !sb_music_sequence_render(&host->sequence,(float *)stream,
-                                 frames)) {
+        !(host->pause_mode ? sb_music_host_render(&host->music_host,(float *)stream,frames) :
+          sb_music_sequence_render(&host->sequence,(float *)stream,frames))) {
         host->failed=true;
         return;
     }
@@ -74,13 +81,67 @@ static bool play(SDL_AudioDeviceID device, host_t *host, const sb_music_song_t *
     return done && !failed;
 }
 
+/* Control thread only; fixtures outlive the callback. Native tests establish
+ * exact sample boundaries; this script exercises the same adapter audibly. */
+static bool play_pause(SDL_AudioDeviceID device, host_t *host, bool smoke) {
+    sb_music_instrument_t ins[3];
+    for (unsigned v=0;v<3;++v)
+        ins[v]=(sb_music_instrument_t){SB_AUDIO_VOICE_TRIANGLE,{.01,.1,.7,.12},.6,0,.5,2000,true};
+    sb_music_event_t events[16]; size_t count=0;
+    const double major[]={220,277.1826309768721,329.6275569128699};
+    const double minor[]={220,261.6255653005986,329.6275569128699};
+    chord(events,&count,0,36000,major,3);
+    chord(events,&count,48000,36000,minor,3);
+    sb_music_song_t song={48000,3,96000,ins,events,count};
+    host->pause_mode=true;
+    sb_music_host_t *h=&host->music_host;
+    sb_music_host_reset(h);
+    bool ok=sb_music_host_start(h,&song,true);
+    if (ok) SDL_PauseAudioDevice(device,0);
+    const char *messages[]={
+        "Pause: fade out, then hold silent.",
+        "Resume: continue the frozen song.",
+        "Stop during pause fade: stay stopped on resume.",
+        "Resume after stop: silence.",
+        "Start while paused: hold opening events at frame zero.",
+        "Cancel held start, prepare again, resume: opening chord fades in.",
+        "Pause again: wait until fully silent.",
+        "Stop fully paused, then resume: silence.",
+        "Paused-stop checks complete."};
+    for (unsigned step=0;ok && step<9;++step) {
+        SDL_Delay(smoke?60:1000);
+        puts(messages[step]); fflush(stdout);
+        SDL_LockAudioDevice(device);
+        switch (step) {
+        case 0: case 6: ok=sb_music_host_pause(h,true); break;
+        case 1: ok=sb_music_host_pause(h,false); break;
+        case 2: ok=sb_music_host_pause(h,true) && sb_music_host_stop(h); break;
+        case 3: ok=h->sequence.state==SB_MUSIC_IDLE && sb_music_host_pause(h,false); break;
+        case 4: ok=h->sequence.state==SB_MUSIC_IDLE && sb_music_host_pause(h,true) &&
+                   sb_music_host_start(h,&song,true); break;
+        case 5: ok=h->sequence.frame==0 && h->sequence.next_event==0 && h->held_start &&
+                   sb_music_host_stop(h) && sb_music_host_start(h,&song,true) &&
+                   sb_music_host_pause(h,false); break;
+        case 7: ok=h->paused && !h->fade.left && sb_music_host_stop(h) &&
+                   h->sequence.state==SB_MUSIC_IDLE && sb_music_host_pause(h,false); break;
+        case 8: ok=h->sequence.state==SB_MUSIC_IDLE; break;
+        }
+        ok=ok && !host->failed;
+        SDL_UnlockAudioDevice(device);
+    }
+    SDL_PauseAudioDevice(device,1);
+    sb_music_host_reset(h); /* Exclude callback before borrowed fixtures expire. */
+    return ok;
+}
+
 int main(int argc, char **argv) {
+    bool pausing=argc==2 && (strcmp(argv[1],"--pause")==0 || strcmp(argv[1],"--pause-smoke")==0);
     bool gaining=argc==2 && (strcmp(argv[1],"--gain")==0 || strcmp(argv[1],"--gain-smoke")==0);
     bool stopping=argc==2 && (strcmp(argv[1],"--stop")==0 || strcmp(argv[1],"--stop-smoke")==0);
     bool looping=argc==2 && (strcmp(argv[1],"--loop")==0 || strcmp(argv[1],"--loop-smoke")==0);
-    bool smoke=argc==2 && (strcmp(argv[1],"--smoke")==0 || strcmp(argv[1],"--loop-smoke")==0 || strcmp(argv[1],"--stop-smoke")==0 || strcmp(argv[1],"--gain-smoke")==0);
-    if(argc!=1 && !smoke && !looping && !stopping && !gaining) {
-        fprintf(stderr,"Usage: %s [--smoke | --loop | --loop-smoke | --stop | --stop-smoke | --gain | --gain-smoke]\n",argv[0]); return 1;
+    bool smoke=argc==2 && (strcmp(argv[1],"--smoke")==0 || strcmp(argv[1],"--loop-smoke")==0 || strcmp(argv[1],"--stop-smoke")==0 || strcmp(argv[1],"--gain-smoke")==0 || strcmp(argv[1],"--pause-smoke")==0);
+    if(argc!=1 && !smoke && !looping && !stopping && !gaining && !pausing) {
+        fprintf(stderr,"Usage: %s [--smoke | --loop | --loop-smoke | --stop | --stop-smoke | --gain | --gain-smoke | --pause | --pause-smoke]\n",argv[0]); return 1;
     }
     if(SDL_Init(SDL_INIT_AUDIO)!=0) {
         fprintf(stderr,"SDL audio: %s\n",SDL_GetError()); return 1;
@@ -94,8 +155,8 @@ int main(int argc, char **argv) {
         fprintf(stderr,"Open audio: %s\n",SDL_GetError()); SDL_Quit(); return 1;
     }
     puts("Prepared music listening test: start with low speaker volume.");
-    bool ok=true;
-    for(unsigned pass=0;ok && pass<(smoke?1u:gaining?2u:stopping?3u:looping?1u:5u);++pass) {
+    bool ok=pausing ? play_pause(device,&host,smoke) : true;
+    for(unsigned pass=0;!pausing && ok && pass<(smoke?1u:gaining?2u:stopping?3u:looping?1u:5u);++pass) {
         sb_music_instrument_t ins[3];
         for(unsigned v=0;v<3;++v) {
             sb_audio_voice_kind_t wave=SB_AUDIO_VOICE_TRIANGLE;
