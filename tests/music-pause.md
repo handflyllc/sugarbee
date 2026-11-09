@@ -62,7 +62,16 @@ with leak detection disabled under tracing. Both the short SDL dummy smoke and
 the complete nine-second pause script exited successfully. These are automated
 checks, not listening acceptance. User subsequently confirmed desktop listening
 acceptance for both `sbee-music-test --pause` and `sbee-session-test`, with exit
-status 0 for both (2026-11-08, America/New_York). Pi acceptance remains pending.
+status 0 for both (2026-11-08, America/New_York). Pi listening acceptance remains open. At synchronized
+`c46c17cc6a9084040562152d201940a341b341bb`, the user reported 101/101 tests
+passed and exit 0 throughout. All other listening checks passed, but
+`sbee-music-test --pause` produced a brief static/pop artifact at "Stop during
+pause fade" on the Pi, not on the development machine. Cause and repeatability
+are not yet established. Do not treat successful exit status as audible acceptance.
+Follow-up: the user tests HDMI0; the artifact is noticeable in `--pause`,
+not ordinary `--stop`. Other output paths are unavailable or unsuitable and are
+not required for this investigation. Repeatability count and cause remain unconfirmed.
+The next diagnostic captures the samples supplied to SDL before changing fades.
 
 ## Listening acceptance (desktop, then Pi)
 
@@ -97,3 +106,27 @@ paused shutdown, with exit status 0.
 After desktop acceptance, commit/push the checkpoint and repeat automated and
 listening checks on the Pi at the synchronized hash. Then return one tested pin
 to SugarBeats for bounded offline host-lifecycle consumer checks.
+
+
+## Pi HDMI0 artifact investigation
+
+The diagnostic-only option below runs the same pause script and captures its
+post-attenuation float samples. It does not change engine fade behavior. A
+20-second bounded buffer is allocated and touched before playback; the callback
+only copies into that storage. Overflow fails the diagnostic. File writing
+happens after the device closes. The named output file is replaced.
+
+```sh
+./build/sbee-music-test --pause-capture /tmp/sugarbee-pause-pi.wav
+echo $?
+```
+
+Save the console output (SDL backend, callback size and exact transition frames).
+Transition 2 is stop during pause fade. Report whether the pop was audible in
+this capture run. Copy the WAV to the development machine for listening/sample
+inspection. A clean capture with an audible live pop points toward delivery
+outside the captured samples; an artifact in the capture points toward generated
+audio. Neither result alone establishes the precise cause. Capturing can alter
+scheduling, so a run without the live artifact is not a reproduction.
+
+No new Pi listening acceptance or runtime fix is claimed by this diagnostic.

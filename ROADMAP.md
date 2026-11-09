@@ -51,8 +51,12 @@ A native adapter exercises fade/freeze/resume, held starts and paused stop using
 the existing session fade calculation, now shared with production SDL audio.
 Desktop 101/101 and seven native ASan/UBSan checks pass; 14 music/session
 checks and the full dummy pause diagnostic pass. User confirmed desktop music
-pause and existing session listening checks, exit 0 for both. Pi acceptance
-pending. Shared voices and production
+pause and existing session listening checks, exit 0 for both. Pi at `c46c17c`:
+101/101 tests passed, exit 0; other listening checks passed, but a brief pop at
+stop during pause fade leaves listening acceptance open. Reproduce/isolate this
+artifact before further development or SugarBeats handoff. Follow-up localizes
+the report to `--pause` on HDMI0, not ordinary `--stop`. Optional pre-SDL WAV
+capture is added to the diagnostic; no fade behavior change or fix is claimed. Shared voices and production
 music/cartridge/Lua integration remain separate.
 Feature remains unmerged.
 

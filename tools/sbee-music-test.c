@@ -11,9 +11,13 @@ typedef struct {
     bool pause_mode, failed;
     uint64_t remaining;
     bool fade_at_limit;
+    float *capture;
+    size_t capture_frames, capture_capacity;
+    size_t transition_frames[9];
 } host_t;
 static void audio_callback(void *userdata, Uint8 *stream, int length) {
     host_t *host=userdata;
+    if (length <= 0) return;
     memset(stream,0,(size_t)length);
     size_t frames=(size_t)length/(2*sizeof(float));
     if(host->remaining && frames>host->remaining) frames=(size_t)host->remaining;
@@ -39,6 +43,14 @@ static void audio_callback(void *userdata, Uint8 *stream, int length) {
     float *samples=(float *)stream;
     for(size_t n=0;n<(size_t)length/sizeof(float);++n)
         samples[n]*=0.790569415f;
+    if (host->capture) {
+        size_t count=(size_t)length/(2*sizeof(float));
+        if (count>host->capture_capacity-host->capture_frames) host->failed=true;
+        else {
+            memcpy(host->capture+2*host->capture_frames,stream,count*2*sizeof(float));
+            host->capture_frames+=count;
+        }
+    }
 }
 
 static void chord(sb_music_event_t *events, size_t *count, uint64_t start,
@@ -112,6 +124,7 @@ static bool play_pause(SDL_AudioDeviceID device, host_t *host, bool smoke) {
         SDL_Delay(smoke?60:1000);
         puts(messages[step]); fflush(stdout);
         SDL_LockAudioDevice(device);
+        host->transition_frames[step]=host->capture_frames;
         switch (step) {
         case 0: case 6: ok=sb_music_host_pause(h,true); break;
         case 1: ok=sb_music_host_pause(h,false); break;
@@ -134,26 +147,71 @@ static bool play_pause(SDL_AudioDeviceID device, host_t *host, bool smoke) {
     return ok;
 }
 
+/* File I/O only after the device closes. Preserve the exact float samples
+ * supplied to SDL, including attenuation, rather than quantizing to PCM16. */
+static bool write_u32(SDL_RWops *file, Uint32 value) {
+    value=SDL_SwapLE32(value);
+    return SDL_RWwrite(file,&value,sizeof(value),1)==1;
+}
+static bool save_capture(const char *path, const host_t *host) {
+    SDL_RWops *file=SDL_RWFromFile(path,"wb");
+    if (!file) { fprintf(stderr,"Capture open: %s\n",SDL_GetError()); return false; }
+    Uint32 bytes=(Uint32)(host->capture_frames*2*sizeof(float));
+    /* IEEE float stereo, 48 kHz, fmt + fact + data; all fields little-endian. */
+    bool ok=SDL_RWwrite(file,"RIFF",4,1)==1 && write_u32(file,bytes+48) &&
+        SDL_RWwrite(file,"WAVEfmt ",8,1)==1 && write_u32(file,16) &&
+        write_u32(file,0x00020003) && write_u32(file,48000) &&
+        write_u32(file,48000*8) && write_u32(file,0x00200008) &&
+        SDL_RWwrite(file,"fact",4,1)==1 && write_u32(file,4) &&
+        write_u32(file,(Uint32)host->capture_frames) &&
+        SDL_RWwrite(file,"data",4,1)==1 && write_u32(file,bytes);
+    for (size_t n=0;ok && n<host->capture_frames*2;++n) {
+        Uint32 bits;
+        memcpy(&bits,&host->capture[n],sizeof(bits));
+        ok=write_u32(file,bits);
+    }
+    if (SDL_RWclose(file)!=0) ok=false;
+    if (!ok) fprintf(stderr,"Capture write failed: %s\n",path);
+    else {
+        printf("Captured %zu frames to %s\n",host->capture_frames,path);
+        for (unsigned n=0;n<9;++n)
+            printf("Transition %u: frame %zu (%.6f seconds)\n",n,
+                   host->transition_frames[n],host->transition_frames[n]/48000.0);
+        puts("Transition 2 is stop during pause fade. Capture is before SDL/hardware conversion.");
+    }
+    return ok;
+}
+
 int main(int argc, char **argv) {
-    bool pausing=argc==2 && (strcmp(argv[1],"--pause")==0 || strcmp(argv[1],"--pause-smoke")==0);
+    const char *capture_path=argc==3 && strcmp(argv[1],"--pause-capture")==0 ? argv[2] : NULL;
+    bool pausing=capture_path || (argc==2 && (strcmp(argv[1],"--pause")==0 || strcmp(argv[1],"--pause-smoke")==0));
     bool gaining=argc==2 && (strcmp(argv[1],"--gain")==0 || strcmp(argv[1],"--gain-smoke")==0);
     bool stopping=argc==2 && (strcmp(argv[1],"--stop")==0 || strcmp(argv[1],"--stop-smoke")==0);
     bool looping=argc==2 && (strcmp(argv[1],"--loop")==0 || strcmp(argv[1],"--loop-smoke")==0);
     bool smoke=argc==2 && (strcmp(argv[1],"--smoke")==0 || strcmp(argv[1],"--loop-smoke")==0 || strcmp(argv[1],"--stop-smoke")==0 || strcmp(argv[1],"--gain-smoke")==0 || strcmp(argv[1],"--pause-smoke")==0);
     if(argc!=1 && !smoke && !looping && !stopping && !gaining && !pausing) {
-        fprintf(stderr,"Usage: %s [--smoke | --loop | --loop-smoke | --stop | --stop-smoke | --gain | --gain-smoke | --pause | --pause-smoke]\n",argv[0]); return 1;
+        fprintf(stderr,"Usage: %s [--smoke | --loop | --loop-smoke | --stop | --stop-smoke | --gain | --gain-smoke | --pause | --pause-smoke | --pause-capture output.wav]\n",argv[0]); return 1;
     }
     if(SDL_Init(SDL_INIT_AUDIO)!=0) {
         fprintf(stderr,"SDL audio: %s\n",SDL_GetError()); return 1;
     }
     host_t host={0};
+    if (capture_path) {
+        host.capture_capacity=48000u*20u;
+        host.capture=SDL_malloc(host.capture_capacity*2*sizeof(float));
+        if (!host.capture) { SDL_Quit(); return 1; }
+        /* Touch storage before playback; callback does only a bounded copy. */
+        memset(host.capture,0,host.capture_capacity*2*sizeof(float));
+    }
     SDL_AudioSpec want={0}, got={0};
     want.freq=48000; want.format=AUDIO_F32SYS; want.channels=2;
     want.samples=512; want.callback=audio_callback; want.userdata=&host;
     SDL_AudioDeviceID device=SDL_OpenAudioDevice(NULL,0,&want,&got,SDL_AUDIO_ALLOW_SAMPLES_CHANGE);
     if(!device) {
-        fprintf(stderr,"Open audio: %s\n",SDL_GetError()); SDL_Quit(); return 1;
+        fprintf(stderr,"Open audio: %s\n",SDL_GetError()); SDL_free(host.capture); SDL_Quit(); return 1;
     }
+    if (capture_path) printf("SDL driver: %s; callback: %d Hz, %u channels, %u frames\n",
+        SDL_GetCurrentAudioDriver(),got.freq,(unsigned)got.channels,(unsigned)got.samples);
     puts("Prepared music listening test: start with low speaker volume.");
     bool ok=pausing ? play_pause(device,&host,smoke) : true;
     for(unsigned pass=0;!pausing && ok && pass<(smoke?1u:gaining?2u:stopping?3u:looping?1u:5u);++pass) {
@@ -223,7 +281,10 @@ int main(int argc, char **argv) {
         sb_music_sequence_reset(&host.sequence);
         if(stopping && !smoke) SDL_Delay(250);
     }
-    SDL_CloseAudioDevice(device); SDL_Quit();
+    SDL_CloseAudioDevice(device);
+    if (capture_path && ok) ok=save_capture(capture_path,&host);
+    SDL_free(host.capture);
+    SDL_Quit();
     puts(ok?"Sequence complete; musical quality requires listening acceptance.":
             "Sequence failed validation, rendering, or timed out.");
     return ok?0:1;

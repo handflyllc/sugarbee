@@ -223,5 +223,8 @@ See [host lifecycle contract and validation](../../tests/music-pause.md).
 The adapter is exercised by native tests and the diagnostic host only; music is
 not yet routed through the production mixer. Shared-voice reservations and
 cartridge/Lua integration remain deferred. User confirmed desktop music pause
-and existing session listening checks, exit 0 for both. Pi acceptance is pending. The prior SugarBeats gain consumer passed 7/7 checks at `a6c80e7`
+and existing session listening checks, exit 0 for both. Pi at `c46c17c` passed
+101/101 tests and returned exit 0 throughout, but a reported brief pop at stop
+during pause fade leaves audible acceptance open; other listening checks passed.
+Cause is unconfirmed. See the validation record for the investigation. The prior SugarBeats gain consumer passed 7/7 checks at `a6c80e7`
 with exact sample parity and balanced allocations, per the shared passdown.
