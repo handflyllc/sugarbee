@@ -71,9 +71,9 @@ static int lab(const char *path, bool unavailable, bool musical, bool pong) {
         set_cartridge_paused(true);
         if (a) {
             audio_output(a,(Uint8 *)output,sizeof output);
-            sb_audio_bank_t frozen=a->bank;
+            sb_audio_bank_t frozen=a->music.sequence.bank;
             audio_output(a,(Uint8 *)output,sizeof output);
-            CHECK(!memcmp(&frozen,&a->bank,sizeof frozen));
+            CHECK(!memcmp(&frozen,&a->music.sequence.bank,sizeof frozen));
             for (unsigned i=0;i<2048;++i) CHECK(output[i]==0);
         }
         set_cartridge_paused(false);
@@ -129,13 +129,13 @@ int main(int argc, char **argv) {
     CHECK(run("s=sugarbee.synth; assert(type(s)=='table'); assert(s.configure(1,{}))"));
     CHECK(!bank_active(a));
     CHECK(run("local t=setmetatable({}, {__index=function() error('must not run') end}); assert(s.configure(1,t)); local c={volume=.5}; assert(s.configure(1,c)); c.volume=0"));
-    CHECK(a->bank.voices[0].volume==.5);
+    CHECK(a->music.sequence.bank.voices[0].volume==.5);
     CHECK(run("assert(s.configure(1,{waveform='pulse',attack=.03,volume=.8,pan=-1,filter={cutoff=700,bypass=false}}))"));
     CHECK(run("assert(s.configure(1,{release=.5,filter={cutoff=900}}))"));
-    CHECK(a->bank.voices[0].settings.attack==.03 && a->bank.voices[0].settings.release==.5);
-    CHECK(a->bank.voices[0].volume==.8 && a->bank.filters[0].cutoff==900);
-    CHECK(a->bank.filters[0].wet==1 && a->bank.kind[0]==SB_AUDIO_VOICE_PULSE);
-    sb_audio_bank_t before=a->bank;
+    CHECK(a->music.sequence.bank.voices[0].settings.attack==.03 && a->music.sequence.bank.voices[0].settings.release==.5);
+    CHECK(a->music.sequence.bank.voices[0].volume==.8 && a->music.sequence.bank.filters[0].cutoff==900);
+    CHECK(a->music.sequence.bank.filters[0].wet==1 && a->music.sequence.bank.kind[0]==SB_AUDIO_VOICE_PULSE);
+    sb_audio_bank_t before=a->music.sequence.bank;
     CHECK(run(
         "local function bad(f) assert(not pcall(f)) end "
         "for _,v in ipairs({0,10,1.5,'1',false,{}}) do bad(function() s.configure(v,{}) end) end "
@@ -157,23 +157,23 @@ int main(int argc, char **argv) {
         "bad(function() s.note_on(1,881) end) "
         "bad(function() s.note_off(1,2) end) "
         "bad(function() s.stop() end)"));
-    CHECK(!memcmp(&before,&a->bank,sizeof before));
+    CHECK(!memcmp(&before,&a->music.sequence.bank,sizeof before));
     CHECK(run("assert(s.note_on(1,440)); assert(s.note_on(2,110)); assert(s.note_on(9,880))"));
     float out[2048];
     audio_output(a,(Uint8 *)out,sizeof out);
     CHECK(bank_active(a));
     CHECK(run("assert(s.configure(1,{waveform='saw'}))"));
-    before=a->bank;
+    before=a->music.sequence.bank;
     CHECK(run("local ok,why=s.configure(1,{waveform='noise',volume=.1}); assert(ok==false and why=='audio_rejected')"));
-    CHECK(!memcmp(&before,&a->bank,sizeof before));
+    CHECK(!memcmp(&before,&a->music.sequence.bank,sizeof before));
     CHECK(run("assert(s.note_on(1,330)); assert(not pcall(s.note_on,1))")); /* Cache unchanged. */
     audio_output(a,(Uint8 *)out,sizeof out);
     CHECK(run("assert(s.configure(1,{waveform='noise'})); assert(s.note_on(1)); assert(not pcall(s.note_on,1,440))"));
     set_cartridge_paused(true);
     audio_output(a,(Uint8 *)out,sizeof out);
-    before=a->bank;
+    before=a->music.sequence.bank;
     audio_output(a,(Uint8 *)out,sizeof out);
-    CHECK(!memcmp(&before,&a->bank,sizeof before));
+    CHECK(!memcmp(&before,&a->music.sequence.bank,sizeof before));
     for (unsigned i=0;i<2048;++i) CHECK(out[i]==0);
     set_cartridge_paused(false);
     CHECK(run("assert(s.note_off(1)); assert(s.stop(2)); assert(s.stop(9)); assert(s.stop(9))"));

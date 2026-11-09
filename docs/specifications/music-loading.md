@@ -264,3 +264,21 @@ WAV, Lua and cartridge integration remain deferred. Pi acceptance reported by
 the user on 2026-11-09 at `8d6e69e5b5668a7aaa1f3d136070f20d8f8bdd01`:
 103/103 tests passed, exit 0; shared host pause checks passed, owner 7432 bytes.
 Next priority: SugarBeats bounded offline combined lifecycle consumer checks.
+
+
+## Production SDL routing — 2026-11-09 checkpoint
+
+Already prepared songs can now run through the production SDL session using
+internal device-locked controls in `src/sb_audio_music.h`. Shared reservations
+protect every direct synth mutation, including settings application. One host
+fade covers the combined music, synth effect and WAV mix; music gain and cleanup
+remain music-only. Session failure/end/fresh start clear borrowed music safely.
+See [production contract and validation](../../tests/music-production.md).
+
+The loader and JSON format are unchanged. Cartridge loading, asset registries,
+Lua music bindings and composer preview expansion remain separate checkpoints.
+Desktop acceptance reported 2026-11-09: three diagnostics and Musical Synth Lab
+pause/exit/resume/reload passed; WAV Lab lifecycle subsequently passed as well.
+Desktop acceptance is complete. Pi acceptance remains pending.
+SugarBeats' preceding combined consumer completed at reviewed pin `4292b88`,
+7/7 checks, 224 tracked allocations matched frees and no contract mismatch.

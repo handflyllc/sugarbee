@@ -3,6 +3,8 @@
 #include "sb_audio_tone.h"
 #include "sb_audio_session_gain.h"
 #include "sb_audio_bank.h"
+#include "sb_music_shared.h"
+#include "sb_audio_music.h"
 #include "sb_wav_internal.h"
 #include <SDL2/SDL.h>
 #include <stdio.h>
@@ -15,17 +17,15 @@ struct sb_audio {
     SDL_AudioDeviceID device;
     sb_audio_tone_t tone;
     sb_audio_triangle_t triangle;
-    sb_audio_bank_t bank;
+    sb_music_shared_t music;
     sb_wav_pool_t wav;
     audio_mode_t mode;
-    bool paused;
-    sb_audio_session_gain_t fade;
 };
 
 /* Caller holds the device lock, or is the callback itself. */
 static bool bank_active(const sb_audio_t *audio) {
     for (unsigned voice = 1; voice <= SB_AUDIO_BANK_VOICES; ++voice)
-        if (sb_audio_bank_active(&audio->bank, voice)) return true;
+        if (sb_audio_bank_active(&audio->music.sequence.bank, voice)) return true;
     return false;
 }
 
@@ -42,25 +42,25 @@ static bool bank_controls_allowed(const sb_audio_t *audio) {
     return audio->mode == AUDIO_DIAGNOSTIC || audio->mode == AUDIO_SESSION;
 }
 static void ramp_session(sb_audio_t *audio, double target) {
-    sb_audio_session_gain_ramp(&audio->fade, target);
+    sb_audio_session_gain_ramp(&audio->music.transport.fade, target);
 }
 /* Callback only. Freeze the complete bank at silence; process a fade exactly
  * once per frame regardless of callback size. Failed sessions cannot resume. */
 static void render_session(sb_audio_t *audio, float *output, size_t frames) {
     for (size_t i=0; i<frames; ++i) {
-        if (!audio->fade.left && (audio->paused || audio->mode == AUDIO_FAILED)) continue;
+        if (!audio->music.transport.fade.left && (audio->music.transport.paused || audio->mode == AUDIO_FAILED)) continue;
         float sample[2];
-        (void)sb_audio_bank_render(&audio->bank, sample, 1);
+        if (!sb_music_transport_render_frame(&audio->music.transport,
+                &audio->music.sequence,sample)) continue;
         float wav[2];
         sb_wav_render(&audio->wav,wav,1);
-        output[2*i] = (float)((sample[0]*bank_diagnostic_gain+wav[0])*audio->fade.value);
-        output[2*i+1] = (float)((sample[1]*bank_diagnostic_gain+wav[1])*audio->fade.value);
-        if (audio->fade.left) {
-            sb_audio_session_gain_advance(&audio->fade);
-            if (!audio->fade.left && audio->mode == AUDIO_FAILED) {
-                sb_audio_bank_reset(&audio->bank);
-                sb_wav_stop_all(&audio->wav);
-            }
+        output[2*i] = (float)((sample[0]*bank_diagnostic_gain+wav[0])*audio->music.transport.fade.value);
+        output[2*i+1] = (float)((sample[1]*bank_diagnostic_gain+wav[1])*audio->music.transport.fade.value);
+        sb_music_transport_advance_frame(&audio->music.transport,&audio->music.sequence);
+        if (!audio->music.transport.fade.left && audio->mode == AUDIO_FAILED) {
+            sb_music_shared_reset(&audio->music);
+            sb_audio_bank_reset(&audio->music.sequence.bank);
+            sb_wav_stop_all(&audio->wav);
         }
     }
 }
@@ -82,7 +82,7 @@ static void audio_output(void *userdata, Uint8 *stream, int length) {
         if (audio->triangle.active)
             sb_audio_triangle_render(&audio->triangle, (float *)stream, frames);
         else
-            (void)sb_audio_bank_render(&audio->bank, (float *)stream, frames);
+            (void)sb_audio_bank_render(&audio->music.sequence.bank, (float *)stream, frames);
         /* Diagnostic loudness is independent of the bank's fixed 1/9 headroom. */
         float *samples = (float *)stream;
         for (size_t i = 0; i < frames * 2; ++i) samples[i] *= gain;
@@ -125,6 +125,7 @@ sb_audio_t *sb_audio_create(void) {
         free(audio);
         return NULL;
     }
+    sb_music_shared_init(&audio->music);
     SDL_PauseAudioDevice(audio->device, 0);
     return audio;
 }
@@ -134,6 +135,7 @@ void sb_audio_destroy(sb_audio_t *audio) {
     /* SDL waits for any running callback before returning. No application
        drain loop or wait for future sounds is introduced. */
     SDL_CloseAudioDevice(audio->device);
+    sb_music_shared_init(&audio->music);
     sb_wav_pool_reset(&audio->wav);
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
     free(audio);
@@ -225,7 +227,7 @@ bool sb_audio_voice_configure(sb_audio_t *audio, unsigned voice, double attack,
     if (!audio) return false;
     sb_envelope_settings_t settings = {attack, decay, sustain, release};
     SDL_LockAudioDevice(audio->device);
-    bool ok = bank_controls_allowed(audio) && sb_audio_bank_configure(&audio->bank, voice, &settings);
+    bool ok = bank_controls_allowed(audio) && sb_music_shared_voice_configure(&audio->music, voice, &settings);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
@@ -233,49 +235,49 @@ bool sb_audio_voice_note_on(sb_audio_t *audio, unsigned voice, double frequency)
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
     bool ok = bank_controls_allowed(audio) && !audio->tone.active && !audio->triangle.active &&
-              sb_audio_bank_note_on(&audio->bank, voice, frequency);
+              sb_music_shared_voice_note_on(&audio->music, voice, frequency);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
 bool sb_audio_voice_pitch(sb_audio_t *audio, unsigned voice, double frequency) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
-    bool ok = bank_controls_allowed(audio) && sb_audio_bank_pitch(&audio->bank, voice, frequency);
+    bool ok = bank_controls_allowed(audio) && sb_music_shared_voice_pitch(&audio->music, voice, frequency);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
 bool sb_audio_voice_volume(sb_audio_t *audio, unsigned voice, double volume) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
-    bool ok = bank_controls_allowed(audio) && sb_audio_bank_volume(&audio->bank, voice, volume);
+    bool ok = bank_controls_allowed(audio) && sb_music_shared_voice_volume(&audio->music, voice, volume);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
 bool sb_audio_voice_pan(sb_audio_t *audio, unsigned voice, double pan) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
-    bool ok = bank_controls_allowed(audio) && sb_audio_bank_pan(&audio->bank, voice, pan);
+    bool ok = bank_controls_allowed(audio) && sb_music_shared_voice_pan(&audio->music, voice, pan);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
 bool sb_audio_voice_note_off(sb_audio_t *audio, unsigned voice) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
-    bool ok = bank_controls_allowed(audio) && sb_audio_bank_note_off(&audio->bank, voice);
+    bool ok = bank_controls_allowed(audio) && sb_music_shared_voice_note_off(&audio->music, voice);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
 bool sb_audio_voice_stop(sb_audio_t *audio, unsigned voice) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
-    bool ok = bank_controls_allowed(audio) && sb_audio_bank_stop(&audio->bank, voice);
+    bool ok = bank_controls_allowed(audio) && sb_music_shared_voice_stop(&audio->music, voice);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
 bool sb_audio_voice_active(sb_audio_t *audio, unsigned voice) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
-    bool ok = bank_controls_allowed(audio) && sb_audio_bank_active(&audio->bank, voice);
+    bool ok = bank_controls_allowed(audio) && sb_audio_bank_active(&audio->music.sequence.bank, voice);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
@@ -284,14 +286,14 @@ bool sb_audio_voice_noise_on(sb_audio_t *audio, unsigned voice) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
     bool ok = bank_controls_allowed(audio) && !audio->tone.active && !audio->triangle.active &&
-              sb_audio_bank_noise_on(&audio->bank, voice);
+              sb_music_shared_voice_noise_on(&audio->music, voice);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
 bool sb_audio_voice_seed(sb_audio_t *audio, unsigned voice, uint32_t seed) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
-    bool ok = bank_controls_allowed(audio) && sb_audio_bank_seed(&audio->bank, voice, seed);
+    bool ok = bank_controls_allowed(audio) && sb_music_shared_voice_seed(&audio->music, voice, seed);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
@@ -300,7 +302,7 @@ bool sb_audio_voice_saw_on(sb_audio_t *audio, unsigned voice, double frequency) 
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
     bool ok = bank_controls_allowed(audio) && !audio->tone.active && !audio->triangle.active &&
-              sb_audio_bank_saw_on(&audio->bank, voice, frequency);
+              sb_music_shared_voice_saw_on(&audio->music, voice, frequency);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
@@ -309,7 +311,7 @@ bool sb_audio_voice_pulse_on(sb_audio_t *audio, unsigned voice, double frequency
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
     bool ok = bank_controls_allowed(audio) && !audio->tone.active && !audio->triangle.active &&
-              sb_audio_bank_pulse_on(&audio->bank, voice, frequency);
+              sb_music_shared_voice_pulse_on(&audio->music, voice, frequency);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
@@ -317,7 +319,7 @@ bool sb_audio_voice_pulse_on(sb_audio_t *audio, unsigned voice, double frequency
 bool sb_audio_voice_pulse_width(sb_audio_t *audio, unsigned voice, double width) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
-    bool ok = bank_controls_allowed(audio) && sb_audio_bank_pulse_width(&audio->bank, voice, width);
+    bool ok = bank_controls_allowed(audio) && sb_music_shared_voice_pulse_width(&audio->music, voice, width);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
@@ -325,7 +327,7 @@ bool sb_audio_voice_pulse_width(sb_audio_t *audio, unsigned voice, double width)
 bool sb_audio_voice_waveform(sb_audio_t *audio, unsigned voice, sb_audio_voice_kind_t kind) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
-    bool ok = bank_controls_allowed(audio) && sb_audio_bank_waveform(&audio->bank, voice, kind);
+    bool ok = bank_controls_allowed(audio) && sb_music_shared_voice_waveform(&audio->music, voice, kind);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
@@ -333,7 +335,7 @@ bool sb_audio_voice_start_selected(sb_audio_t *audio, unsigned voice, double fre
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
     bool ok = bank_controls_allowed(audio) && !audio->tone.active && !audio->triangle.active &&
-              sb_audio_bank_start_selected(&audio->bank, voice, frequency);
+              sb_music_shared_voice_start_selected(&audio->music, voice, frequency);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
@@ -342,7 +344,7 @@ bool sb_audio_voice_start_selected_noise(sb_audio_t *audio, unsigned voice) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
     bool ok = bank_controls_allowed(audio) && !audio->tone.active && !audio->triangle.active &&
-              sb_audio_bank_start_selected_noise(&audio->bank, voice);
+              sb_music_shared_voice_start_selected_noise(&audio->music, voice);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
@@ -350,14 +352,14 @@ bool sb_audio_voice_start_selected_noise(sb_audio_t *audio, unsigned voice) {
 bool sb_audio_voice_filter_cutoff(sb_audio_t *audio, unsigned voice, double cutoff) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
-    bool ok = bank_controls_allowed(audio) && sb_audio_bank_filter_cutoff(&audio->bank, voice, cutoff);
+    bool ok = bank_controls_allowed(audio) && sb_music_shared_voice_filter_cutoff(&audio->music, voice, cutoff);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
 bool sb_audio_voice_filter_bypass(sb_audio_t *audio, unsigned voice, bool bypass) {
     if (!audio) return false;
     SDL_LockAudioDevice(audio->device);
-    bool ok = bank_controls_allowed(audio) && sb_audio_bank_filter_bypass(&audio->bank, voice, bypass);
+    bool ok = bank_controls_allowed(audio) && sb_music_shared_voice_filter_bypass(&audio->music, voice, bypass);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
@@ -367,22 +369,21 @@ bool sb_audio_voice_filter_bypass(sb_audio_t *audio, unsigned voice, bool bypass
 void sb_audio_session_begin(sb_audio_t *audio) {
     if (!audio) return;
     SDL_LockAudioDevice(audio->device);
-    sb_audio_bank_reset(&audio->bank);
+    sb_music_shared_init(&audio->music);
     sb_wav_pool_reset(&audio->wav);
     audio->tone = (sb_audio_tone_t){0};
     audio->triangle = (sb_audio_triangle_t){0};
     audio->mode = AUDIO_SESSION;
-    audio->paused = false;
-    audio->fade.value = audio->fade.from = audio->fade.target = 1;
-    audio->fade.left = 0;
+    audio->music.transport.paused = false;
+    audio->music.transport.fade.value = audio->music.transport.fade.from = audio->music.transport.fade.target = 1;
+    audio->music.transport.fade.left = 0;
     SDL_UnlockAudioDevice(audio->device);
 }
 void sb_audio_session_pause(sb_audio_t *audio, bool paused) {
     if (!audio) return;
     SDL_LockAudioDevice(audio->device);
-    if (audio->mode == AUDIO_SESSION && audio->paused != paused) {
-        audio->paused = paused;
-        ramp_session(audio, paused ? 0 : 1);
+    if (audio->mode == AUDIO_SESSION && audio->music.transport.paused != paused) {
+        (void)sb_music_shared_pause(&audio->music,paused);
     }
     SDL_UnlockAudioDevice(audio->device);
 }
@@ -391,9 +392,12 @@ void sb_audio_session_fail(sb_audio_t *audio) {
     SDL_LockAudioDevice(audio->device);
     if (audio->mode == AUDIO_SESSION) {
         audio->mode = AUDIO_FAILED;
+        (void)sb_music_shared_stop(&audio->music);
+        audio->music.transport.paused = true;
         ramp_session(audio, 0);
-        if (!audio->fade.left) {
-            sb_audio_bank_reset(&audio->bank);
+        if (!audio->music.transport.fade.left) {
+            sb_music_shared_reset(&audio->music);
+            sb_audio_bank_reset(&audio->music.sequence.bank);
             sb_wav_stop_all(&audio->wav);
         }
     }
@@ -402,14 +406,14 @@ void sb_audio_session_fail(sb_audio_t *audio) {
 void sb_audio_session_end(sb_audio_t *audio) {
     if (!audio) return;
     SDL_LockAudioDevice(audio->device);
-    sb_audio_bank_reset(&audio->bank);
+    sb_music_shared_init(&audio->music);
     sb_wav_pool_reset(&audio->wav);
     audio->tone = (sb_audio_tone_t){0};
     audio->triangle = (sb_audio_triangle_t){0};
     audio->mode = AUDIO_CLOSED;
-    audio->paused = false;
-    audio->fade.value = audio->fade.from = audio->fade.target = 0;
-    audio->fade.left = 0;
+    audio->music.transport.paused = false;
+    audio->music.transport.fade.value = audio->music.transport.fade.from = audio->music.transport.fade.target = 0;
+    audio->music.transport.fade.left = 0;
     SDL_UnlockAudioDevice(audio->device);
 }
 
@@ -418,9 +422,9 @@ void sb_audio_session_prepare_shutdown(sb_audio_t *audio) {
     SDL_LockAudioDevice(audio->device);
     /* Exit from a pause menu must not briefly play shutdown-created notes,
      * even if the pause fade has not yet reached the callback. */
-    if (audio->mode == AUDIO_SESSION && audio->paused) {
-        audio->fade.value = audio->fade.from = audio->fade.target = 0;
-        audio->fade.left = 0;
+    if (audio->mode == AUDIO_SESSION && audio->music.transport.paused) {
+        audio->music.transport.fade.value = audio->music.transport.fade.from = audio->music.transport.fade.target = 0;
+        audio->music.transport.fade.left = 0;
     }
     SDL_UnlockAudioDevice(audio->device);
 }
@@ -435,10 +439,10 @@ bool sb_audio_voice_apply_settings(sb_audio_t *audio, unsigned voice,
     SDL_LockAudioDevice(audio->device);
     /* Fixed-size scratch copy: validate every operation before publishing it.
      * No Lua call, allocation, or error transfer occurs while locked. */
-    sb_audio_bank_t next = audio->bank;
+    sb_audio_bank_t next = audio->music.sequence.bank;
     sb_envelope_settings_t envelope = {settings->attack, settings->decay,
                                        settings->sustain, settings->release};
-    bool ok = bank_controls_allowed(audio) &&
+    bool ok = bank_controls_allowed(audio) && !sb_music_shared_reserved(&audio->music,voice) &&
         sb_audio_bank_configure(&next,voice,&envelope) &&
         sb_audio_bank_volume(&next,voice,settings->volume) &&
         sb_audio_bank_pan(&next,voice,settings->pan) &&
@@ -446,7 +450,7 @@ bool sb_audio_voice_apply_settings(sb_audio_t *audio, unsigned voice,
         sb_audio_bank_filter_cutoff(&next,voice,settings->cutoff) &&
         sb_audio_bank_filter_bypass(&next,voice,settings->bypass) &&
         sb_audio_bank_waveform(&next,voice,settings->waveform);
-    if (ok) audio->bank = next;
+    if (ok) audio->music.sequence.bank = next;
     SDL_UnlockAudioDevice(audio->device);
     return ok;
 }
@@ -510,4 +514,50 @@ bool sb_audio_wav_controls(sb_audio_t *audio,sb_wav_handle_t playback,double vol
     bool ok=bank_controls_allowed(audio) && sb_wav_controls(&audio->wav,playback,volume,pan);
     SDL_UnlockAudioDevice(audio->device);
     return ok;
+}
+
+bool sb_audio_music_start(sb_audio_t *audio, const sb_music_song_t *song,
+                          const unsigned *voices, size_t count, bool loop) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok=audio->mode==AUDIO_SESSION &&
+        sb_music_shared_start(&audio->music,song,voices,count,loop);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+bool sb_audio_music_stop(sb_audio_t *audio) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok=audio->mode==AUDIO_SESSION && sb_music_shared_stop(&audio->music);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+bool sb_audio_music_reset(sb_audio_t *audio) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok=audio->mode==AUDIO_SESSION;
+    if (ok) sb_music_shared_reset(&audio->music);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+bool sb_audio_music_gain(sb_audio_t *audio, double gain) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool ok=audio->mode==AUDIO_SESSION && sb_music_shared_set_gain(&audio->music,gain);
+    SDL_UnlockAudioDevice(audio->device);
+    return ok;
+}
+sb_music_state_t sb_audio_music_state(sb_audio_t *audio) {
+    if (!audio) return SB_MUSIC_IDLE;
+    SDL_LockAudioDevice(audio->device);
+    sb_music_state_t state=audio->music.sequence.state;
+    SDL_UnlockAudioDevice(audio->device);
+    return state;
+}
+bool sb_audio_music_reserved(sb_audio_t *audio, unsigned voice) {
+    if (!audio) return false;
+    SDL_LockAudioDevice(audio->device);
+    bool reserved=sb_music_shared_reserved(&audio->music,voice);
+    SDL_UnlockAudioDevice(audio->device);
+    return reserved;
 }

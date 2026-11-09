@@ -71,8 +71,19 @@ Held music starts preserve effect progression during fade-out; music cleanup
 preserves effects and host fade. Desktop 103/103, 19 focused checks and ten
 native ASan/UBSan checks pass. Pi acceptance reported 2026-11-09 at `8d6e69e`:
 103/103 passed, exit 0; shared-pause checks passed, owner size 7432 bytes.
-Next priority: SugarBeats bounded offline combined host/shared consumer checks.
-Production SDL/WAV/Lua/cartridge integration remains deferred.
+SugarBeats combined consumer completed at reviewed pin `4292b88`: 7/7 checks,
+224 allocations matched frees, no playback allocations or contract mismatch.
+
+Current authorized checkpoint: [production SDL music routing](tests/music-production.md).
+Prepared songs now share the production bank with guarded synth effects; WAVs
+join the mix before one common host fade. Native session controls, reservation
+checks, lifecycle tests and an audible production diagnostic are implemented.
+Desktop automated results are recorded in the checkpoint document. On 2026-11-09
+the user confirmed all three desktop diagnostics and Musical Synth Lab
+pause/exit/resume/reload passed, followed by WAV Lab lifecycle acceptance.
+Desktop acceptance is complete; Pi acceptance remains pending. No cartridge loader integration,
+asset registry or Lua music bindings. Stop at validation, then hand the tested
+pin back to SugarBeats; no preview/editor expansion is authorized here.
 Feature remains unmerged.
 
 ## Validated RC1 baseline

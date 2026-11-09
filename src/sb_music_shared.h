@@ -1,4 +1,4 @@
-/* Internal offline shared music/direct-synth owner. No SDL/Lua integration. */
+/* Internal platform-independent shared music/direct-synth owner. */
 #ifndef SB_MUSIC_SHARED_H
 #define SB_MUSIC_SHARED_H
 #include "sb_music_transport.h"
@@ -30,7 +30,7 @@ bool sb_music_shared_voice_active(const sb_music_shared_t *shared, unsigned voic
  * Reserved voices refuse every mutation, even harmless/repeated commands.
  * Rendering advances music and effects once each; do not also render the bank.
  * This owner includes host pause: do not wrap it in the private host adapter.
- * Production SDL/WAV/Lua integration remains a separate checkpoint. */
+ * The SDL backend owns one of these; Lua music integration is deferred. */
 bool sb_music_shared_voice_configure(sb_music_shared_t *s, unsigned voice, const sb_envelope_settings_t *settings);
 bool sb_music_shared_voice_note_on(sb_music_shared_t *s, unsigned voice, double frequency);
 bool sb_music_shared_voice_noise_on(sb_music_shared_t *s, unsigned voice);
