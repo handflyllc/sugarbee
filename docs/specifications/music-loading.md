@@ -244,4 +244,7 @@ or music-only reset. The private sequencer and host adapter remain available.
 
 See [shared ownership contract and validation](../../tests/music-shared.md).
 Native layout changed; rebuild consumers. Shared production audio/host pause,
-Lua and cartridge integration remain separate. Pi native validation is pending.
+Lua and cartridge integration remain separate. Pi acceptance reported by the
+user on 2026-11-09 at `3f1f849698ada3a24ed0c9a3a7c8748a5161d3e4`: shared
+ownership test exit 0; full suite 102/102 passed, no failures. Next priority:
+SugarBeats bounded offline mapped-voice, refusal, parity and lifetime checks.

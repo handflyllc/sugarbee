@@ -73,10 +73,13 @@ bounded stack scratch; rendering and controls introduce no allocations or I/O.
 Desktop Debug build: no warnings. Full suite **102/102 passed** (106.68 s).
 All 21 focused music/bank/session/sample checks passed. Nine native music/bank
 ASan/UBSan checks passed with leak detection disabled under tracing. Diff and
-whitespace review passed. Pi native validation is pending. This checkpoint has no new SDL listening mode; existing
+whitespace review passed. Pi acceptance reported by the user on 2026-11-09 at
+synchronized `3f1f849698ada3a24ed0c9a3a7c8748a5161d3e4`: `test_music_shared`
+returned exit 0; full suite passed 102/102 with no failures.
+This checkpoint has no new SDL listening mode; existing
 private music/session diagnostics remain regression checks. No new audible
 coexistence acceptance or production integration is claimed.
 
-After engine validation, return to SugarBeats for bounded offline mapped-voice,
+Engine validation is complete. Next priority: SugarBeats bounded offline mapped-voice,
 control-refusal, parity and asset-lifetime checks. Do not add preview controls,
 Lua bindings or production mixer integration in the follower checkpoint.
