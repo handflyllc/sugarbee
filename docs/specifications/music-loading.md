@@ -226,5 +226,8 @@ cartridge/Lua integration remain deferred. User confirmed desktop music pause
 and existing session listening checks, exit 0 for both. Pi at `c46c17c` passed
 101/101 tests and returned exit 0 throughout, but a reported brief pop at stop
 during pause fade leaves audible acceptance open; other listening checks passed.
-Cause is unconfirmed. See the validation record for the investigation. The prior SugarBeats gain consumer passed 7/7 checks at `a6c80e7`
+Capture reconstruction identified scheduled notes cut short near wall-clock
+controls, not output after completed host fades. The diagnostic fixture now
+uses one sustained chord; engine behavior is unchanged. Revised desktop listening
+passed without artifacts, exit 0, per user. Revised Pi listening remains pending. See the validation record for evidence. The prior SugarBeats gain consumer passed 7/7 checks at `a6c80e7`
 with exact sample parity and balanced allocations, per the shared passdown.

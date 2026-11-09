@@ -99,12 +99,13 @@ static bool play_pause(SDL_AudioDeviceID device, host_t *host, bool smoke) {
     sb_music_instrument_t ins[3];
     for (unsigned v=0;v<3;++v)
         ins[v]=(sb_music_instrument_t){SB_AUDIO_VOICE_TRIANGLE,{.01,.1,.7,.12},.6,0,.5,2000,true};
-    sb_music_event_t events[16]; size_t count=0;
+    sb_music_event_t events[6]; size_t count=0;
     const double major[]={220,277.1826309768721,329.6275569128699};
-    const double minor[]={220,261.6255653005986,329.6275569128699};
-    chord(events,&count,0,36000,major,3);
-    chord(events,&count,48000,36000,minor,3);
-    sb_music_song_t song={48000,3,96000,ins,events,count};
+    /* Keep every scripted control inside one sustained note. Short authored
+     * rests followed by new notes near wall-clock controls can sound like
+     * post-fade blips even though they precede completion of the host fade. */
+    chord(events,&count,0,30u*48000u,major,3);
+    sb_music_song_t song={48000,3,31u*48000u,ins,events,count};
     host->pause_mode=true;
     sb_music_host_t *h=&host->music_host;
     sb_music_host_reset(h);
@@ -112,7 +113,7 @@ static bool play_pause(SDL_AudioDeviceID device, host_t *host, bool smoke) {
     if (ok) SDL_PauseAudioDevice(device,0);
     const char *messages[]={
         "Pause: fade out, then hold silent.",
-        "Resume: continue the frozen song.",
+        "Resume: continue the held chord.",
         "Stop during pause fade: stay stopped on resume.",
         "Resume after stop: silence.",
         "Start while paused: hold opening events at frame zero.",

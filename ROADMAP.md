@@ -55,8 +55,11 @@ pause and existing session listening checks, exit 0 for both. Pi at `c46c17c`:
 101/101 tests passed, exit 0; other listening checks passed, but a brief pop at
 stop during pause fade leaves listening acceptance open. Reproduce/isolate this
 artifact before further development or SugarBeats handoff. Follow-up localizes
-the report to `--pause` on HDMI0, not ordinary `--stop`. Optional pre-SDL WAV
-capture is added to the diagnostic; no fade behavior change or fix is claimed. Shared voices and production
+the report to `--pause` on HDMI0, not ordinary `--stop`. Capture inspection subsequently reproduced both Pi files exactly on desktop:
+new notes near wall-clock controls caused the bursts, all ending at host fade
+completion. The diagnostic now uses one sustained chord; engine behavior is
+unchanged. Revised desktop listening passed without artifacts, exit 0, per user.
+Revised Pi listening remains pending. Shared voices and production
 music/cartridge/Lua integration remain separate.
 Feature remains unmerged.
 

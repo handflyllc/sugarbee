@@ -82,10 +82,13 @@ Start with low speaker volume:
 echo $?
 ```
 
-The approximately nine-second script prints each transition. Confirm:
+The approximately nine-second script prints each transition. Its revised fixture
+uses one sustained chord so a new note after an authored rest cannot be confused
+with the host fade. Confirm:
 
 1. Initial playback fades out cleanly and stays silent while paused.
-2. Resume continues the song through a clean fade-in, without an opening restart.
+2. Resume restores the held chord through a clean fade-in, without an extra burst.
+   Native sample comparisons independently verify frozen-position continuity.
 3. Stop during pause fade stays silent after the following resume.
 4. A new start while paused makes no sound; the next resume begins its opening
    chord. The intermediate held start is silently cancelled and prepared again.
@@ -130,3 +133,48 @@ audio. Neither result alone establishes the precise cause. Capturing can alter
 scheduling, so a run without the live artifact is not a reproduction.
 
 No new Pi listening acceptance or runtime fix is claimed by this diagnostic.
+
+
+Capture follow-up (user report, 2026-11-08): both saved Pi WAVs reproduce the
+blips when played on the desktop; `-01` is more pronounced near three seconds.
+This implicates content in the capture rather than HDMI delivery alone; the
+exact sample defect is not yet identified. The provided console reports
+PulseAudio, 48 kHz stereo, 512-frame callbacks, and stop/pause transition frame
+140800. Do not assume that transition frame applies to both files without
+checking each capture. Uploaded byte retrieval failed in this session; waveform
+inspection awaits locally accessible copies. No fix or audible acceptance claimed.
+
+
+### Diagnosis and fixture correction
+
+Both uploaded captures are now inspected locally. `-00` contains 431616 frames;
+`-01` contains 432128, so the earlier 428544-frame console trace is not the exact
+trace for either file. All samples are finite and within range.
+
+Reconstructing the original fixture on desktop with callback-aligned control
+positions reproduces **every stereo float sample exactly** in both Pi captures
+(zero differing samples). Inferred pause/resume/stop positions are 47616/95744/
+143872 for `-00` and 48128/96256/144384 for `-01`. The final pause positions are
+335872 and 336384 respectively. These are reconstruction-derived positions,
+not a claim that the supplied log contains these markers.
+
+The initial chord naturally releases to silence at frame 41760 (0.870 s).
+A new chord begins at 48000 (1.000 s), close to the wall-clock pause request.
+In `-01`, the loud burst starts at frame 143649, before the stop request at
+144384, and ends at 144864: exactly the end of the 480-frame stop/host fade.
+The other bursts likewise end at host fade completion. They are scheduled note
+onsets truncated by controls, not sound reappearing after a completed host fade.
+Wall-clock controls reach different song positions between runs/platforms.
+This evidence does not identify an HDMI, PulseAudio or engine rendering defect.
+
+The pause diagnostic now uses a 30-second held chord in a 31-second eligible
+loop; its approximately nine-second script reaches no new note/rest boundary.
+No engine fade, stop, scheduling or ownership behavior changed. Capture remains
+available. User confirmed revised desktop listening on 2026-11-08
+(America/New_York): no audible artifacts, exit 0. Revised Pi listening remains
+pending; do not claim its acceptance from inspection of the earlier recordings.
+
+Revised-fixture desktop checks: warning-free diagnostic build; all 14
+music/session checks passed. A complete SDL dummy capture passed format/range
+inspection and exact-zero checks from each host fade completion to the next
+intended resume/start (or end). No audible acceptance is inferred from this run.
