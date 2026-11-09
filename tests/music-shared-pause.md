@@ -71,10 +71,13 @@ protect against double rendering and unintended reset.
 Desktop Debug build: warning-free. Full suite **103/103 passed** (107.56 s).
 All 19 focused music/bank/session checks passed; ten native music/bank ASan/UBSan
 checks passed with leak detection disabled under tracing. Diff/whitespace review
-passed. Pi native validation remains pending.
+passed. Pi acceptance reported by the user on 2026-11-09 at synchronized
+`8d6e69e5b5668a7aaa1f3d136070f20d8f8bdd01`: **103/103 tests passed**, exit 0;
+`test_music_shared_pause` reported passing checks and a 7432-byte shared host
+owner, matching the desktop size.
 This offline checkpoint introduces no new listening mode or claim of audible
 shared playback. Existing private-host SDL diagnostics remain regression checks.
 
-After engine acceptance, return to SugarBeats for bounded offline combined
+Engine acceptance is complete. Next priority: SugarBeats bounded offline combined
 host/shared ownership checks. Production SDL routing, WAV coexistence, Lua and
 cartridge integration remain deferred.

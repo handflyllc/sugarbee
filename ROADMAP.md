@@ -65,11 +65,13 @@ Desktop 102/102 and nine native ASan/UBSan checks pass. Pi acceptance reported
 2026-11-09 at `3f1f849`: shared test exit 0; full suite 102/102, no failures.
 SugarBeats shared consumer passed 7/7 at `c3c176a`, with 220 allocations matched
 by frees and no playback/control allocations. No contract mismatch found.
-Current authorized checkpoint: [combined native shared-owner host pause](tests/music-shared-pause.md).
+Accepted checkpoint: [combined native shared-owner host pause](tests/music-shared-pause.md).
 The private adapter and shared owner reuse one native lifecycle implementation.
 Held music starts preserve effect progression during fade-out; music cleanup
 preserves effects and host fade. Desktop 103/103, 19 focused checks and ten
-native ASan/UBSan checks pass. Pi validation pending.
+native ASan/UBSan checks pass. Pi acceptance reported 2026-11-09 at `8d6e69e`:
+103/103 passed, exit 0; shared-pause checks passed, owner size 7432 bytes.
+Next priority: SugarBeats bounded offline combined host/shared consumer checks.
 Production SDL/WAV/Lua/cartridge integration remains deferred.
 Feature remains unmerged.
 

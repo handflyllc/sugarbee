@@ -260,4 +260,7 @@ preserves host pause/fade state. Render each bank once through its owning API.
 
 See [combined lifecycle contract and validation](../../tests/music-shared-pause.md).
 Internal host/shared-owner layout changed; rebuild consumers. Production SDL,
-WAV, Lua and cartridge integration remain deferred. Pi validation is pending.
+WAV, Lua and cartridge integration remain deferred. Pi acceptance reported by
+the user on 2026-11-09 at `8d6e69e5b5668a7aaa1f3d136070f20d8f8bdd01`:
+103/103 tests passed, exit 0; shared host pause checks passed, owner 7432 bytes.
+Next priority: SugarBeats bounded offline combined lifecycle consumer checks.
