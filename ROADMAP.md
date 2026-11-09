@@ -46,21 +46,18 @@ Pi acceptance reported by the user on 2026-11-09 (UTC) at synchronized
 `6fe04d9`: 99/99 tests passed, exit 0; validation checks passed, exit 0.
 SugarBeats gain consumer completed at `a6c80e7`: 7/7 checks, exact gain parity,
 whole/single-frame equivalence and 200 tracked allocations matched frees.
-Current authorized checkpoint: [native host pause](tests/music-pause.md).
+Accepted checkpoint: [native host pause](tests/music-pause.md).
 A native adapter exercises fade/freeze/resume, held starts and paused stop using
 the existing session fade calculation, now shared with production SDL audio.
-Desktop 101/101 and seven native ASan/UBSan checks pass; 14 music/session
-checks and the full dummy pause diagnostic pass. User confirmed desktop music
-pause and existing session listening checks, exit 0 for both. Pi at `c46c17c`:
-101/101 tests passed, exit 0; other listening checks passed, but a brief pop at
-stop during pause fade leaves listening acceptance open. Reproduce/isolate this
-artifact before further development or SugarBeats handoff. Follow-up localizes
-the report to `--pause` on HDMI0, not ordinary `--stop`. Capture inspection subsequently reproduced both Pi files exactly on desktop:
-new notes near wall-clock controls caused the bursts, all ending at host fade
-completion. The diagnostic now uses one sustained chord; engine behavior is
-unchanged. Revised desktop listening passed without artifacts, exit 0, per user.
-Revised Pi listening remains pending. Shared voices and production
-music/cartridge/Lua integration remain separate.
+Desktop 101/101 and seven native ASan/UBSan checks passed. Pi at `c46c17c`:
+101/101 tests passed, exit 0; listening exposed misleading short notes near the
+diagnostic's wall-clock controls. Exact capture reconstruction identified the
+fixture timing, not an engine fade defect. The fixture now uses a sustained chord.
+Revised desktop listening passed without artifacts, exit 0. On 2026-11-09 the
+user confirmed all Pi validation checks passed at synchronized `4a03f4e`.
+Host pause acceptance is complete. Next priority: SugarBeats bounded offline
+host-lifecycle consumer validation. Shared voices and production music/cartridge/
+Lua integration remain separate.
 Feature remains unmerged.
 
 ## Validated RC1 baseline

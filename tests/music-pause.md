@@ -1,5 +1,16 @@
 # Native host pause checkpoint
 
+## Current acceptance — 2026-11-09
+
+User confirmed all Pi validation checks passed at synchronized
+`4a03f4e2a2156739ba2c3d5bb12bf4d9d64121cd`. Revised desktop listening had
+already passed without artifacts, exit 0. Prior full desktop/Pi suites passed
+101/101; revised-fixture desktop music/session checks passed 14/14. The listening
+gate is now closed. Earlier pending statements below are investigation history.
+Next priority: SugarBeats bounded offline host-lifecycle consumer validation.
+The two diagnostic WAV captures may now be deleted; the diagnosis is preserved
+below. No engine fade correction was needed. Feature remains unmerged.
+
 Internal adapter: `src/sb_music_host.h`. This proves host lifecycle behavior with
 an exclusive music bank; it does not connect music to the production mixer,
 reserve shared voices, or expose a Lua/cartridge API. Production session audio
@@ -171,8 +182,8 @@ The pause diagnostic now uses a 30-second held chord in a 31-second eligible
 loop; its approximately nine-second script reaches no new note/rest boundary.
 No engine fade, stop, scheduling or ownership behavior changed. Capture remains
 available. User confirmed revised desktop listening on 2026-11-08
-(America/New_York): no audible artifacts, exit 0. Revised Pi listening remains
-pending; do not claim its acceptance from inspection of the earlier recordings.
+(America/New_York): no audible artifacts, exit 0. Revised Pi listening subsequently passed per the user on 2026-11-09 at
+`4a03f4e`; this acceptance is separate from inspection of the earlier recordings.
 
 Revised-fixture desktop checks: warning-free diagnostic build; all 14
 music/session checks passed. A complete SDL dummy capture passed format/range

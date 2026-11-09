@@ -222,12 +222,12 @@ See [host lifecycle contract and validation](../../tests/music-pause.md).
 
 The adapter is exercised by native tests and the diagnostic host only; music is
 not yet routed through the production mixer. Shared-voice reservations and
-cartridge/Lua integration remain deferred. User confirmed desktop music pause
-and existing session listening checks, exit 0 for both. Pi at `c46c17c` passed
-101/101 tests and returned exit 0 throughout, but a reported brief pop at stop
-during pause fade leaves audible acceptance open; other listening checks passed.
-Capture reconstruction identified scheduled notes cut short near wall-clock
-controls, not output after completed host fades. The diagnostic fixture now
-uses one sustained chord; engine behavior is unchanged. Revised desktop listening
-passed without artifacts, exit 0, per user. Revised Pi listening remains pending. See the validation record for evidence. The prior SugarBeats gain consumer passed 7/7 checks at `a6c80e7`
-with exact sample parity and balanced allocations, per the shared passdown.
+cartridge/Lua integration remain deferred. Desktop and Pi full suites passed
+101/101 at the original checkpoint. Capture reconstruction explained the
+reported Pi blips as scheduled notes near diagnostic wall-clock controls, not
+output after completed host fades. The revised sustained-chord fixture passed
+desktop listening without artifacts, exit 0. On 2026-11-09 the user confirmed
+all Pi validation checks passed at `4a03f4e2a2156739ba2c3d5bb12bf4d9d64121cd`.
+Acceptance is complete; next priority is bounded SugarBeats host-lifecycle
+consumer validation. See the validation record for evidence. The prior gain
+consumer passed 7/7 checks at `a6c80e7` with exact parity and balanced allocations.
