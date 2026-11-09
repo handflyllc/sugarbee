@@ -123,6 +123,19 @@ static void finish_if_silent(sb_music_sequence_t *s) {
     sb_music_sequence_reset(s);
 }
 
+bool sb_music_sequence_stop(sb_music_sequence_t *s) {
+    if (!s) return false;
+    if (s->state == SB_MUSIC_IDLE) return true;
+    /* Stop event dispatch and boundary restart before applying voice fades.
+     * Bank stop is idempotent: repeated calls do not restart a running fade. */
+    s->loop = false;
+    s->state = SB_MUSIC_FINISHING;
+    for (unsigned v = 1; v <= s->song->track_count; ++v)
+        (void)sb_audio_bank_stop(&s->bank, v);
+    finish_if_silent(s);
+    return true;
+}
+
 bool sb_music_sequence_render(sb_music_sequence_t *s, float *output, size_t frames) {
     if (!s || (frames && !output) || frames > SIZE_MAX / (2 * sizeof(float))) return false;
     for (size_t n = 0; n < frames; ++n) {

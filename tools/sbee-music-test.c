@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef struct { sb_music_sequence_t sequence; bool failed; uint64_t remaining; } host_t;
+typedef struct { sb_music_sequence_t sequence; bool failed; uint64_t remaining; bool fade_at_limit; } host_t;
 static void audio_callback(void *userdata, Uint8 *stream, int length) {
     host_t *host=userdata;
     memset(stream,0,(size_t)length);
@@ -18,9 +18,15 @@ static void audio_callback(void *userdata, Uint8 *stream, int length) {
     }
     if(host->remaining) {
         host->remaining-=frames;
-        /* Test-only termination at an eligible iteration boundary; this is
-         * cleanup, not a new production fade/stop contract. */
-        if(!host->remaining) sb_music_sequence_reset(&host->sequence);
+        /* Diagnostic countdown: stop within this buffer, or clean up a fixed
+         * number of completed eligible loop iterations. */
+        if(!host->remaining) {
+            if(host->fade_at_limit) {
+                if(!sb_music_sequence_stop(&host->sequence) ||
+                   !sb_music_sequence_render(&host->sequence,(float *)stream+2*frames,
+                       (size_t)length/(2*sizeof(float))-frames)) host->failed=true;
+            } else sb_music_sequence_reset(&host->sequence);
+        }
     }
     /* Match the current SDL bank attenuation; bank already applies 1/9. */
     float *samples=(float *)stream;
@@ -37,9 +43,10 @@ static void chord(sb_music_event_t *events, size_t *count, uint64_t start,
 }
 
 static bool play(SDL_AudioDeviceID device, host_t *host, const sb_music_song_t *song,
-                 Uint32 timeout, unsigned iterations) {
+                 Uint32 timeout, unsigned iterations, uint64_t stop_after) {
     /* Device remains paused while caller-owned fixture data is prepared. */
-    host->remaining=iterations>1?song->end_frame*iterations:0;
+    host->fade_at_limit=stop_after!=0;
+    host->remaining=stop_after?stop_after:(iterations>1?song->end_frame*iterations:0);
     if(iterations>1) {
         if(!sb_music_sequence_start_loop(&host->sequence,song)) return false;
     } else if(!sb_music_sequence_start(&host->sequence,song)) return false;
@@ -59,10 +66,11 @@ static bool play(SDL_AudioDeviceID device, host_t *host, const sb_music_song_t *
 }
 
 int main(int argc, char **argv) {
+    bool stopping=argc==2 && (strcmp(argv[1],"--stop")==0 || strcmp(argv[1],"--stop-smoke")==0);
     bool looping=argc==2 && (strcmp(argv[1],"--loop")==0 || strcmp(argv[1],"--loop-smoke")==0);
-    bool smoke=argc==2 && (strcmp(argv[1],"--smoke")==0 || strcmp(argv[1],"--loop-smoke")==0);
-    if(argc!=1 && !smoke && !looping) {
-        fprintf(stderr,"Usage: %s [--smoke | --loop | --loop-smoke]\n",argv[0]); return 1;
+    bool smoke=argc==2 && (strcmp(argv[1],"--smoke")==0 || strcmp(argv[1],"--loop-smoke")==0 || strcmp(argv[1],"--stop-smoke")==0);
+    if(argc!=1 && !smoke && !looping && !stopping) {
+        fprintf(stderr,"Usage: %s [--smoke | --loop | --loop-smoke | --stop | --stop-smoke]\n",argv[0]); return 1;
     }
     if(SDL_Init(SDL_INIT_AUDIO)!=0) {
         fprintf(stderr,"SDL audio: %s\n",SDL_GetError()); return 1;
@@ -77,20 +85,25 @@ int main(int argc, char **argv) {
     }
     puts("Prepared music listening test: start with low speaker volume.");
     bool ok=true;
-    for(unsigned pass=0;ok && pass<((smoke||looping)?1u:5u);++pass) {
+    for(unsigned pass=0;ok && pass<(smoke?1u:stopping?3u:looping?1u:5u);++pass) {
         sb_music_instrument_t ins[3];
         for(unsigned v=0;v<3;++v) {
             sb_audio_voice_kind_t wave=SB_AUDIO_VOICE_TRIANGLE;
             if(pass==1) wave=SB_AUDIO_VOICE_SAW;
             if(pass==2) wave=SB_AUDIO_VOICE_PULSE;
-            if(pass>=3 || looping) wave=v==0?SB_AUDIO_VOICE_TRIANGLE:v==1?SB_AUDIO_VOICE_SAW:SB_AUDIO_VOICE_PULSE;
+            if(pass>=3 || looping || stopping) wave=v==0?SB_AUDIO_VOICE_TRIANGLE:v==1?SB_AUDIO_VOICE_SAW:SB_AUDIO_VOICE_PULSE;
             ins[v]=(sb_music_instrument_t){wave,{.01,.1,.7,.12},.6,0,.5,2000,true};
         }
         sb_music_event_t events[128]; size_t count=0;
         uint64_t end;
         const double major[]={220,277.1826309768721,329.6275569128699};
         const double minor[]={220,261.6255653005986,329.6275569128699};
-        if(looping) {
+        if(stopping) {
+            puts(pass==0?"Stop a held looping chord; then replay.":
+                 pass==1?"Stop during natural release tails.":"Stop in an authored gap; no next iteration.");
+            chord(events,&count,0,84000,major,3);
+            end=pass==1?84000:96000;
+        } else if(looping) {
             puts("Four identical mixed-instrument loops; authored releases and gaps, no added boundary delay.");
             chord(events,&count,0,smoke?480:24000,major,3);
             if(!smoke) chord(events,&count,48000,36000,minor,3);
@@ -129,9 +142,12 @@ int main(int argc, char **argv) {
         }
         fflush(stdout);
         sb_music_song_t song={48000,3,end,ins,events,count};
-        ok=play(device,&host,&song,smoke?3000:15000,looping?4:1);
+        ok=play(device,&host,&song,smoke?3000:15000,
+                looping || (stopping && pass!=1)?4:1,
+                stopping?(smoke?480:pass==0?24000:pass==1?86400:91200):0);
         /* Pausing above excludes callback access before local data expires. */
         sb_music_sequence_reset(&host.sequence);
+        if(stopping && !smoke) SDL_Delay(250);
     }
     SDL_CloseAudioDevice(device); SDL_Quit();
     puts(ok?"Sequence complete; musical quality requires listening acceptance.":

@@ -24,13 +24,19 @@ Accepted checkpoint: cached loop-eligibility analysis on loaded assets.
 Desktop 93/93 and targeted ASan/UBSan checks pass. Pi acceptance reported by user
 2026-11-08 for `93c598c`: eligibility checks passed; full suite 93/93 passed.
 SugarBeats eligibility consumer accepted at `d4e2a84`: 7/7 checks, eight boundary
-cases, no mismatch. Current authorized checkpoint: native whole-song looping
+cases, no mismatch. Accepted checkpoint: native whole-song looping
 with deterministic bank reset and authored seams. See [validation](tests/music-loop.md).
 Desktop 95/95 and native ASan/UBSan checks pass. User confirmed all desktop
 listening checks, 95 passing tests and exit 0 on 2026-11-08. Pi acceptance
 reported at synchronized `cc281aa`: 95 tests passed, listening checks passed.
-Next priority: SugarBeats bounded native loop consumer validation. Feature remains
-unmerged; no additional lifecycle or cartridge/Lua scope yet.
+SugarBeats native loop consumer passed 7/7 checks at clean pin `2041086`, with
+exact repeated-render parity, refusal/ownership checks and balanced allocations.
+Current authorized checkpoint: [native audible stop](tests/music-stop.md), using
+the existing 10 ms fade. Desktop 97/97 and native ASan/UBSan checks pass.
+All four desktop listening checks and exit 0 confirmed by user.
+Pi automated and listening acceptance pending.
+Host pause, gain, shared voices and cartridge/Lua integration remain separate.
+Feature remains unmerged.
 
 ## Validated RC1 baseline
 

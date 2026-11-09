@@ -58,8 +58,15 @@ bool sb_music_sequence_loop_eligible(const sb_music_song_t *song);
 /* Explicit looping start, same lifetime/atomic-refusal contract as start.
  * Ineligible songs are refused. Snapshot is prepared before playback. Each
  * iteration restores it with no inserted samples. Remains PLAYING until reset;
- * no audible stop API yet. Reset/release ownership only with callback excluded. */
+ * stop fades to idle. Reset/release ownership only with callback excluded. */
 bool sb_music_sequence_start_loop(sb_music_sequence_t *sequence, const sb_music_song_t *song);
+/* Caller serializes with rendering (e.g. device lock). Cancel scheduling/loop
+ * immediately; active voices use existing 480-frame stop fades. FINISHING until
+ * render drains them, then silent defaults and song reference are cleared.
+ * Repeated requests do not extend fades; idle succeeds, NULL returns false.
+ * With no active voices cleanup is immediate. Natural release can be stopped.
+ * Asset remains caller-owned, alive until idle/reset; no host-pause handling. */
+bool sb_music_sequence_stop(sb_music_sequence_t *sequence);
 /* Replace interleaved float stereo output. Buffer must hold 2*frames floats,
  * not alias sequence/song data. NULL output allowed only for zero frames.
  * Invalid buffer arguments do not advance state. All boundary events apply

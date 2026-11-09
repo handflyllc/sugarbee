@@ -175,3 +175,18 @@ acceptance. User confirmed desktop listening, 95 passing tests and exit 0 on
 `cc281aa185e7dab7b3c0cabcd8d410dc5395a7a8`, Pi 95 passing tests and listening
 acceptance on 2026-11-08. Next priority: SugarBeats native loop consumer checks.
 Pi size figures were not supplied; desktop figures above remain desktop-only.
+
+## Native audible stop — 2026-11-08 checkpoint
+
+Authorized private-sequencer operation `sb_music_sequence_stop`. It immediately
+cancels note scheduling and looping, applies the bank's existing 480-frame stop
+fade to active voices, and drains through FINISHING to silent IDLE. Repeated
+requests do not extend fades. Stopping idle succeeds; NULL fails. No active
+voices means immediate reset. New starts remain refused until idle. Assets stay
+caller-owned and alive until idle/reset, and can replay afterward.
+
+No host-pause behavior, gain, shared-voice reservations, handles or Lua/cartridge
+integration is introduced. Caller must serialize with rendering. Reset remains
+immediate cleanup. Detailed edge cases, tests and listening acceptance are in
+[native stop validation](../../tests/music-stop.md). All four desktop listening
+checks and exit 0 confirmed by user; Pi automated/listening acceptance pending.
