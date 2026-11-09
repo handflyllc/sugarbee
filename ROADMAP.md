@@ -38,12 +38,14 @@ Pi acceptance reported 2026-11-08 at `0412c37`: native stop check confirmed,
 97/97 tests passed, exit 0; listening passed, exit 0. Next priority: SugarBeats
 bounded offline stop/replay/ownership consumer validation (now completed: 7/7
 checks at pin `556abbb`, seven stop scenarios and balanced allocations).
-Current authorized checkpoint: [native music gain](tests/music-gain.md), with
+Accepted checkpoint: [native music gain](tests/music-gain.md), with
 480-frame smoothing, mute advancing time and gain surviving loop boundaries.
 Desktop 99/99 and native ASan/UBSan checks pass.
 All five desktop gain listening checks and exit 0 confirmed by user.
-Pi listening and automated acceptance pending.
-Host pause, gain, shared voices and cartridge/Lua integration remain separate.
+Pi acceptance reported by the user on 2026-11-09 (UTC) at synchronized
+`6fe04d9`: 99/99 tests passed, exit 0; validation checks passed, exit 0.
+Next priority: SugarBeats bounded offline gain/parity/ownership consumer checks.
+Host pause, shared voices and cartridge/Lua integration remain separate.
 Feature remains unmerged.
 
 ## Validated RC1 baseline

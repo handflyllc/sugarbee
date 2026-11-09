@@ -206,5 +206,7 @@ Cleanup clears gain; replay defaults to 1. JSON and asset ownership are unchange
 Native sequence layout changes; rebuild pinned consumers. No stable ABI is
 promised. Host pause, reservations and cartridge/Lua integration remain deferred.
 See [gain contract and validation](../../tests/music-gain.md). All five desktop
-listening checks and exit 0 confirmed by user. Pi listening and automated
-validation pending.
+listening checks and exit 0 confirmed by user. Pi acceptance reported by the
+user on 2026-11-09 (UTC), at `6fe04d9e29b80eabe92ca9a73c0923de30a28fbe`:
+99/99 tests passed, exit 0; validation checks passed, exit 0. Next priority:
+SugarBeats bounded offline gain consumer validation.

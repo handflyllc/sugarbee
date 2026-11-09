@@ -44,7 +44,9 @@ checks passed. Six native music ASan/UBSan checks passed with leak detection
 disabled under tracing. Debug build had no new warnings. Complete --gain host
 passed with SDL dummy audio.
 User confirmed all five desktop listening checks and exit status 0.
-Pi listening and automated acceptance remain pending.
+Pi acceptance reported by the user on 2026-11-09 (UTC), at synchronized
+`6fe04d9e29b80eabe92ca9a73c0923de30a28fbe`: 99/99 tests passed, exit 0;
+validation checks passed, exit 0. Desktop and Pi gain validation are accepted.
 
 ## Desktop and Pi listening
 
