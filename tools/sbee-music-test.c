@@ -43,7 +43,7 @@ static void chord(sb_music_event_t *events, size_t *count, uint64_t start,
 }
 
 static bool play(SDL_AudioDeviceID device, host_t *host, const sb_music_song_t *song,
-                 Uint32 timeout, unsigned iterations, uint64_t stop_after) {
+                 Uint32 timeout, unsigned iterations, uint64_t stop_after, Uint32 gain_step_ms) {
     /* Device remains paused while caller-owned fixture data is prepared. */
     host->fade_at_limit=stop_after!=0;
     host->remaining=stop_after?stop_after:(iterations>1?song->end_frame*iterations:0);
@@ -53,8 +53,17 @@ static bool play(SDL_AudioDeviceID device, host_t *host, const sb_music_song_t *
     SDL_PauseAudioDevice(device,0);
     Uint32 started=SDL_GetTicks();
     bool done=false, failed=false;
+    unsigned gain_step=0;
+    const unsigned gain_times[]={1,2,4};
+    const double gain_values[]={.25,0,1};
     while(SDL_GetTicks()-started<timeout) {
         SDL_LockAudioDevice(device);
+        if(gain_step_ms && gain_step<3 &&
+           SDL_GetTicks()-started >= gain_step_ms*gain_times[gain_step]) {
+            if(!sb_music_sequence_set_gain(&host->sequence,gain_values[gain_step]))
+                host->failed=true;
+            ++gain_step;
+        }
         done=host->sequence.state==SB_MUSIC_IDLE;
         failed=host->failed;
         SDL_UnlockAudioDevice(device);
@@ -66,11 +75,12 @@ static bool play(SDL_AudioDeviceID device, host_t *host, const sb_music_song_t *
 }
 
 int main(int argc, char **argv) {
+    bool gaining=argc==2 && (strcmp(argv[1],"--gain")==0 || strcmp(argv[1],"--gain-smoke")==0);
     bool stopping=argc==2 && (strcmp(argv[1],"--stop")==0 || strcmp(argv[1],"--stop-smoke")==0);
     bool looping=argc==2 && (strcmp(argv[1],"--loop")==0 || strcmp(argv[1],"--loop-smoke")==0);
-    bool smoke=argc==2 && (strcmp(argv[1],"--smoke")==0 || strcmp(argv[1],"--loop-smoke")==0 || strcmp(argv[1],"--stop-smoke")==0);
-    if(argc!=1 && !smoke && !looping && !stopping) {
-        fprintf(stderr,"Usage: %s [--smoke | --loop | --loop-smoke | --stop | --stop-smoke]\n",argv[0]); return 1;
+    bool smoke=argc==2 && (strcmp(argv[1],"--smoke")==0 || strcmp(argv[1],"--loop-smoke")==0 || strcmp(argv[1],"--stop-smoke")==0 || strcmp(argv[1],"--gain-smoke")==0);
+    if(argc!=1 && !smoke && !looping && !stopping && !gaining) {
+        fprintf(stderr,"Usage: %s [--smoke | --loop | --loop-smoke | --stop | --stop-smoke | --gain | --gain-smoke]\n",argv[0]); return 1;
     }
     if(SDL_Init(SDL_INIT_AUDIO)!=0) {
         fprintf(stderr,"SDL audio: %s\n",SDL_GetError()); return 1;
@@ -85,13 +95,13 @@ int main(int argc, char **argv) {
     }
     puts("Prepared music listening test: start with low speaker volume.");
     bool ok=true;
-    for(unsigned pass=0;ok && pass<(smoke?1u:stopping?3u:looping?1u:5u);++pass) {
+    for(unsigned pass=0;ok && pass<(smoke?1u:gaining?2u:stopping?3u:looping?1u:5u);++pass) {
         sb_music_instrument_t ins[3];
         for(unsigned v=0;v<3;++v) {
             sb_audio_voice_kind_t wave=SB_AUDIO_VOICE_TRIANGLE;
             if(pass==1) wave=SB_AUDIO_VOICE_SAW;
             if(pass==2) wave=SB_AUDIO_VOICE_PULSE;
-            if(pass>=3 || looping || stopping) wave=v==0?SB_AUDIO_VOICE_TRIANGLE:v==1?SB_AUDIO_VOICE_SAW:SB_AUDIO_VOICE_PULSE;
+            if(pass>=3 || looping || stopping || gaining) wave=v==0?SB_AUDIO_VOICE_TRIANGLE:v==1?SB_AUDIO_VOICE_SAW:SB_AUDIO_VOICE_PULSE;
             ins[v]=(sb_music_instrument_t){wave,{.01,.1,.7,.12},.6,0,.5,2000,true};
         }
         sb_music_event_t events[128]; size_t count=0;
@@ -103,8 +113,10 @@ int main(int argc, char **argv) {
                  pass==1?"Stop during natural release tails.":"Stop in an authored gap; no next iteration.");
             chord(events,&count,0,84000,major,3);
             end=pass==1?84000:96000;
-        } else if(looping) {
-            puts("Four identical mixed-instrument loops; authored releases and gaps, no added boundary delay.");
+        } else if(looping || gaining) {
+            puts(gaining?(pass==0?"Gain: full, quarter, mute across loop boundary, then full again.":
+                 "Replay: full gain restored without another gain command."):
+                 "Four identical mixed-instrument loops; authored releases and gaps, no added boundary delay.");
             chord(events,&count,0,smoke?480:24000,major,3);
             if(!smoke) chord(events,&count,48000,36000,minor,3);
             end=smoke?7200:96000;
@@ -143,8 +155,9 @@ int main(int argc, char **argv) {
         fflush(stdout);
         sb_music_song_t song={48000,3,end,ins,events,count};
         ok=play(device,&host,&song,smoke?3000:15000,
-                looping || (stopping && pass!=1)?4:1,
-                stopping?(smoke?480:pass==0?24000:pass==1?86400:91200):0);
+                looping || (gaining && pass==0) || (stopping && pass!=1)?4:1,
+                stopping?(smoke?480:pass==0?24000:pass==1?86400:91200):0,
+                gaining && pass==0?(smoke?20:1000):0);
         /* Pausing above excludes callback access before local data expires. */
         sb_music_sequence_reset(&host.sequence);
         if(stopping && !smoke) SDL_Delay(250);

@@ -6,6 +6,7 @@
 /* Prototype validation bound, not the future JSON asset budget. */
 #define SB_MUSIC_SEQUENCE_MAX_EVENTS 4096u
 #define SB_MUSIC_SEQUENCE_RATE 48000u
+#define SB_MUSIC_GAIN_FRAMES 480u
 
 typedef struct {
     sb_audio_voice_kind_t waveform;
@@ -35,6 +36,8 @@ typedef struct {
     sb_audio_bank_t bank; /* Exclusive private bank for this checkpoint. */
     sb_audio_bank_t initial_bank; /* Prepared silent snapshot for looping. */
     bool loop;
+    double gain, gain_from, gain_target;
+    unsigned gain_left;
     const sb_music_song_t *song;
     uint64_t frame;
     size_t next_event;
@@ -50,7 +53,8 @@ void sb_music_sequence_reset(sb_music_sequence_t *sequence);
  * Start refuses busy or invalid songs without changing sequence. Empty event
  * arrays/unused tracks are allowed.
  * pulse_width is required only for pulse (otherwise ignored).
- * No gain API, mapping, pause control, or cartridge integration yet. */
+ * Each successful start initializes gain to 1. No mapping, pause control,
+ * or cartridge integration yet. */
 bool sb_music_sequence_start(sb_music_sequence_t *sequence, const sb_music_song_t *song);
 /* Validate and analyze a prepared song; false for invalid/ineligible songs.
  * Preparation only, never call from the callback. Used by the asset loader. */
@@ -67,6 +71,12 @@ bool sb_music_sequence_start_loop(sb_music_sequence_t *sequence, const sb_music_
  * With no active voices cleanup is immediate. Natural release can be stopped.
  * Asset remains caller-owned, alive until idle/reset; no host-pause handling. */
 bool sb_music_sequence_stop(sb_music_sequence_t *sequence);
+/* Finite gain 0..1, playing/finishing only; false without mutation otherwise.
+ * Caller serializes with render. Ramp from current gain over 480 frames; same
+ * target does not restart ramp. Apply current gain before advancing each frame.
+ * Mute does not stop time. Gain/ramp survives loop bank restoration; cleanup
+ * clears it and the next start uses 1. No retained idle setting. */
+bool sb_music_sequence_set_gain(sb_music_sequence_t *sequence, double gain);
 /* Replace interleaved float stereo output. Buffer must hold 2*frames floats,
  * not alias sequence/song data. NULL output allowed only for zero frames.
  * Invalid buffer arguments do not advance state. All boundary events apply

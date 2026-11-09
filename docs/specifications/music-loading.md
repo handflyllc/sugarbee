@@ -193,3 +193,18 @@ checks and exit 0 confirmed by user. Pi acceptance reported 2026-11-08 at
 `0412c37c47099c56793b6221c07f59666dc2eb56`: native stop check confirmed,
 97/97 tests passed with exit 0; listening passed with exit 0. Next priority is
 SugarBeats bounded offline consumer validation; no additional lifecycle scope.
+
+## Native music gain — 2026-11-08 checkpoint
+
+Authorized sequencer-level gain via `sb_music_sequence_set_gain`. Finite 0..1,
+playing/finishing only; idle/invalid requests fail without mutation. New playback
+starts at 1. Gain ramps over 480 frames from its current value, with same-target
+requests leaving the ramp untouched. Mute advances time. Gain applies after bank
+mixing and is independent of loop-bank restoration and voice stop fades.
+Cleanup clears gain; replay defaults to 1. JSON and asset ownership are unchanged.
+
+Native sequence layout changes; rebuild pinned consumers. No stable ABI is
+promised. Host pause, reservations and cartridge/Lua integration remain deferred.
+See [gain contract and validation](../../tests/music-gain.md). All five desktop
+listening checks and exit 0 confirmed by user. Pi listening and automated
+validation pending.

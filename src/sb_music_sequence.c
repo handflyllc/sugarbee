@@ -60,6 +60,7 @@ bool sb_music_sequence_start(sb_music_sequence_t *s, const sb_music_song_t *song
     for (unsigned v = 1; v <= song->track_count; ++v)
         if (!configure(&next.bank, v, &song->instruments[v-1])) return false;
     if (!events_valid(song)) return false;
+    next.gain = next.gain_from = next.gain_target = 1.0;
     next.song = song;
     next.state = SB_MUSIC_PLAYING;
     *s = next;
@@ -136,11 +137,29 @@ bool sb_music_sequence_stop(sb_music_sequence_t *s) {
     return true;
 }
 
+bool sb_music_sequence_set_gain(sb_music_sequence_t *s, double gain) {
+    if (!s || s->state == SB_MUSIC_IDLE || !isfinite(gain) || gain < 0 || gain > 1)
+        return false;
+    if (gain != s->gain_target) {
+        s->gain_from = s->gain;
+        s->gain_target = gain;
+        s->gain_left = SB_MUSIC_GAIN_FRAMES;
+    }
+    return true;
+}
+
 bool sb_music_sequence_render(sb_music_sequence_t *s, float *output, size_t frames) {
     if (!s || (frames && !output) || frames > SIZE_MAX / (2 * sizeof(float))) return false;
     for (size_t n = 0; n < frames; ++n) {
         if (s->state == SB_MUSIC_PLAYING) dispatch(s);
         (void)sb_audio_bank_render(&s->bank, output + 2*n, 1);
+        output[2*n] = (float)(output[2*n] * s->gain);
+        output[2*n+1] = (float)(output[2*n+1] * s->gain);
+        if (s->gain_left) {
+            --s->gain_left;
+            s->gain = s->gain_left ? s->gain_from + (s->gain_target - s->gain_from) *
+                (SB_MUSIC_GAIN_FRAMES - s->gain_left) / SB_MUSIC_GAIN_FRAMES : s->gain_target;
+        }
         if (s->state == SB_MUSIC_PLAYING) {
             /* Never increment beyond end_frame, even for UINT64_MAX ends. */
             ++s->frame;
