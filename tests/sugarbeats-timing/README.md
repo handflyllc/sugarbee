@@ -45,10 +45,13 @@ passed**, exit 0 (150.01 seconds). Original Music Lab and first-export checks
 remain passing alongside the three new timing-export checks. Fresh reproduction
 and packed member match the handoff bytes/hash. Original fixture hash unchanged.
 Diff/whitespace check passed. No new sanitizer run; runtime unchanged.
-Desktop listening accepted per the user on 2026-11-10. Pi validation remains
-pending; changes await development-host commit/push.
+Desktop listening accepted per the user on 2026-11-10. Pi acceptance reported
+on 2026-11-10 at synchronized `15aa0633b8b21621e7ecd4d1cedd151d22eee5ef`:
+**123 tests passed**, exit 0, all listening checks passed. Artifact checkpoint
+is committed; acceptance documentation awaits commit/push. Runtime remains
+unchanged; feature unmerged. Documentation-only update, tests not rerun.
 
-## Listening and Pi handoff
+## Reproducing the accepted listening and Pi checks
 
 ```sh
 ./build/sugarbee build/sugarbeats-timing.vcart
@@ -61,8 +64,8 @@ pause/resume/exit/relaunch. Expect faster chord changes than the 120 BPM export
 and a longer authored rest at the end of each 4.3795625-second loop. That rest
 is not a stalled timeline or an extra fade inserted by the engine.
 
-After desktop listening acceptance, commit/push on the development host. On the
-Pi, synchronize the exact checkpoint commit before building and testing:
+For reproduction on the Pi, synchronize the tested checkpoint (or its
+documentation-only successor) before building and testing:
 
 ```sh
 git pull --ff-only origin feature/native-music-sequencer
