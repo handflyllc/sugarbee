@@ -175,6 +175,15 @@ listening. Return one reproducible mixed-instrument export for SugarBee cartridg
 validation. Noise, custom instrument editing, GUI and engine expansion remain
 outside this slice. Next project: SugarBeats; no merge authorized.
 
+Current bounded follow-up: [mixed-instrument cartridge validation](tests/sugarbeats-mixed/README.md).
+SugarBeats preset export and desktop preview accepted: 11/11 serial checks and
+four listening checks per its passdown. Selected triangle/saw/pulse artifact is
+preserved unchanged, reproduced byte-for-byte, and packaged with existing Music
+Lab. No runtime change; previous fixtures remain intact. Desktop warning-free
+build and 126/126 serial tests passed, exit 0. Desktop cartridge checks/listening
+accepted per the user on 2026-11-10, exit 0. Pi validation pending. No further
+feature scope.
+
 Remaining major milestones, each separately bounded and validated:
 - SugarBeats authoring/export and preview against demonstrated engine behavior.
 - End-to-end exported soundtrack validation and release integration; merge still
