@@ -138,14 +138,18 @@ Pi CTest must run serially: parallel runs at 2–4 workers caused user-reported
 system lockups requiring reboot. Cause unresolved; parallel builds remain usable.
 See the checkpoint validation record; no parallel Pi retest is required.
 
-Current follow-up: [first SugarBeats export cartridge](tests/sugarbeats-export/README.md).
+Accepted checkpoint: [first SugarBeats export cartridge](tests/sugarbeats-export/README.md).
 SugarBeats returned a deterministic four-second C–F–G–C JSON asset with 9/9
 reported serial checks. Engine checkout `1ce1e83` retains runtime `e2d7b7c`.
 The asset is copied byte-for-byte into a self-contained acceptance fixture and
 packed with the unchanged Music Lab. Fresh export reproduction matches its hash.
 No runtime changes. Desktop warning-free build and 120/120 serial tests passed,
 exit 0; packed member bytes match. Desktop listening passed per the user on
-2026-11-09. Pi acceptance remains pending; pause before Pi execution as requested. SugarBeats code remains untouched.
+2026-11-09. Pi acceptance reported on 2026-11-10 at synchronized `bdb74b1`:
+120/120 tests, all listening checks passed, exit 0. The first exported soundtrack
+has completed desktop/Pi cartridge acceptance. SugarBeats code remains untouched.
+Next priority: SugarBeats records end-to-end acceptance and reviews the next
+bounded composer checkpoint before any further feature work.
 
 Remaining major milestones, each separately bounded and validated:
 - SugarBeats authoring/export and preview against demonstrated engine behavior.

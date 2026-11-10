@@ -41,10 +41,15 @@ passed**, exit 0 (149.69 seconds), including all three new export-cartridge chec
 A fresh export to `/tmp` independently reproduced the supplied CSV's artifact;
 the packed cartridge member also matches the snapshot bytes and hash. Diff check
 passed. No new sanitizer run (runtime code unchanged). Desktop listening passed
-per the user on 2026-11-09. Pi validation remains pending; changes await the
-development-host commit/push. SugarBeats source untouched. Pause before Pi execution.
+per the user on 2026-11-09. Pi acceptance reported by the user on 2026-11-10
+at synchronized `bdb74b1d58147db0afb0fe6c0de5fdae1e1a6951`: **120/120 tests
+passed**, all listening checks passed, exit 0. This completes the exported asset's
+desktop/Pi cartridge acceptance. Runtime code remains that of `e2d7b7c`; `bdb74b1`
+adds the fixture, test registration and documentation. Acceptance documentation
+awaits commit/push. SugarBeats source untouched; feature remains unmerged.
+Documentation-only acceptance update: unchanged tests were not rerun.
 
-## Desktop listening, then pause before Pi validation
+## Reproducing the accepted cartridge checks
 
 ```sh
 ./build/sugarbee build/sugarbeats-export.vcart
@@ -55,11 +60,11 @@ exported four-chord exercise instead of the original two-chord lab asset.
 Use the [five-step Music Lab checklist](../music-playback.md#desktop-and-pi-listening-checklist):
 one-shot/replay, looping and harmony, gain/mute with independent effect, stop and
 muted start, host pause/resume/exit/relaunch. Expect authored rests, not seamless
-sustained audio. Desktop listening requires user acceptance.
+sustained audio. Both desktop and Pi listening are now accepted as recorded above.
 
-After desktop acceptance, commit/push this fixture/documentation checkpoint from
-the development machine. **Pause before Pi execution.** When ready later, verify
-Pi is on the same feature branch and synchronize the exact new commit:
+The requested pause before Pi execution was honored; the user subsequently resumed
+and completed validation. For a future reproduction, verify the Pi is on the same
+feature branch and check the tested commit (or a documentation-only successor):
 
 ```sh
 git pull --ff-only origin feature/native-music-sequencer
