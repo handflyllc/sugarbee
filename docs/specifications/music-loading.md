@@ -345,3 +345,23 @@ checks accepted by the user on 2026-11-09, exit 0. Pi acceptance reported on
 consumer regression and cartridge-loading contract review.
 Lua bindings, cartridge Music Lab and composer
 expansion remain separate checkpoints; no cartridge format change.
+
+
+## Lua music asset access — 2026-11-09 checkpoint
+
+The accepted next milestone is split: load/info/unload first, playback controls
+and Music Lab later. `sugarbee.music.load(path)` reads only from the host's current
+cartridge, returns protected owner-specific userdata or nil/reason, and never
+starts playback. `info` returns copied `track_count`, `end_frame`, `timeline_rate`
+and `loop_eligible`; `unload` refuses active assets and invalidates successful
+handles. Wrong arguments/foreign/unloaded handles raise Lua errors. Read/schema
+failures return useful diagnostics; operational refusals remain non-throwing.
+
+Loading/metadata/unload also work without an audio device via the same bounded
+native loader/collection in a per-cartridge silent context. Native assets and
+silent assets follow their existing respective teardown ownership. Contexts close
+before Lua and are destroyed afterward. No public playback/stop/state/volume yet.
+See [API](../api/music.md) and [validation](../../tests/music-lua.md). Pi validation
+is pending; no new sound output or listening gate is introduced.
+SugarBeats' preceding review at `8bbc546` passed 7/7 checks, with 264 allocations
+matched frees and no mismatch. Composer changes remain deferred.

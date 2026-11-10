@@ -32,6 +32,7 @@
 #include "sb_audio.h"
 #include "sb_lua_synth.h"
 #include "sb_lua_audio.h"
+#include "sb_lua_music.h"
 
 #define SB_LAUNCHER_MAX_CARTRIDGES 64
 #define SB_LAUNCHER_PATH_SIZE 4096
@@ -57,6 +58,7 @@ typedef struct {
     sb_input_t* input;
     sb_audio_t* audio; /* Host-owned; NULL means unavailable. */
     lua_State* L;
+    sb_lua_music_t *lua_music; /* Same lifetime as the Lua audio context. */
     sb_lua_audio_t *lua_audio; /* Host-owned; outlives Lua closing callbacks. */
     bool is_running;
     bool console_mode;
@@ -510,6 +512,7 @@ void register_sugarbee_api(lua_State* L) {
     lua_pushcfunction(L, l_sugarbee_load_save); lua_setfield(L, -2, "load_save");
     sb_lua_synth_register(L, g_engine.audio);
     sb_lua_audio_register(L, g_engine.lua_audio);
+    sb_lua_music_register(L, g_engine.lua_music);
     lua_setglobal(L, "sugarbee");
 }
 
@@ -527,6 +530,7 @@ void trigger_guru_meditation(uint32_t code, const char* title, const char* messa
     fflush(stderr);
     sb_audio_session_fail(g_engine.audio);
     sb_lua_audio_fail(g_engine.lua_audio);
+    sb_lua_music_fail(g_engine.lua_music);
     g_engine.guru_active = true;
     g_engine.error_code = code;
     strncpy(g_engine.error_title, title, sizeof(g_engine.error_title) - 1);
@@ -723,6 +727,12 @@ static bool start_cartridge(const char *filepath) {
     g_engine.lua_audio = sb_lua_audio_create(g_engine.audio, filepath);
     if (!g_engine.lua_audio) {
         trigger_guru_meditation(0x00000004, "AUDIO SESSION FAILED", "Out of memory preparing cartridge audio.", NULL);
+        end_cartridge();
+        return false;
+    }
+    g_engine.lua_music = sb_lua_music_create(g_engine.audio, filepath);
+    if (!g_engine.lua_music) {
+        trigger_guru_meditation(0x00000004, "MUSIC SESSION FAILED", "Out of memory preparing cartridge music.", NULL);
         end_cartridge();
         return false;
     }
@@ -1235,6 +1245,7 @@ static void end_cartridge(void) {
     call_lua_shutdown();
     sb_audio_session_end(g_engine.audio);
     sb_lua_audio_end(g_engine.lua_audio);
+    sb_lua_music_end(g_engine.lua_music);
 
     if (g_engine.L) {
         lua_close(g_engine.L);
@@ -1243,6 +1254,8 @@ static void end_cartridge(void) {
 
     sb_lua_audio_destroy(g_engine.lua_audio);
     g_engine.lua_audio = NULL;
+    sb_lua_music_destroy(g_engine.lua_music);
+    g_engine.lua_music = NULL;
     sb_graphics_clear_cartridge_textures(g_engine.graphics);
 
     g_engine.cart_initialized = false;

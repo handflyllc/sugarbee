@@ -106,8 +106,15 @@ reader and JSON loader. Music's 1 MiB input cap is checked before decompression;
 existing asset-read limits and cartridge format are preserved. Desktop cartridge
 checks passed per the user on 2026-11-09, exit 0. Pi acceptance reported at
 synchronized `ee6255d`: 111/111 tests passed, exit 0; listening checks passed.
-Next priority: SugarBeats consumer regression and cartridge-loading contract review.
-No Lua music API or composer changes.
+SugarBeats returned review at `8bbc546`: 7/7 checks, 264 allocations matched
+frees, no mismatch.
+
+Current checkpoint: [Lua music asset access](tests/music-lua.md).
+`sugarbee.music.load/info/unload` and per-cartridge context are implemented,
+including bounded loading without an audio device. Metadata is copied and handles
+are owner-checked; native lifecycle and limits are preserved. Pi validation is
+pending. No new listening gate: this checkpoint adds no Lua playback.
+Playback/stop/state/volume and the audible Music Lab follow separately.
 
 Remaining major milestones, each separately bounded and validated:
 - Lua music controls and a minimal cartridge Music Lab.

@@ -350,6 +350,11 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sugarbee_lua_synth PUBLIC sugarbee_audio PkgConfig::LUA54)
     sugarbee_warnings(sugarbee_lua_synth)
 
+    add_library(sugarbee_lua_music STATIC src/sb_lua_music.c)
+    target_include_directories(sugarbee_lua_music PUBLIC "${PROJECT_SOURCE_DIR}/include")
+    target_link_libraries(sugarbee_lua_music PUBLIC sugarbee_audio sugarbee_assets sugarbee_music_load PkgConfig::LUA54)
+    sugarbee_warnings(sugarbee_lua_music)
+
     add_library(sugarbee_lua_audio STATIC src/sb_lua_audio.c)
     target_include_directories(sugarbee_lua_audio PUBLIC "${PROJECT_SOURCE_DIR}/include")
     target_link_libraries(sugarbee_lua_audio PUBLIC sugarbee_audio sugarbee_assets sugarbee_wav PkgConfig::LUA54)
@@ -360,6 +365,7 @@ if(SUGARBEE_BUILD_HOST)
         sugarbee_save
         sugarbee_lua_synth
         sugarbee_lua_audio
+        sugarbee_lua_music
         sugarbee_audio
         sugarbee_graphics
         sugarbee_input
@@ -476,6 +482,23 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     add_test(NAME audio_tone_output COMMAND sbee-audio-test)
     set_tests_properties(audio_tone_output PROPERTIES TIMEOUT 10
         ENVIRONMENT "SDL_AUDIODRIVER=dummy")
+
+    add_executable(test_lua_music tests/test_lua_music.c)
+    target_link_libraries(test_lua_music PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    sugarbee_warnings(test_lua_music)
+    if(SUGARBEE_BUILD_PACKER)
+        add_test(NAME lua_music_pack COMMAND "${CMAKE_COMMAND}"
+            "-DPACKER=$<TARGET_FILE:sbee-pack>" "-DSOURCE_ROOT=${PROJECT_SOURCE_DIR}"
+            "-DTEST_ROOT=${PROJECT_BINARY_DIR}/music-lua-source"
+            "-DCART=${PROJECT_BINARY_DIR}/music-lua.vcart"
+            -P "${PROJECT_SOURCE_DIR}/tests/music_lua_pack.cmake")
+        set_tests_properties(lua_music_pack PROPERTIES FIXTURES_SETUP lua_music TIMEOUT 10)
+        foreach(mode device unavailable)
+            add_test(NAME lua_music_${mode} COMMAND test_lua_music "${PROJECT_BINARY_DIR}/music-lua.vcart" ${mode})
+            set_tests_properties(lua_music_${mode} PROPERTIES FIXTURES_REQUIRED lua_music TIMEOUT 15
+                ENVIRONMENT "SDL_AUDIODRIVER=dummy;SDL_VIDEODRIVER=dummy")
+        endforeach()
+    endif()
 
     add_executable(test_lua_wav tests/test_lua_wav.c)
     target_link_libraries(test_lua_wav PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})

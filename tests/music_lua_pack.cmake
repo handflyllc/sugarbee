@@ -1,0 +1,10 @@
+file(MAKE_DIRECTORY "${TEST_ROOT}/assets")
+configure_file("${SOURCE_ROOT}/tests/music-lua/main.lua" "${TEST_ROOT}/main.lua" COPYONLY)
+configure_file("${SOURCE_ROOT}/tests/music-cartridge/assets/music.json" "${TEST_ROOT}/assets/music.json" COPYONLY)
+configure_file("${SOURCE_ROOT}/tests/music-load/one-note.json" "${TEST_ROOT}/assets/one-note.json" COPYONLY)
+file(WRITE "${TEST_ROOT}/assets/invalid.json" "{ invalid json")
+execute_process(COMMAND "${PACKER}" -i "${TEST_ROOT}" -o "${CART}" -t "Lua Music Assets"
+    RESULT_VARIABLE result)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "Lua music fixture packaging failed")
+endif()

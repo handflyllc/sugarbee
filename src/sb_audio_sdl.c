@@ -641,3 +641,17 @@ sb_music_asset_code_t sb_audio_music_load_cartridge(sb_audio_t *audio,
     free(bytes);
     return code;
 }
+
+sb_music_asset_code_t sb_audio_music_info(sb_audio_t *audio,sb_music_handle_t handle,
+    sb_music_info_t *info) {
+    if (!info) return SB_MUSIC_ASSET_ARGUMENT;
+    *info=(sb_music_info_t){0};
+    if (!audio) return SB_MUSIC_ASSET_UNAVAILABLE;
+    SDL_LockAudioDevice(audio->device);
+    sb_music_asset_code_t code=SB_MUSIC_ASSET_REJECTED;
+    if (audio->mode==AUDIO_SESSION)
+        code=sb_music_asset_info(sb_music_assets_get(&audio->music_assets,handle),info) ?
+            SB_MUSIC_ASSET_OK : SB_MUSIC_ASSET_BAD_HANDLE;
+    SDL_UnlockAudioDevice(audio->device);
+    return code;
+}

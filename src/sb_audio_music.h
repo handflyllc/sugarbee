@@ -41,4 +41,7 @@ sb_music_asset_code_t sb_audio_music_play(sb_audio_t *audio, sb_music_handle_t h
 sb_music_asset_code_t sb_audio_music_load_cartridge(sb_audio_t *audio,
     const char *cartridge,const char *path,sb_music_handle_t *handle,
     sb_asset_result_t *read_result,sb_music_load_result_t *detail);
+/* Copies metadata under the device lock. No allocation; session mode only. */
+sb_music_asset_code_t sb_audio_music_info(sb_audio_t *audio,sb_music_handle_t handle,
+    sb_music_info_t *info);
 #endif

@@ -44,3 +44,13 @@ void sb_music_assets_reset(sb_music_assets_t *p) {
     memset(p->slots,0,sizeof p->slots);
     p->bytes=0;
 }
+
+bool sb_music_asset_info(const sb_music_asset_t *asset,sb_music_info_t *info) {
+    if (!info) return false;
+    *info=(sb_music_info_t){0};
+    if (!asset) return false;
+    const sb_music_song_t *song=sb_music_asset_song(asset);
+    *info=(sb_music_info_t){song->track_count,song->timeline_rate,song->end_frame,
+        sb_music_asset_loop_eligible(asset)};
+    return true;
+}

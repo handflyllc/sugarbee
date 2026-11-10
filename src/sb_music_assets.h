@@ -5,6 +5,13 @@
 #define SB_MUSIC_ASSETS 8u
 #define SB_MUSIC_ASSETS_MAX_BYTES (1024u * 1024u)
 typedef uint64_t sb_music_handle_t;
+typedef struct {
+    unsigned track_count, timeline_rate;
+    uint64_t end_frame;
+    bool loop_eligible;
+} sb_music_info_t;
+/* Copy immutable metadata, never expose storage pointers to Lua. */
+bool sb_music_asset_info(const sb_music_asset_t *asset,sb_music_info_t *info);
 typedef enum {
     SB_MUSIC_ASSET_OK, SB_MUSIC_ASSET_ARGUMENT, SB_MUSIC_ASSET_UNAVAILABLE,
     SB_MUSIC_ASSET_REJECTED, SB_MUSIC_ASSET_LOAD_FAILED, SB_MUSIC_ASSET_CAPACITY,
