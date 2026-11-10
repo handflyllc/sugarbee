@@ -3,31 +3,37 @@
 Reviewed 2026-11-06 against merged baseline `b304a00`. This is a revisable
 plan, not a release schedule or a promise of additional features.
 
-## Current coordination — saved-project preview and merge boundary
+## Current coordination — merge authorized; execution pending
 
-2026-11-10: SugarBeats saved-project workflow accepted per its passdown:
-12/12 serial tests and user save/reopen/export/listening checks passed.
-Saved projects reproduce accepted asset bytes; existing desktop/Pi cartridge
-acceptance at `4993140` stands. Engine checkout reviewed at `8366b18`;
-runtime unchanged since `e2d7b7c`.
+2026-11-10: SugarBeats saved-project preview accepted per PASSDOWN.md and
+PROJECT_FORMAT.md: warning-free build, 13/13 serial tests and user desktop
+listening checks passed. `preview.py --project PATH` with optional `--loop`
+reuses project validation/export and native playback. Explicit-export parity,
+source preservation, temporary cleanup, invalid-input/loop refusal and existing
+preview workflows are covered. No concrete engine prerequisite remains before
+the GUI/editor boundary; no additional CLI checkpoint is proposed.
 
-Agreed next checkpoint belongs to SugarBeats: `preview.py --project PATH`,
-with optional `--loop`, reusing project validation/export conversion and native
-playback. Preserve project files, CSV/exported-song workflows, native loop
-eligibility and graceful stopping. Acceptance covers parity with explicit
-project export, invalid-project refusal, one-shot/loop/stop behavior, existing
-serial regressions and desktop listening. No new engine prerequisite identified.
-GUI/editor, note editing and multiple patterns remain outside this checkpoint.
+Merge-readiness evidence reviewed at clean `7df7444`:
+- Target local `main` is `cca7c62`, an ancestor of the feature branch; no
+  main-only commits. This is a local-ref assessment, not a fresh remote fetch.
+- Scope: native music sequencing/loading, looping/transport, shared audio and
+  lifecycle, cartridge/Lua playback, vendored yyjson, examples and validation.
+- Runtime unchanged since `e2d7b7c`. Only documentation changed since `4993140`,
+  accepted on desktop/Pi with 129 serial tests, exit 0 and listening passed.
+- Branch diff/whitespace check passes. Existing evidence was reviewed; no new
+  test run or comprehensive source audit is claimed by this coordination review.
 
-After this checkpoint, assess concrete remaining prerequisites; do not invent
-CLI work to postpone the editor. Before the first GUI/editor checkpoint, review
-SugarBee merge readiness, confirm desktop/Pi evidence, obtain explicit merge
-authorization and perform post-merge validation. The user plans to build,
-initialize and merge the SugarBeats repository shortly after SugarBee merges,
-so both projects have synchronized progress before GUI/editor work. SugarBeats
-Git setup remains deferred until that point; no merge or repository initialization
-is authorized by this handoff. Return to SugarBee for coordination after accepted
-saved-project preview, or earlier for a demonstrated engine mismatch.
+User explicitly authorized the SugarBee merge on 2026-11-10. Commit
+coordination docs, merge without rewriting history, rebuild and run all 129
+CTest checks serially, then record the merged hash and arrange Pi post-merge
+confirmation. Preserve existing hardware evidence; report new checks separately.
+Git metadata is read-only in this session; user-side Git commands are required.
+
+SugarBeats reports user initialization on main with no commits yet; requested
+ignore rules including `.directory` are present. This supersedes the earlier
+Git-deferral plan. Synchronize its accepted work after SugarBee merges and before
+GUI/editor implementation. No SugarBeats commit/merge or GUI scope is authorized
+by this coordination handoff.
 
 ## Accepted checkpoint — prepared native music sequencing
 
