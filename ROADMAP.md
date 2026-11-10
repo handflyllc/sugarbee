@@ -123,7 +123,11 @@ voice mapping and atomic initial volume preserve existing ownership and fades.
 The minimal Music Lab demonstrates a backing track plus an independent effect.
 Desktop: 117/117 tests and 36 selected ASan/UBSan-build checks passed
 (leak detection disabled). Desktop listening passed per the user on 2026-11-09.
-Pi acceptance remains pending. Stop here for validation, then return to SugarBeats.
+Pi acceptance reported at synchronized `e2d7b7c`: 117/117 tests, exit 0;
+all validation/listening checks passed. Next priority: SugarBeats consumer/API review.
+Pi CTest must run serially: parallel runs at 2–4 workers caused user-reported
+system lockups requiring reboot. Cause unresolved; parallel builds remain usable.
+See the checkpoint validation record; no parallel Pi retest is required.
 
 Remaining major milestones, each separately bounded and validated:
 - SugarBeats authoring/export and preview against demonstrated engine behavior.

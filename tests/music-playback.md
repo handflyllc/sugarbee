@@ -1,6 +1,6 @@
 # Lua music playback and Music Lab checkpoint
 
-2026-11-09: desktop automated and listening checks accepted; Pi acceptance pending.
+2026-11-09: desktop and Pi automated/listening checks accepted at `e2d7b7c`.
 Predecessor runtime `4910b38`, acceptance docs `1d6889f`; SugarBeats review at
 that docs pin passed 7/7, with 264 allocations matched frees and no mismatch.
 
@@ -25,7 +25,7 @@ not establish musical quality or hardware output quality.
 ```sh
 cmake --build build -j4
 ctest --test-dir build -R '^(lua_music|music_lab)_' --output-on-failure
-ctest --test-dir build --output-on-failure -j4
+ctest --test-dir build --output-on-failure
 ```
 
 Desktop evidence (2026-11-09): warning-free build; **117/117 tests passed**,
@@ -33,9 +33,21 @@ exit 0 (37.39 seconds, four workers). All **36 selected checks in the ASan/UBSan
 build passed**, including fixture setup and Music Lab/device-unavailable cases
 (30.19 seconds, two workers). Leak detection was disabled; no LeakSanitizer result
 is claimed. Diff/whitespace review passed. Desktop listening passed per the user on
-2026-11-09. Pi acceptance remains pending; changes await the development-host
-commit/push. SugarBeats code and the read-only canonical
-passdown were not modified.
+2026-11-09. Pi acceptance reported by the user on 2026-11-09 at synchronized
+`e2d7b7c7afd0d5fe7262f13e99a01f714bae9d10`: **117/117 tests passed**, exit 0,
+and all validation/listening checks passed. Runtime is committed; acceptance
+documentation awaits commit/push. Feature remains unmerged. SugarBeats code and
+the read-only canonical passdown were not modified.
+
+Pi execution constraint: the user reports full-system lockups with CTest `-j2`,
+`-j3` and `-j4`, under both fish and bash, with no TTY access and reboot required.
+Serial CTest passed. Use the serial command above on Pi; parallel compilation
+with `cmake --build build -j4` remains usable. CTest normally executes tests;
+it does not compile the project in this invocation (fixtures may prepare assets).
+The lockup cause is unresolved; serial success does not establish a fix or a
+particular audio, driver, kernel, resource or test-concurrency diagnosis.
+Do not repeat parallel Pi CTest as part of routine acceptance. Investigation is
+separate future work; no new implementation is authorized by this observation.
 
 ## Desktop and Pi listening checklist
 

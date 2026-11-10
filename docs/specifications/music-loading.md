@@ -378,5 +378,7 @@ No asset schema/limit change. Existing native `sb_audio_music_play` retains its
 generic refusal contract; the volume-aware sibling reports detailed start refusals
 for Lua. The [public API](../api/music.md) is authoritative for arguments/results;
 [validation](../../tests/music-playback.md) records automated and manual gates.
-Desktop listening accepted per the user on 2026-11-09; Pi acceptance pending.
+Desktop and Pi listening accepted per the user on 2026-11-09; Pi synchronized
+to `e2d7b7c`, 117/117 tests passed, exit 0. See validation for the serial Pi
+CTest requirement and unresolved parallel-run lockups.
 No composer changes or merge.

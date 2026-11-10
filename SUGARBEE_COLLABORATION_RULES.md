@@ -152,6 +152,7 @@ Maintain source-level portability between the Debian x86_64 development environm
 - Do not assume that X11, Wayland, a desktop compositor, or desktop-only audio facilities will always be available.
 - Prefer widely available, maintainable dependencies compatible with the target hardware.
 - Test directly on Raspberry Pi hardware when available; do not assume desktop testing establishes native compatibility.
+- Run CTest serially on the Pi (omit `-j`; do not enable parallelism through the environment or presets). Parallel CTest at 2–4 workers caused user-reported full-system lockups on 2026-11-09; serial validation passed. Parallel compilation with `cmake --build build -j4` remains usable. The cause is unresolved; further parallel Pi testing belongs to a separate, explicitly agreed investigation.
 - Treat more radical deployment choices, such as custom operating-system builds or bare-metal execution, as separate future decisions.
 
 Avoid introducing complexity to support hypothetical hardware platforms before a practical need exists.
