@@ -1,6 +1,6 @@
 # Lua music asset access checkpoint
 
-2026-11-09: load/info/unload implemented; Pi validation pending.
+2026-11-09: load/info/unload accepted on desktop and Pi at `4910b38`.
 No Lua playback API, audible Music Lab, exporter or composer changes.
 See [API contract](../docs/api/music.md).
 
@@ -52,14 +52,19 @@ the launcher's state transition. Existing WAV/synth and close-limit regressions
 remain in the full suite. Allocation-failure tests concern Lua allocation;
 previous native loader fault-injection tests remain separate coverage.
 
-Desktop evidence (2026-11-09, working tree based on `8bbc546`): warning-free
+Desktop evidence (2026-11-09, subsequently committed as `4910b38`): warning-free
 Debug build; **114/114 tests passed**, exit 0 (37.25 seconds, four workers).
 All **24 selected checks in the ASan/UBSan build passed**, including fixture
 setup, both Lua music/device modes, both existing WAV modes, and the native
 music/ownership/session regressions. Leak detection was disabled under tracing;
-no LeakSanitizer result is claimed. Diff/whitespace review passed. No Pi result
-is claimed; implementation is uncommitted/unmerged. SugarBeats code and the
-read-only canonical passdown were not modified.
+no LeakSanitizer result is claimed. Diff/whitespace review passed.
+
+Pi acceptance reported by the user on 2026-11-09 at synchronized commit
+`4910b38b4b75a77e6b2c8bd86497ea238939d4f9`: **114/114 tests passed**, exit 0.
+Engine acceptance is complete; next priority is SugarBeats consumer/API contract
+review. No listening claim is added for this silent checkpoint. Feature remains
+unmerged. Only acceptance documentation changed; unchanged tests were not rerun.
+SugarBeats code and the read-only canonical passdown were not modified.
 
 ## Pi handoff
 

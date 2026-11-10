@@ -109,11 +109,13 @@ synchronized `ee6255d`: 111/111 tests passed, exit 0; listening checks passed.
 SugarBeats returned review at `8bbc546`: 7/7 checks, 264 allocations matched
 frees, no mismatch.
 
-Current checkpoint: [Lua music asset access](tests/music-lua.md).
+Accepted checkpoint: [Lua music asset access](tests/music-lua.md).
 `sugarbee.music.load/info/unload` and per-cartridge context are implemented,
 including bounded loading without an audio device. Metadata is copied and handles
-are owner-checked; native lifecycle and limits are preserved. Pi validation is
-pending. No new listening gate: this checkpoint adds no Lua playback.
+are owner-checked; native lifecycle and limits are preserved. Pi acceptance
+reported by the user on 2026-11-09 at synchronized `4910b38`: 114/114 tests passed,
+exit 0. Next priority: SugarBeats consumer/API contract review. No new listening
+claim: this checkpoint adds no Lua playback.
 Playback/stop/state/volume and the audible Music Lab follow separately.
 
 Remaining major milestones, each separately bounded and validated:

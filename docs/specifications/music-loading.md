@@ -361,7 +361,10 @@ Loading/metadata/unload also work without an audio device via the same bounded
 native loader/collection in a per-cartridge silent context. Native assets and
 silent assets follow their existing respective teardown ownership. Contexts close
 before Lua and are destroyed afterward. No public playback/stop/state/volume yet.
-See [API](../api/music.md) and [validation](../../tests/music-lua.md). Pi validation
-is pending; no new sound output or listening gate is introduced.
+See [API](../api/music.md) and [validation](../../tests/music-lua.md). Pi acceptance
+reported by the user on 2026-11-09 at synchronized
+`4910b38b4b75a77e6b2c8bd86497ea238939d4f9`: 114/114 tests passed, exit 0.
+Next priority: SugarBeats consumer/API contract review. No new sound output or
+listening claim is introduced.
 SugarBeats' preceding review at `8bbc546` passed 7/7 checks, with 264 allocations
 matched frees and no mismatch. Composer changes remain deferred.
