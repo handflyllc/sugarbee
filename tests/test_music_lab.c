@@ -23,19 +23,33 @@ static bool press(SDL_Scancode code) {
     return keypress(SDL_KEYDOWN,code) && keypress(SDL_KEYUP,code);
 }
 int main(int argc,char **argv) {
-    CHECK(argc==3); bool unavailable=!strcmp(argv[2],"unavailable");
+    CHECK(argc==3 || argc==4);
+    unsigned end_frame=192000;
+    if (argc==4) {
+        char *end=NULL; unsigned long value=strtoul(argv[3],&end,10);
+        CHECK(end!=argv[3] && *end=='\0' && value>0 && value<=28800000);
+        end_frame=(unsigned)value;
+    }
+    bool unavailable=!strcmp(argv[2],"unavailable");
     if (unavailable) CHECK(SDL_setenv("SDL_AUDIODRIVER","sugarbee-no-device",1)==0);
     CHECK(init_engine()); CHECK((g_engine.audio==NULL)==unavailable);
     if (g_engine.audio) SDL_PauseAudioDevice(g_engine.audio->device,1);
     CHECK(start_cartridge(argv[1])); CHECK(!g_engine.guru_active);
     CHECK(press(SDL_SCANCODE_J));
     if (!unavailable) {
-        render(192000); CHECK(sb_audio_music_state(g_engine.audio)==SB_MUSIC_IDLE);
+        CHECK(g_engine.audio->music.sequence.song->end_frame==end_frame);
+        render(end_frame-1);
+        CHECK(sb_audio_music_state(g_engine.audio)==SB_MUSIC_PLAYING);
+        CHECK(g_engine.audio->music.sequence.frame==end_frame-1);
+        render(1); CHECK(sb_audio_music_state(g_engine.audio)==SB_MUSIC_IDLE);
     }
     CHECK(press(SDL_SCANCODE_W)); CHECK(press(SDL_SCANCODE_J));
     CHECK(press(SDL_SCANCODE_I));
     if (!unavailable) {
-        render(192100); CHECK(g_engine.audio->music.sequence.frame==100);
+        render(end_frame-1); CHECK(g_engine.audio->music.sequence.frame==end_frame-1);
+        render(1); CHECK(g_engine.audio->music.sequence.frame==0);
+        render(end_frame); CHECK(g_engine.audio->music.sequence.frame==0);
+        render(100); CHECK(g_engine.audio->music.sequence.frame==100);
         CHECK(sb_audio_music_state(g_engine.audio)==SB_MUSIC_PLAYING);
         CHECK(sb_music_shared_voice_active(&g_engine.audio->music,9));
     }

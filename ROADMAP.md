@@ -151,6 +151,14 @@ has completed desktop/Pi cartridge acceptance. SugarBeats code remains untouched
 Next priority: SugarBeats records end-to-end acceptance and reviews the next
 bounded composer checkpoint before any further feature work.
 
+Current bounded follow-up: [137 BPM export validation](tests/sugarbeats-timing/README.md).
+Selected SugarBeats artifact is preserved unchanged; the original accepted export
+remains intact. Music Lab tests now accept the expected end frame and verify
+one-shot/loop boundaries at 210219 frames. No runtime change. Desktop warning-free
+build and 123/123 serial tests passed, exit 0. Desktop listening accepted per the
+user on 2026-11-10; Pi validation pending. Include the obsolete
+"No exporter" README status correction in the next SugarBeats passdown.
+
 Remaining major milestones, each separately bounded and validated:
 - SugarBeats authoring/export and preview against demonstrated engine behavior.
 - End-to-end exported soundtrack validation and release integration; merge still
