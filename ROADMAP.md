@@ -157,10 +157,19 @@ remains intact. Music Lab tests now accept the expected end frame and verify
 one-shot/loop boundaries at 210219 frames. No runtime change. Desktop warning-free
 build and 123/123 serial tests passed, exit 0. Desktop listening accepted per the
 user on 2026-11-10. Pi acceptance reported at synchronized `15aa063`:
-123 tests passed, exit 0; listening checks passed. Return to SugarBeats for
-acceptance documentation and review of its next bounded checkpoint. Include the
-obsolete "No exporter" README status correction in that passdown. No new feature
-scope or merge authorized.
+123 tests passed, exit 0; listening checks passed. Acceptance docs at `3382bb9`.
+SugarBeats subsequently accepted one-shot JSON preview: 11/11 serial checks and
+all four desktop listening checks passed (reported in its passdown, 2026-11-10).
+The stale "No exporter" README status is resolved; JSON preview now exists.
+
+Agreed next checkpoint (2026-11-10): SugarBeats looping JSON preview with graceful
+stop. Add --loop only for --song, use native eligibility/sequencing, and request
+native stop on Ctrl+C before closing after idle; retain bounded emergency cleanup.
+Preserve one-shot, fixed-sequence and direct-note behavior. Validate repeated-loop
+sample parity, ineligible refusal, stop/cleanup/relaunch, serial regressions and
+desktop listening. No GUI, pause/seek/gain controls or automatic re-export.
+Next project: SugarBeats. No engine change, new Pi run or merge is required solely
+for this desktop preview checkpoint; return sooner if a native mismatch appears.
 
 Remaining major milestones, each separately bounded and validated:
 - SugarBeats authoring/export and preview against demonstrated engine behavior.
