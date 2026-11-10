@@ -162,14 +162,18 @@ SugarBeats subsequently accepted one-shot JSON preview: 11/11 serial checks and
 all four desktop listening checks passed (reported in its passdown, 2026-11-10).
 The stale "No exporter" README status is resolved; JSON preview now exists.
 
-Agreed next checkpoint (2026-11-10): SugarBeats looping JSON preview with graceful
-stop. Add --loop only for --song, use native eligibility/sequencing, and request
-native stop on Ctrl+C before closing after idle; retain bounded emergency cleanup.
-Preserve one-shot, fixed-sequence and direct-note behavior. Validate repeated-loop
-sample parity, ineligible refusal, stop/cleanup/relaunch, serial regressions and
-desktop listening. No GUI, pause/seek/gain controls or automatic re-export.
-Next project: SugarBeats. No engine change, new Pi run or merge is required solely
-for this desktop preview checkpoint; return sooner if a native mismatch appears.
+SugarBeats looping JSON preview and graceful stop are now accepted (2026-11-10):
+11/11 serial tests and all four desktop listening checks passed per its passdown.
+No engine changes or new Pi run; existing artifact acceptance stands.
+
+Agreed next checkpoint (2026-11-10): SugarBeats per-track preset selection for
+triangle, saw and pulse. Keep three tracks and existing CSV/timing controls;
+export explicit instrument settings in the existing asset format. With no preset
+selection, preserve the accepted default export byte-for-byte. Validate deterministic
+exports, invalid preset refusal, native loading, preview regressions and desktop
+listening. Return one reproducible mixed-instrument export for SugarBee cartridge
+validation. Noise, custom instrument editing, GUI and engine expansion remain
+outside this slice. Next project: SugarBeats; no merge authorized.
 
 Remaining major milestones, each separately bounded and validated:
 - SugarBeats authoring/export and preview against demonstrated engine behavior.
