@@ -186,14 +186,16 @@ accepted per the user on 2026-11-10, exit 0. Pi acceptance reported at synchroni
 SugarBeats for acceptance documentation and a bounded next-checkpoint proposal.
 No further feature implementation or merge authorized by this handoff.
 
-Current bounded follow-up: [per-track level cartridge validation](tests/sugarbeats-balanced/README.md).
+Accepted checkpoint: [per-track level cartridge validation](tests/sugarbeats-balanced/README.md).
 SugarBeats static instrument-volume export and desktop preview accepted: reported
 11/11 serial checks and four listening checks. Returned triangle/saw/pulse levels
 0.4/0.2/0.15; unchanged notes/timing and existing master-gain behavior. Selected
 artifact preserved unchanged and freshly reproduced. No runtime change; previous
 fixtures intact. Desktop warning-free build and 129/129 serial tests passed,
 exit 0. Desktop cartridge listening accepted per the user on 2026-11-10.
-Pi validation pending. No additional feature scope.
+Pi acceptance reported on 2026-11-10 at synchronized `4993140`: 129 tests
+passed, exit 0; all listening checks passed. Return to SugarBeats to record
+acceptance and propose one bounded next checkpoint. No additional feature scope.
 
 Remaining major milestones, each separately bounded and validated:
 - SugarBeats authoring/export and preview against demonstrated engine behavior.

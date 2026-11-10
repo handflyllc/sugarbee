@@ -49,10 +49,14 @@ passed**, exit 0 (150.35 seconds). Fresh export and packaged member match snapsh
 bytes/hash; source CSV hash verified. Comparison confirms only static instrument
 volumes differ from the accepted mixed asset. Prior artifact hashes unchanged.
 Diff check passed. No new sanitizer run (runtime unchanged). Desktop cartridge
-listening accepted per the user on 2026-11-10. Pi validation remains pending;
-changes uncommitted. Acceptance documentation only; tests were not rerun.
+listening accepted per the user on 2026-11-10.
 
-## Desktop listening and Pi handoff
+Pi acceptance reported by the user on 2026-11-10 at synchronized commit
+`49931402793755edaa9d3d2a357a2363c6516690`: **129 tests passed**, exit 0;
+all listening checks passed. This completes cartridge acceptance.
+Acceptance documentation only; tests were not rerun.
+
+## Listening checklist and Pi reproduction
 
 ```sh
 ./build/sugarbee build/sugarbeats-balanced.vcart
@@ -72,8 +76,8 @@ The screen retains Music Lab's title and controls:
    and verify idle defaults and fresh playback.
 5. Replay `build/sugarbeats-export.vcart`: original triangle sound/timing unchanged.
 
-After desktop acceptance, commit/push from the development machine. On Pi,
-synchronize the exact checkpoint and repeat serial tests and listening:
+To reproduce on Pi, synchronize the checkpoint being validated, then run
+serial tests and listening:
 
 ```sh
 git pull --ff-only origin feature/native-music-sequencer
