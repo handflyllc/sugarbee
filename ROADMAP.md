@@ -3,6 +3,32 @@
 Reviewed 2026-11-06 against merged baseline `b304a00`. This is a revisable
 plan, not a release schedule or a promise of additional features.
 
+## Current coordination — saved-project preview and merge boundary
+
+2026-11-10: SugarBeats saved-project workflow accepted per its passdown:
+12/12 serial tests and user save/reopen/export/listening checks passed.
+Saved projects reproduce accepted asset bytes; existing desktop/Pi cartridge
+acceptance at `4993140` stands. Engine checkout reviewed at `8366b18`;
+runtime unchanged since `e2d7b7c`.
+
+Agreed next checkpoint belongs to SugarBeats: `preview.py --project PATH`,
+with optional `--loop`, reusing project validation/export conversion and native
+playback. Preserve project files, CSV/exported-song workflows, native loop
+eligibility and graceful stopping. Acceptance covers parity with explicit
+project export, invalid-project refusal, one-shot/loop/stop behavior, existing
+serial regressions and desktop listening. No new engine prerequisite identified.
+GUI/editor, note editing and multiple patterns remain outside this checkpoint.
+
+After this checkpoint, assess concrete remaining prerequisites; do not invent
+CLI work to postpone the editor. Before the first GUI/editor checkpoint, review
+SugarBee merge readiness, confirm desktop/Pi evidence, obtain explicit merge
+authorization and perform post-merge validation. The user plans to build,
+initialize and merge the SugarBeats repository shortly after SugarBee merges,
+so both projects have synchronized progress before GUI/editor work. SugarBeats
+Git setup remains deferred until that point; no merge or repository initialization
+is authorized by this handoff. Return to SugarBee for coordination after accepted
+saved-project preview, or earlier for a demonstrated engine mismatch.
+
 ## Accepted checkpoint — prepared native music sequencing
 
 2026-11-07: engine edits authorized for a small isolated sequencer, native
