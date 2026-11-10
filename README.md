@@ -24,6 +24,7 @@ See [dependencies](docs/development/dependencies.md) and
 
 ## Documentation
 
+- [The SugarBee Manifesto — purpose and principles](MANIFESTO.md)
 - [Release-readiness checklist](docs/development/release-checklist.md)
 - [Release notes](RELEASE_NOTES.md)
 - [Build and testing](docs/development/building.md)
