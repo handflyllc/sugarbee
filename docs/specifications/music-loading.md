@@ -290,7 +290,10 @@ SugarBeats' preceding combined consumer completed at reviewed pin `4292b88`,
 ## Accepted next checkpoint: native asset ownership — 2026-11-09
 
 Design accepted and native collection implemented; desktop listening accepted
-by the user on 2026-11-09, exit 0. Pi acceptance remains pending. See [ownership contract and validation](../../tests/music-assets.md).
+by the user on 2026-11-09, exit 0. Pi acceptance also reported by the user on
+2026-11-09 at confirmed `d142156d9679477d3f6a417c3eef273a54a6dd16`:
+108/108 tests passed, exit 0; listening checks passed. Next priority: SugarBeats
+bounded ownership consumer validation. See [ownership contract and validation](../../tests/music-assets.md).
 SugarBeats returned the production-contract review at `df25be5`: 7/7 consumer
 checks passed, 224 tracked allocations matched frees, no mismatch.
 

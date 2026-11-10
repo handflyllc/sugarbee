@@ -92,8 +92,10 @@ no automatic eviction. See [accepted scope](docs/specifications/music-loading.md
 The native collection and production handle controls are implemented, with
 capacity/lifetime regression tests and an owned-asset listening mode. See
 [ownership validation](tests/music-assets.md). Desktop listening accepted by the
-user on 2026-11-09, exit 0. Pi acceptance remains pending; stop here before
-returning a tested pin to SugarBeats.
+user on 2026-11-09, exit 0. Pi acceptance reported by the user at confirmed
+`d142156`: synchronized hash, 108/108 tests passed, exit 0; listening passed.
+Engine acceptance is complete. Next priority: SugarBeats bounded ownership
+consumer validation.
 Cartridge file access, Lua music bindings and preview/editor expansion remain deferred.
 Feature remains unmerged.
 

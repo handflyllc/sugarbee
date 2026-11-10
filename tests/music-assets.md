@@ -1,6 +1,6 @@
 # Native music asset ownership checkpoint
 
-2026-11-09: implemented; desktop listening accepted, exit 0. Pi acceptance pending.
+2026-11-09: implemented and accepted on desktop and Pi at `d142156`.
 This adds an owned native collection and production-session handle controls.
 No cartridge file access, Lua bindings, exporter or editor features are added.
 
@@ -76,15 +76,18 @@ completion, teardown/restart/destroy, and input independence. Allocator wrappers
 verify no malloc/free calls during callback rendering, including failure cleanup.
 Existing borrowed-song, synth and WAV regressions remain in the full suite.
 
-Desktop evidence (2026-11-09, working tree based on `df25be5`): warning-free
+Desktop evidence (2026-11-09, subsequently committed as `d142156`): warning-free
 Debug build; **108/108 tests passed**, exit 0 (44.23 seconds, four test workers).
 **17 targeted ASan/UBSan checks passed**, exit 0, including both new ownership
 tests and existing native/production music, bank, session, WAV and Lua synth
 regressions. Leak detection was disabled under tracing; allocator fault/cleanup
 checks above are separate evidence. Diff/whitespace review passed. The user confirmed desktop listening acceptance
 for `sbee-music-session-test --owned`, exit 0, on 2026-11-09 (America/New_York).
-Pi acceptance remains pending; no commit or merge has been made. Only acceptance
-documentation changed for this report; unchanged tests were not rerun.
+Pi acceptance reported by the user on 2026-11-09 (America/New_York) at confirmed
+commit `d142156d9679477d3f6a417c3eef273a54a6dd16`: synchronized hash,
+**108/108 tests passed**, exit 0; listening checks passed. Pi validation is
+complete. Feature remains unmerged. Only acceptance documentation changed for
+this report; unchanged tests were not rerun.
 
 ## Listening and handoff
 
@@ -104,5 +107,6 @@ or written by the added music fixture.
 After desktop listening acceptance, commit/push on the development machine and
 validate the exact hash on the Pi: both new tests, full suite, and the owned
 listening mode (HDMI0). Report hash, counts, exit status and listening result.
-Stop at validation, then return a tested pin to SugarBeats for a bounded ownership
-consumer check. No composer expansion or additional engine milestone yet.
+Validation is complete. Next priority: SugarBeats bounded ownership consumer
+checks against the tested pin or its verified documentation-only successor.
+No composer expansion or additional engine milestone yet.
