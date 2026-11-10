@@ -124,7 +124,16 @@ The minimal Music Lab demonstrates a backing track plus an independent effect.
 Desktop: 117/117 tests and 36 selected ASan/UBSan-build checks passed
 (leak detection disabled). Desktop listening passed per the user on 2026-11-09.
 Pi acceptance reported at synchronized `e2d7b7c`: 117/117 tests, exit 0;
-all validation/listening checks passed. Next priority: SugarBeats consumer/API review.
+all validation/listening checks passed. SugarBeats returned consumer/API review at
+`5eb43a11bd85d76c884cdaf8ffe08c00a5ff7895`: warning-free rebuild, 7/7 serial checks,
+264 tracked allocations matched frees, no mismatch. This was contract review and
+native consumer regression, not new Lua integration or listening evidence.
+The first backing-track runtime path is demonstrated; no further engine blocker
+was identified. Agreed next bounded checkpoint (2026-11-09): SugarBeats exports
+one small fixed-instrument song from note data and validates it with the existing
+engine loader. Return the reproducible asset and validation evidence here for
+desktop cartridge checks, then prepare Pi validation and pause before running it.
+GUI/editor and preview expansion remain separate. Next project: SugarBeats.
 Pi CTest must run serially: parallel runs at 2–4 workers caused user-reported
 system lockups requiring reboot. Cause unresolved; parallel builds remain usable.
 See the checkpoint validation record; no parallel Pi retest is required.
