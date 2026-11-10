@@ -42,6 +42,11 @@ const char *sb_asset_error_string(sb_asset_result_t result) {
 
 sb_asset_result_t sb_asset_read(const char *cartridge, const char *path,
                                  uint8_t **data, size_t *length) {
+    return sb_asset_read_limited(cartridge,path,SB_ASSET_MAX_ENTRY,data,length);
+}
+sb_asset_result_t sb_asset_read_limited(const char *cartridge,const char *path,
+    size_t max_entry,uint8_t **data,size_t *length) {
+    if (max_entry>SB_ASSET_MAX_ENTRY) max_entry=SB_ASSET_MAX_ENTRY;
     if (data) *data = NULL;
     if (length) *length = 0;
     if (!data || !length || !cartridge || !safe_path(path))
@@ -95,7 +100,7 @@ sb_asset_result_t sb_asset_read(const char *cartridge, const char *path,
             if (found) goto done; /* ambiguous duplicates are rejected */
             found = true;
             target_info = info;
-            if (info.uncompressed_size > SB_ASSET_MAX_ENTRY) {
+            if (info.uncompressed_size > max_entry) {
                 result = SB_ASSET_TOO_LARGE;
                 goto done;
             }

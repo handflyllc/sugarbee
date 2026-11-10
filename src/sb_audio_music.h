@@ -1,9 +1,10 @@
-/* Internal prepared-song SDL controls; no cartridge loading or Lua API. */
+/* Internal native music/session controls; no Lua API. */
 #ifndef SB_AUDIO_MUSIC_H
 #define SB_AUDIO_MUSIC_H
 #include "sb_audio.h"
 #include "sb_music_sequence.h"
 #include "sb_music_assets.h"
+#include "sb_assets.h"
 /* Session mode only. Device locking serializes all controls with rendering.
  * Start validates atomically, copies the map, and borrows the immutable song
  * and its arrays until idle/reset/session end/destroy. Stop is a fade, not an
@@ -29,4 +30,15 @@ sb_music_asset_code_t sb_audio_music_load(sb_audio_t *audio, const char *json,
 sb_music_asset_code_t sb_audio_music_unload(sb_audio_t *audio, sb_music_handle_t handle);
 sb_music_asset_code_t sb_audio_music_play(sb_audio_t *audio, sb_music_handle_t handle,
     const unsigned *voices, size_t count, bool loop);
+/* Native host path: cartridge identifies the archive; path is a relative ZIP
+ * member, not a host filename. Reads <= SB_MUSIC_LOAD_MAX_INPUT before JSON
+ * validation and owned publication. No autoplay or extension-based trust.
+ * Same serialized control-thread/session requirements as memory load.
+ * On READ_FAILED, read_result identifies archive/path/size/CRC failure.
+ * On LOAD_FAILED, detail describes JSON/schema/preparation failure. Other
+ * result codes retain memory-load semantics. Output handle is zero on failure.
+ * Optional details are meaningful only for their respective failure stage. */
+sb_music_asset_code_t sb_audio_music_load_cartridge(sb_audio_t *audio,
+    const char *cartridge,const char *path,sb_music_handle_t *handle,
+    sb_asset_result_t *read_result,sb_music_load_result_t *detail);
 #endif

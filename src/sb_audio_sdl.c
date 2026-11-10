@@ -613,3 +613,31 @@ sb_music_asset_code_t sb_audio_music_play(sb_audio_t *audio,sb_music_handle_t ha
     SDL_UnlockAudioDevice(audio->device);
     return code;
 }
+
+
+sb_music_asset_code_t sb_audio_music_load_cartridge(sb_audio_t *audio,
+    const char *cartridge,const char *path,sb_music_handle_t *handle,
+    sb_asset_result_t *read_result,sb_music_load_result_t *detail) {
+    if (read_result) *read_result=SB_ASSET_OK;
+    if (detail) {
+        *detail=(sb_music_load_result_t){0};
+        detail->code=SB_MUSIC_LOAD_ARGUMENT;
+        detail->byte_offset=SIZE_MAX;
+    }
+    if (!handle) return SB_MUSIC_ASSET_ARGUMENT;
+    *handle=0;
+    if (!audio) return SB_MUSIC_ASSET_UNAVAILABLE;
+    SDL_LockAudioDevice(audio->device);
+    bool allowed=audio->mode==AUDIO_SESSION;
+    SDL_UnlockAudioDevice(audio->device);
+    if (!allowed) return SB_MUSIC_ASSET_REJECTED;
+    uint8_t *bytes=NULL;
+    size_t length=0;
+    sb_asset_result_t read=sb_asset_read_limited(cartridge,path,
+        SB_MUSIC_LOAD_MAX_INPUT,&bytes,&length);
+    if (read_result) *read_result=read;
+    if (read!=SB_ASSET_OK) return SB_MUSIC_ASSET_READ_FAILED;
+    sb_music_asset_code_t code=sb_audio_music_load(audio,(const char *)bytes,length,handle,detail);
+    free(bytes);
+    return code;
+}

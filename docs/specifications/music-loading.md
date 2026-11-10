@@ -324,3 +324,21 @@ storage until teardown, so callbacks never free. Handles are scoped to an owner;
 serials survive session reset, and exhaustion refuses rather than wraps.
 The total budget counts actual loaded prepared allocations, excluding transient
 parsing/candidate storage and fixed collection/player bookkeeping.
+
+
+## Native cartridge music file access — 2026-11-09 checkpoint
+
+Implemented after the owned-asset consumer returned at `af76f8d` (7/7 checks,
+264 allocations matched frees, no mismatch). Native host code can read a named
+member from a `.vcart` into the owned session collection. Reuse the existing
+archive reader, capped at the existing 1 MiB music input limit before member
+allocation/decompression, then the existing loader and atomic publication path.
+The ordinary asset reader retains its existing 16 MiB entry limit.
+
+Loading does not start playback. Read errors, loader errors and publication
+refusals remain distinguishable; existing assets/playback survive every refusal.
+File access/parsing/freeing stay outside the audio callback and device lock.
+See [contract and validation](../../tests/music-cartridge.md). Desktop cartridge
+checks accepted by the user on 2026-11-09, exit 0. Pi acceptance remains pending.
+Lua bindings, cartridge Music Lab and composer
+expansion remain separate checkpoints; no cartridge format change.

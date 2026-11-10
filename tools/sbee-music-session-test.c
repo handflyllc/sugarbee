@@ -57,9 +57,23 @@ static bool load_wav(sb_audio_t *a,sb_wav_handle_t *asset) {
 }
 #define REQUIRE(e) do { if (!(e)) { fprintf(stderr,"Check failed: %s\n",#e); goto done; } } while (0)
 static void listen(const char *message) { puts(message); SDL_Delay(1000); }
+static bool load_music(sb_audio_t *a,const char *cart,const char *path,sb_music_handle_t *id) {
+    if (!cart) return sb_audio_music_load(a,owned_json,sizeof owned_json-1,id,NULL)==SB_MUSIC_ASSET_OK;
+    sb_asset_result_t read;
+    sb_music_load_result_t detail;
+    sb_music_asset_code_t code=sb_audio_music_load_cartridge(a,cart,path,id,&read,&detail);
+    if (code==SB_MUSIC_ASSET_READ_FAILED) fprintf(stderr,"Music read: %s\n",sb_asset_error_string(read));
+    else if (code==SB_MUSIC_ASSET_LOAD_FAILED) fprintf(stderr,"Music load: %s\n",detail.message);
+    else if (code!=SB_MUSIC_ASSET_OK) fprintf(stderr,"Music publication refused: %d\n",(int)code);
+    return code==SB_MUSIC_ASSET_OK;
+}
 int main(int argc,char **argv) {
-    bool owned=argc==2 && !strcmp(argv[1],"--owned");
-    if (argc!=1 && !owned) { fprintf(stderr,"Usage: %s [--owned]\n",argv[0]); return 2; }
+    bool from_cart=argc==4 && !strcmp(argv[1],"--cartridge");
+    bool owned=from_cart || (argc==2 && !strcmp(argv[1],"--owned"));
+    if (argc!=1 && !owned) {
+        fprintf(stderr,"Usage: %s [--owned | --cartridge file.vcart member]\n",argv[0]); return 2;
+    }
+    const char *cart=from_cart?argv[2]:NULL,*path=from_cart?argv[3]:NULL;
     sb_music_handle_t music=0;
     int result=1;
     puts("Production music session: start with low speaker volume.");
@@ -68,8 +82,8 @@ int main(int argc,char **argv) {
     sb_wav_handle_t asset,playback;
     REQUIRE(load_wav(a,&asset));
     if (owned) {
-        puts("Using session-owned JSON music asset handles.");
-        REQUIRE(sb_audio_music_load(a,owned_json,sizeof owned_json-1,&music,NULL)==SB_MUSIC_ASSET_OK);
+        puts(from_cart ? "Using music loaded from a cartridge member." : "Using session-owned JSON music asset handles.");
+        REQUIRE(load_music(a,cart,path,&music));
     }
     REQUIRE(start_music(a,music));
     listen("Music: sustained triangle chord.");
@@ -99,7 +113,7 @@ int main(int argc,char **argv) {
     sb_audio_session_end(a); sb_audio_session_begin(a);
     if (owned) {
         REQUIRE(sb_audio_music_play(a,music,voices,3,true)==SB_MUSIC_ASSET_BAD_HANDLE);
-        REQUIRE(sb_audio_music_load(a,owned_json,sizeof owned_json-1,&music,NULL)==SB_MUSIC_ASSET_OK);
+        REQUIRE(load_music(a,cart,path,&music));
     }
     REQUIRE(start_music(a,music));
     listen("Fresh session: chord alone; no previous effects.");

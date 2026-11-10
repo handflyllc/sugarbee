@@ -97,6 +97,22 @@ user on 2026-11-09, exit 0. Pi acceptance reported by the user at confirmed
 Engine acceptance is complete. Next priority: SugarBeats bounded ownership
 consumer validation.
 Cartridge file access, Lua music bindings and preview/editor expansion remain deferred.
+SugarBeats ownership consumer completed at reviewed pin `af76f8d`: 7/7 checks,
+264 tracked allocations matched frees, no mismatch.
+
+Current checkpoint: [native cartridge music loading](tests/music-cartridge.md).
+Named `.vcart` members now load into the owned collection through the existing
+reader and JSON loader. Music's 1 MiB input cap is checked before decompression;
+existing asset-read limits and cartridge format are preserved. Desktop cartridge
+checks passed per the user on 2026-11-09, exit 0. Pi acceptance remains pending.
+No Lua music API or composer changes.
+
+Remaining major milestones, each separately bounded and validated:
+- Lua music controls and a minimal cartridge Music Lab.
+- SugarBeats authoring/export and preview against demonstrated engine behavior.
+- End-to-end exported soundtrack validation and release integration; merge still
+  requires explicit authorization.
+
 Feature remains unmerged.
 
 ## Validated RC1 baseline
