@@ -272,3 +272,7 @@ const sb_music_song_t *sb_music_asset_song(const sb_music_asset_t *a) { return a
 void sb_music_asset_free(sb_music_asset_t *a) { free(a); }
 
 bool sb_music_asset_loop_eligible(const sb_music_asset_t *a) { return a && a->loop_eligible; }
+
+size_t sb_music_asset_prepared_bytes(const sb_music_asset_t *a) {
+    return a ? sizeof(*a)+a->song.event_count*sizeof(sb_music_event_t) : 0;
+}

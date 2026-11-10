@@ -33,4 +33,7 @@ bool sb_music_asset_loop_eligible(const sb_music_asset_t *asset);
 /* NULL safe. Caller MUST ensure no sequencer still borrows this asset. No registry
  * or active-use tracking here; this is not the future Lua unload operation. */
 void sb_music_asset_free(sb_music_asset_t *asset);
+/* Actual prepared allocation size, including the asset header and arrays.
+ * Excludes temporary parser/input storage and allocator bookkeeping. NULL: 0. */
+size_t sb_music_asset_prepared_bytes(const sb_music_asset_t *asset);
 #endif

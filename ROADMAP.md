@@ -83,9 +83,18 @@ the user confirmed all three desktop diagnostics and Musical Synth Lab
 pause/exit/resume/reload passed, followed by WAV Lab lifecycle acceptance.
 Pi acceptance reported by the user on 2026-11-09 at `92946e3`: 105/105 tests
 passed, all checks exited 0, and Synth/WAV Lab lifecycle checks passed.
-Desktop and Pi acceptance are complete. Next priority: SugarBeats consumer
-rebuild/regression and production contract review. No cartridge loader
-integration, asset registry, Lua music bindings or preview/editor expansion.
+Desktop and Pi acceptance are complete. SugarBeats returned its consumer review
+at `df25be5`: 7/7 checks, 224 allocations matched frees, no mismatch.
+Accepted next checkpoint: native asset ownership and lifetime management.
+Starting limits: eight loaded assets, 1 MiB total actual prepared storage,
+existing 256 KiB per asset, one active song. Capacity refusal is atomic;
+no automatic eviction. See [accepted scope](docs/specifications/music-loading.md#accepted-next-checkpoint-native-asset-ownership--2026-11-09).
+The native collection and production handle controls are implemented, with
+capacity/lifetime regression tests and an owned-asset listening mode. See
+[ownership validation](tests/music-assets.md). Desktop listening accepted by the
+user on 2026-11-09, exit 0. Pi acceptance remains pending; stop here before
+returning a tested pin to SugarBeats.
+Cartridge file access, Lua music bindings and preview/editor expansion remain deferred.
 Feature remains unmerged.
 
 ## Validated RC1 baseline

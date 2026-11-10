@@ -18,6 +18,7 @@ struct sb_audio {
     sb_audio_tone_t tone;
     sb_audio_triangle_t triangle;
     sb_music_shared_t music;
+    sb_music_assets_t music_assets;
     sb_wav_pool_t wav;
     audio_mode_t mode;
 };
@@ -136,6 +137,7 @@ void sb_audio_destroy(sb_audio_t *audio) {
        drain loop or wait for future sounds is introduced. */
     SDL_CloseAudioDevice(audio->device);
     sb_music_shared_init(&audio->music);
+    sb_music_assets_reset(&audio->music_assets);
     sb_wav_pool_reset(&audio->wav);
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
     free(audio);
@@ -370,6 +372,7 @@ void sb_audio_session_begin(sb_audio_t *audio) {
     if (!audio) return;
     SDL_LockAudioDevice(audio->device);
     sb_music_shared_init(&audio->music);
+    sb_music_assets_reset(&audio->music_assets);
     sb_wav_pool_reset(&audio->wav);
     audio->tone = (sb_audio_tone_t){0};
     audio->triangle = (sb_audio_triangle_t){0};
@@ -407,6 +410,7 @@ void sb_audio_session_end(sb_audio_t *audio) {
     if (!audio) return;
     SDL_LockAudioDevice(audio->device);
     sb_music_shared_init(&audio->music);
+    sb_music_assets_reset(&audio->music_assets);
     sb_wav_pool_reset(&audio->wav);
     audio->tone = (sb_audio_tone_t){0};
     audio->triangle = (sb_audio_triangle_t){0};
@@ -560,4 +564,52 @@ bool sb_audio_music_reserved(sb_audio_t *audio, unsigned voice) {
     bool reserved=sb_music_shared_reserved(&audio->music,voice);
     SDL_UnlockAudioDevice(audio->device);
     return reserved;
+}
+
+
+sb_music_asset_code_t sb_audio_music_load(sb_audio_t *audio,const char *json,
+    size_t length,sb_music_handle_t *handle,sb_music_load_result_t *detail) {
+    if (detail) {
+        *detail=(sb_music_load_result_t){0};
+        detail->code=SB_MUSIC_LOAD_ARGUMENT;
+        detail->byte_offset=SIZE_MAX;
+    }
+    if (!handle) return SB_MUSIC_ASSET_ARGUMENT;
+    *handle=0;
+    if (!audio) return SB_MUSIC_ASSET_UNAVAILABLE;
+    SDL_LockAudioDevice(audio->device);
+    bool allowed=audio->mode==AUDIO_SESSION;
+    SDL_UnlockAudioDevice(audio->device);
+    if (!allowed) return SB_MUSIC_ASSET_REJECTED;
+    sb_music_asset_t *asset=sb_music_load(json,length,detail);
+    if (!asset) return SB_MUSIC_ASSET_LOAD_FAILED;
+    SDL_LockAudioDevice(audio->device);
+    sb_music_asset_code_t code=audio->mode==AUDIO_SESSION ?
+        sb_music_assets_insert(&audio->music_assets,&asset,handle) : SB_MUSIC_ASSET_REJECTED;
+    SDL_UnlockAudioDevice(audio->device);
+    sb_music_asset_free(asset); /* NULL on ownership transfer; otherwise refused. */
+    return code;
+}
+sb_music_asset_code_t sb_audio_music_unload(sb_audio_t *audio,sb_music_handle_t handle) {
+    if (!audio) return SB_MUSIC_ASSET_UNAVAILABLE;
+    SDL_LockAudioDevice(audio->device);
+    sb_music_asset_code_t code=audio->mode==AUDIO_SESSION ?
+        sb_music_assets_unload(&audio->music_assets,handle,audio->music.sequence.song) :
+        SB_MUSIC_ASSET_REJECTED;
+    SDL_UnlockAudioDevice(audio->device);
+    return code;
+}
+sb_music_asset_code_t sb_audio_music_play(sb_audio_t *audio,sb_music_handle_t handle,
+    const unsigned *voices,size_t count,bool loop) {
+    if (!audio) return SB_MUSIC_ASSET_UNAVAILABLE;
+    SDL_LockAudioDevice(audio->device);
+    sb_music_asset_code_t code=SB_MUSIC_ASSET_REJECTED;
+    if (audio->mode==AUDIO_SESSION) {
+        const sb_music_asset_t *asset=sb_music_assets_get(&audio->music_assets,handle);
+        if (!asset) code=SB_MUSIC_ASSET_BAD_HANDLE;
+        else if (sb_music_shared_start(&audio->music,sb_music_asset_song(asset),voices,count,loop))
+            code=SB_MUSIC_ASSET_OK;
+    }
+    SDL_UnlockAudioDevice(audio->device);
+    return code;
 }

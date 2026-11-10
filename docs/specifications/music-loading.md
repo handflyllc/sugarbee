@@ -285,3 +285,39 @@ exited 0, and Synth/WAV Lab lifecycle checks passed. Engine acceptance is
 complete; next priority is SugarBeats consumer regression and contract review.
 SugarBeats' preceding combined consumer completed at reviewed pin `4292b88`,
 7/7 checks, 224 tracked allocations matched frees and no contract mismatch.
+
+
+## Accepted next checkpoint: native asset ownership — 2026-11-09
+
+Design accepted and native collection implemented; desktop listening accepted
+by the user on 2026-11-09, exit 0. Pi acceptance remains pending. See [ownership contract and validation](../../tests/music-assets.md).
+SugarBeats returned the production-contract review at `df25be5`: 7/7 consumer
+checks passed, 224 tracked allocations matched frees, no mismatch.
+
+- At most eight loaded music assets per session.
+- At most 1 MiB (1,048,576 bytes) of total prepared music storage, counting
+  actual prepared allocations rather than reserving the maximum for each slot.
+- Preserve the existing 256 KiB per-asset prepared limit and 4,096-event limit.
+- One active song. Temporary JSON parsing retains its separate existing limits;
+  the 1 MiB total is not a cap on all transient loading memory.
+- Exceeding either collection limit refuses the load without changing existing
+  assets or interrupting playback. No automatic eviction; unload is explicit.
+
+These starting limits are settled until further notice, but may be revised
+when real compositions demonstrate a need. Record meaningful revisions and why.
+
+The bounded implementation scope is a native collection with validated handles,
+active-use protection through stop fades, safe session teardown, and regression
+checks for stale handles, capacity, failed loads and cleanup. Reuse the bounded
+in-memory loader and explicit voice mapping. Cartridge file access, Lua music
+bindings and composer feature expansion remain separate checkpoints.
+
+
+Implementation uses an eight-slot native collection in `sugarbee_music_load`,
+with device-locked production load/play/unload controls. Loaded assets survive
+music completion/reset and remain until explicit unload or session teardown.
+Active unload is refused through paused/held/finishing states. Failure retains
+storage until teardown, so callbacks never free. Handles are scoped to an owner;
+serials survive session reset, and exhaustion refuses rather than wraps.
+The total budget counts actual loaded prepared allocations, excluding transient
+parsing/candidate storage and fixed collection/player bookkeeping.
