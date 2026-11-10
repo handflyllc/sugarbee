@@ -560,6 +560,21 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
         endforeach()
     endif()
 
+    if(SUGARBEE_BUILD_PACKER)
+        add_test(NAME sugarbeats_balanced_pack COMMAND "${CMAKE_COMMAND}"
+            "-DPACKER=$<TARGET_FILE:sbee-pack>" "-DSOURCE_ROOT=${PROJECT_SOURCE_DIR}"
+            "-DTEST_ROOT=${PROJECT_BINARY_DIR}/sugarbeats-balanced-source"
+            "-DCART=${PROJECT_BINARY_DIR}/sugarbeats-balanced.vcart"
+            -P "${PROJECT_SOURCE_DIR}/tests/sugarbeats_balanced_pack.cmake")
+        set_tests_properties(sugarbeats_balanced_pack PROPERTIES FIXTURES_SETUP sugarbeats_balanced TIMEOUT 10)
+        foreach(mode device unavailable)
+            add_test(NAME sugarbeats_balanced_${mode} COMMAND test_music_lab
+                "${PROJECT_BINARY_DIR}/sugarbeats-balanced.vcart" ${mode} 192000)
+            set_tests_properties(sugarbeats_balanced_${mode} PROPERTIES FIXTURES_REQUIRED sugarbeats_balanced TIMEOUT 15
+                ENVIRONMENT "SDL_AUDIODRIVER=dummy;SDL_VIDEODRIVER=dummy")
+        endforeach()
+    endif()
+
     add_executable(test_lua_wav tests/test_lua_wav.c)
     target_link_libraries(test_lua_wav PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
     sugarbee_warnings(test_lua_wav)
