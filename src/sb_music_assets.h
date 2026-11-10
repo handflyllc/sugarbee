@@ -15,7 +15,8 @@ bool sb_music_asset_info(const sb_music_asset_t *asset,sb_music_info_t *info);
 typedef enum {
     SB_MUSIC_ASSET_OK, SB_MUSIC_ASSET_ARGUMENT, SB_MUSIC_ASSET_UNAVAILABLE,
     SB_MUSIC_ASSET_REJECTED, SB_MUSIC_ASSET_LOAD_FAILED, SB_MUSIC_ASSET_CAPACITY,
-    SB_MUSIC_ASSET_BAD_HANDLE, SB_MUSIC_ASSET_IN_USE, SB_MUSIC_ASSET_EXHAUSTED, SB_MUSIC_ASSET_READ_FAILED
+    SB_MUSIC_ASSET_BAD_HANDLE, SB_MUSIC_ASSET_IN_USE, SB_MUSIC_ASSET_EXHAUSTED, SB_MUSIC_ASSET_READ_FAILED,
+    SB_MUSIC_ASSET_PLAYER_BUSY, SB_MUSIC_ASSET_VOICE_BUSY, SB_MUSIC_ASSET_LOOP_INELIGIBLE
 } sb_music_asset_code_t;
 typedef struct { sb_music_handle_t id; sb_music_asset_t *asset; } sb_music_asset_slot_t;
 typedef struct {

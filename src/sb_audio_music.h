@@ -44,4 +44,9 @@ sb_music_asset_code_t sb_audio_music_load_cartridge(sb_audio_t *audio,
 /* Copies metadata under the device lock. No allocation; session mode only. */
 sb_music_asset_code_t sb_audio_music_info(sb_audio_t *audio,sb_music_handle_t handle,
     sb_music_info_t *info);
+/* Atomic start with initial gain, applied before the first callback frame.
+ * Extended refusal reasons for Lua; the older play wrapper retains its generic
+ * REJECTED result. Subsequent gain changes still use the normal 480-frame ramp. */
+sb_music_asset_code_t sb_audio_music_play_volume(sb_audio_t *audio,sb_music_handle_t handle,
+    const unsigned *voices,size_t count,bool loop,double volume);
 #endif

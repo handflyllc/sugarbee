@@ -1,7 +1,9 @@
 # Lua music asset access checkpoint
 
 2026-11-09: load/info/unload accepted on desktop and Pi at `4910b38`.
-No Lua playback API, audible Music Lab, exporter or composer changes.
+This historical checkpoint added no playback API or audible Music Lab.
+The subsequent [playback checkpoint](music-playback.md) extends these tests;
+exporter and composer changes remain out of scope.
 See [API contract](../docs/api/music.md).
 
 ## Implementation
@@ -33,7 +35,7 @@ ctest --test-dir build --output-on-failure
 The fixture is packed by the real packager and launched by the real host in two
 modes: SDL dummy audio and forced unavailable audio. It loads/inspects on init
 and unloads on shutdown. Its silent/blank screen is intentional: no playback or
-Music Lab UI exists yet. `build/music-lua.vcart` can also be launched normally;
+UI is included in this asset fixture. `build/music-lua.vcart` can also be launched normally;
 console messages identify successful load/info and unload.
 
 Tests cover metadata values/types/copy independence, return counts and stack
@@ -41,8 +43,8 @@ balance; missing/invalid assets; malformed paths/types/arity; protected userdata
 WAV/foreign/unloaded/stale handle rejection; eight-slot capacity and recovery;
 Lua allocation failure before load and during info without native mutation;
 and unavailable-device parity. Native-only playback checks verify Lua unload
-refuses active, paused and finishing assets. Existing Lua music playback names
-are asserted absent.
+refuses active, paused and finishing assets. Playback names were absent at the original checkpoint; current tests also
+exercise the playback contract described in the linked follow-up.
 
 Real host lifecycle coverage includes normal shutdown, repeated launches,
 Guru failure after load, init-callback failure and cleanup. A host-installed

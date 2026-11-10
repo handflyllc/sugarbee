@@ -8,6 +8,7 @@
 #include "sb_wav_internal.h"
 #include <SDL2/SDL.h>
 #include <stdio.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -601,14 +602,48 @@ sb_music_asset_code_t sb_audio_music_unload(sb_audio_t *audio,sb_music_handle_t 
 }
 sb_music_asset_code_t sb_audio_music_play(sb_audio_t *audio,sb_music_handle_t handle,
     const unsigned *voices,size_t count,bool loop) {
+    sb_music_asset_code_t code=sb_audio_music_play_volume(audio,handle,voices,count,loop,1);
+    /* Preserve the established native wrapper's generic playback refusal. */
+    return code==SB_MUSIC_ASSET_PLAYER_BUSY || code==SB_MUSIC_ASSET_VOICE_BUSY ||
+        code==SB_MUSIC_ASSET_LOOP_INELIGIBLE || code==SB_MUSIC_ASSET_ARGUMENT ?
+        SB_MUSIC_ASSET_REJECTED : code;
+}
+sb_music_asset_code_t sb_audio_music_play_volume(sb_audio_t *audio,sb_music_handle_t handle,
+    const unsigned *voices,size_t count,bool loop,double volume) {
     if (!audio) return SB_MUSIC_ASSET_UNAVAILABLE;
+    if (!voices || !count || count>SB_AUDIO_BANK_VOICES || !isfinite(volume) || volume<0 || volume>1)
+        return SB_MUSIC_ASSET_ARGUMENT;
+    unsigned mask=0;
+    for (size_t n=0;n<count;++n) {
+        if (voices[n]<1 || voices[n]>SB_AUDIO_BANK_VOICES || (mask & (1u<<(voices[n]-1))))
+            return SB_MUSIC_ASSET_ARGUMENT;
+        mask|=1u<<(voices[n]-1);
+    }
     SDL_LockAudioDevice(audio->device);
     sb_music_asset_code_t code=SB_MUSIC_ASSET_REJECTED;
     if (audio->mode==AUDIO_SESSION) {
         const sb_music_asset_t *asset=sb_music_assets_get(&audio->music_assets,handle);
         if (!asset) code=SB_MUSIC_ASSET_BAD_HANDLE;
-        else if (sb_music_shared_start(&audio->music,sb_music_asset_song(asset),voices,count,loop))
+        else if (count!=sb_music_asset_song(asset)->track_count) code=SB_MUSIC_ASSET_ARGUMENT;
+        else if (audio->music.sequence.state!=SB_MUSIC_IDLE) code=SB_MUSIC_ASSET_PLAYER_BUSY;
+        else if (loop && !sb_music_asset_loop_eligible(asset)) code=SB_MUSIC_ASSET_LOOP_INELIGIBLE;
+        else {
             code=SB_MUSIC_ASSET_OK;
+            for (size_t n=0;n<count;++n)
+                if (sb_music_shared_voice_active(&audio->music,voices[n])) code=SB_MUSIC_ASSET_VOICE_BUSY;
+            if (code==SB_MUSIC_ASSET_OK) {
+                if (!sb_music_shared_start(&audio->music,sb_music_asset_song(asset),voices,count,loop))
+                    code=SB_MUSIC_ASSET_REJECTED;
+                else {
+                    /* Publishing playback and initial gain shares one lock. No
+                     * opening frame may escape at the default gain first. */
+                    audio->music.sequence.gain=volume;
+                    audio->music.sequence.gain_from=volume;
+                    audio->music.sequence.gain_target=volume;
+                    audio->music.sequence.gain_left=0;
+                }
+            }
+        }
     }
     SDL_UnlockAudioDevice(audio->device);
     return code;

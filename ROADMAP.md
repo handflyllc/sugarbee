@@ -114,12 +114,18 @@ Accepted checkpoint: [Lua music asset access](tests/music-lua.md).
 including bounded loading without an audio device. Metadata is copied and handles
 are owner-checked; native lifecycle and limits are preserved. Pi acceptance
 reported by the user on 2026-11-09 at synchronized `4910b38`: 114/114 tests passed,
-exit 0. Next priority: SugarBeats consumer/API contract review. No new listening
-claim: this checkpoint adds no Lua playback.
-Playback/stop/state/volume and the audible Music Lab follow separately.
+exit 0. SugarBeats returned review at documentation successor `1d6889f`:
+7/7 checks, 264 allocations matched frees, no mismatch; no follower source changes.
+
+Current checkpoint: [Lua playback and Music Lab](tests/music-playback.md).
+`play/state/stop/set_volume` now route to the established native player; explicit
+voice mapping and atomic initial volume preserve existing ownership and fades.
+The minimal Music Lab demonstrates a backing track plus an independent effect.
+Desktop: 117/117 tests and 36 selected ASan/UBSan-build checks passed
+(leak detection disabled). Desktop listening passed per the user on 2026-11-09.
+Pi acceptance remains pending. Stop here for validation, then return to SugarBeats.
 
 Remaining major milestones, each separately bounded and validated:
-- Lua music controls and a minimal cartridge Music Lab.
 - SugarBeats authoring/export and preview against demonstrated engine behavior.
 - End-to-end exported soundtrack validation and release integration; merge still
   requires explicit authorization.

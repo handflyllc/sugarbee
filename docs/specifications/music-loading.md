@@ -368,3 +368,15 @@ Next priority: SugarBeats consumer/API contract review. No new sound output or
 listening claim is introduced.
 SugarBeats' preceding review at `8bbc546` passed 7/7 checks, with 264 allocations
 matched frees and no mismatch. Composer changes remain deferred.
+
+## Lua playback and Music Lab — 2026-11-09 checkpoint
+
+The follow-up adds `play/state/stop/set_volume` with explicit physical voice maps
+and an initial volume applied atomically with native start. The existing native
+loop, ownership, stop/gain fades, shared effects and host lifecycle are reused.
+No asset schema/limit change. Existing native `sb_audio_music_play` retains its
+generic refusal contract; the volume-aware sibling reports detailed start refusals
+for Lua. The [public API](../api/music.md) is authoritative for arguments/results;
+[validation](../../tests/music-playback.md) records automated and manual gates.
+Desktop listening accepted per the user on 2026-11-09; Pi acceptance pending.
+No composer changes or merge.

@@ -2,6 +2,7 @@
 #include "sb_audio_music.h"
 #include <lauxlib.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 #define MUSIC_MT "sugarbee.music.asset"
 struct sb_lua_music {
@@ -44,6 +45,10 @@ static music_handle_t *music_check(lua_State *L) {
 static int music_code(lua_State *L,sb_music_asset_code_t code,bool boolean) {
     const char *reason;
     switch (code) {
+        case SB_MUSIC_ASSET_PLAYER_BUSY: reason="music_busy"; break;
+        case SB_MUSIC_ASSET_VOICE_BUSY: reason="voice_busy"; break;
+        case SB_MUSIC_ASSET_LOOP_INELIGIBLE: reason="loop_ineligible"; break;
+        case SB_MUSIC_ASSET_ARGUMENT: return luaL_error(L,"music: invalid playback options");
         case SB_MUSIC_ASSET_CAPACITY: reason="music_capacity"; break;
         case SB_MUSIC_ASSET_IN_USE: reason="music_in_use"; break;
         case SB_MUSIC_ASSET_EXHAUSTED: reason="music_id_exhausted"; break;
@@ -123,11 +128,105 @@ static int music_unload(lua_State *L) {
     if (code!=SB_MUSIC_ASSET_OK) return music_code(L,code,true);
     h->id=0; lua_pushboolean(L,1); return 1;
 }
+static double music_volume_value(lua_State *L,int index) {
+    double value=lua_tonumber(L,index);
+    if (lua_type(L,index)!=LUA_TNUMBER || !isfinite(value) || value<0 || value>1)
+        luaL_error(L,"music: volume must be a finite number in [0, 1]");
+    return value;
+}
+static bool music_key(lua_State *L,int index,const char *name) {
+    size_t n;
+    if (lua_type(L,index)!=LUA_TSTRING) return false;
+    const char *key=lua_tolstring(L,index,&n);
+    return n==strlen(name) && !memcmp(key,name,n);
+}
+/* Raw table iteration: no inherited fields or metamethods. Each key is a
+ * logical track, each value a distinct physical voice. Stack unchanged. */
+static size_t music_voices(lua_State *L,int index,unsigned voices[SB_AUDIO_BANK_VOICES]) {
+    if (lua_type(L,index)!=LUA_TTABLE) luaL_error(L,"music.play: voices must be a table");
+    index=lua_absindex(L,index);
+    unsigned tracks=0,physical=0; size_t count=0;
+    lua_pushnil(L);
+    while (lua_next(L,index)) {
+        if (!lua_isinteger(L,-2) || !lua_isinteger(L,-1))
+            luaL_error(L,"music.play: voice mapping needs integer keys and values");
+        lua_Integer track=lua_tointeger(L,-2),voice=lua_tointeger(L,-1);
+        if (track<1 || track>SB_AUDIO_BANK_VOICES || voice<1 || voice>SB_AUDIO_BANK_VOICES ||
+            (physical & (1u<<((unsigned)voice-1))))
+            luaL_error(L,"music.play: invalid or duplicate voice assignment");
+        tracks|=1u<<((unsigned)track-1); physical|=1u<<((unsigned)voice-1);
+        voices[(unsigned)track-1]=(unsigned)voice; ++count;
+        lua_pop(L,1);
+    }
+    if (!count || tracks!=((1u<<(unsigned)count)-1))
+        luaL_error(L,"music.play: voices must be a complete dense mapping");
+    return count;
+}
+/* Stack [song, options] -> [..., true] or [..., false, reason]. All option and
+ * handle validation precedes mutation. No Lua allocation after successful start. */
+static int music_play(lua_State *L) {
+    if (lua_gettop(L)!=2) return luaL_error(L,"music.play: expected song and options");
+    music_handle_t *h=music_check(L);
+    if (lua_type(L,2)!=LUA_TTABLE) return luaL_error(L,"music.play: options must be a table");
+    unsigned voices[SB_AUDIO_BANK_VOICES]={0}; size_t count=0;
+    bool loop=false; double volume=1;
+    lua_pushnil(L);
+    while (lua_next(L,2)) {
+        if (music_key(L,-2,"voices")) count=music_voices(L,-1,voices);
+        else if (music_key(L,-2,"volume")) volume=music_volume_value(L,-1);
+        else if (music_key(L,-2,"loop")) {
+            if (lua_type(L,-1)!=LUA_TBOOLEAN) return luaL_error(L,"music.play: loop must be boolean");
+            loop=lua_toboolean(L,-1);
+        } else return luaL_error(L,"music.play: unknown option");
+        lua_pop(L,1);
+    }
+    if (!count) return luaL_error(L,"music.play: voices are required");
+    sb_lua_music_t *c=music_context(L); const char *reason=music_session_reason(c);
+    if (reason) return music_refuse(L,true,reason);
+    sb_music_info_t info;
+    sb_music_asset_code_t code=c->audio ? sb_audio_music_info(c->audio,h->id,&info) :
+        (sb_music_asset_info(sb_music_assets_get(&c->silent,h->id),&info) ? SB_MUSIC_ASSET_OK : SB_MUSIC_ASSET_BAD_HANDLE);
+    if (code!=SB_MUSIC_ASSET_OK) return music_code(L,code,true);
+    if (count!=info.track_count) return luaL_error(L,"music.play: one voice is required per track");
+    if (!c->audio) return music_refuse(L,true,"audio_unavailable");
+    code=sb_audio_music_play_volume(c->audio,h->id,voices,count,loop,volume);
+    if (code!=SB_MUSIC_ASSET_OK) return music_code(L,code,true);
+    lua_pushboolean(L,1); return 1;
+}
+/* Stack [] -> [state]. Pausing does not add a playback state. Failed sessions
+ * remain queryable while native cleanup finishes; closed/no-device is idle. */
+static int music_state(lua_State *L) {
+    if (lua_gettop(L)) return luaL_error(L,"music.state: expected no arguments");
+    sb_lua_music_t *c=music_context(L);
+    sb_music_state_t state=c && !c->closed ? sb_audio_music_state(c->audio) : SB_MUSIC_IDLE;
+    lua_pushstring(L,state==SB_MUSIC_PLAYING ? "playing" : state==SB_MUSIC_FINISHING ? "finishing" : "idle");
+    return 1;
+}
+/* Stack [] -> [true] or [false, reason]. Idle includes the no-device context. */
+static int music_stop(lua_State *L) {
+    if (lua_gettop(L)) return luaL_error(L,"music.stop: expected no arguments");
+    sb_lua_music_t *c=music_context(L); const char *reason=music_session_reason(c);
+    if (reason) return music_refuse(L,true,reason);
+    if (c->audio && !sb_audio_music_stop(c->audio)) return music_refuse(L,true,"session_unavailable");
+    lua_pushboolean(L,1); return 1;
+}
+/* Stack [volume] -> [..., true] or [..., false, reason]. Idle never stores gain. */
+static int music_set_volume(lua_State *L) {
+    music_arity(L); double volume=music_volume_value(L,1);
+    sb_lua_music_t *c=music_context(L); const char *reason=music_session_reason(c);
+    if (reason) return music_refuse(L,true,reason);
+    if (!c->audio || sb_audio_music_state(c->audio)==SB_MUSIC_IDLE)
+        return music_refuse(L,true,"music_idle");
+    if (!sb_audio_music_gain(c->audio,volume))
+        return music_refuse(L,true,"music_idle"); /* Callback may just have finished. */
+    lua_pushboolean(L,1); return 1;
+}
 void sb_lua_music_register(lua_State *L,sb_lua_music_t *c) {
     luaL_newmetatable(L,MUSIC_MT);
     lua_pushliteral(L,"protected music handle"); lua_setfield(L,-2,"__metatable");
     lua_pop(L,1);
-    static const luaL_Reg functions[]={{"load",music_load},{"info",music_info},{"unload",music_unload},{NULL,NULL}};
+    static const luaL_Reg functions[]={{"load",music_load},{"info",music_info},{"unload",music_unload},
+        {"play",music_play},{"state",music_state},{"stop",music_stop},{"set_volume",music_set_volume},{NULL,NULL}};
     lua_newtable(L); lua_pushlightuserdata(L,c); luaL_setfuncs(L,functions,1);
     lua_setfield(L,-2,"music");
 }
