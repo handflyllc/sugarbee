@@ -339,6 +339,9 @@ Loading does not start playback. Read errors, loader errors and publication
 refusals remain distinguishable; existing assets/playback survive every refusal.
 File access/parsing/freeing stay outside the audio callback and device lock.
 See [contract and validation](../../tests/music-cartridge.md). Desktop cartridge
-checks accepted by the user on 2026-11-09, exit 0. Pi acceptance remains pending.
+checks accepted by the user on 2026-11-09, exit 0. Pi acceptance reported on
+2026-11-09 at synchronized `ee6255da74a176cde66aeaf2a24f56a894409554`:
+111/111 tests passed, exit 0; listening checks passed. Next priority: SugarBeats
+consumer regression and cartridge-loading contract review.
 Lua bindings, cartridge Music Lab and composer
 expansion remain separate checkpoints; no cartridge format change.

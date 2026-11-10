@@ -1,6 +1,6 @@
 # Native cartridge music loading checkpoint
 
-2026-11-09: implemented; desktop cartridge checks accepted, exit 0. Pi acceptance pending.
+2026-11-09: implemented and accepted on desktop and Pi at `ee6255d`.
 This connects the existing cartridge reader, bounded JSON loader, owned asset
 collection and production session. It adds no Lua bindings or composer features.
 
@@ -69,16 +69,22 @@ Temporary native fixtures are removed on success. CTest packs a separate listeni
 fixture with the real packager and runs it with dummy output when packer is built;
 this is not listening acceptance.
 
-Desktop evidence (2026-11-09, working tree based on `af76f8d`): warning-free
+Desktop evidence (2026-11-09, subsequently committed as `ee6255d`): warning-free
 Debug build; **111/111 tests passed**, exit 0 (47.92 seconds, four workers).
 **18 targeted ASan/UBSan checks passed**, exit 0, including cartridge loading,
 ownership, loader/sequencer, production mixer, session, WAV and Lua synth.
 Leak detection was disabled under tracing; injected allocation cleanup checks
 are separate evidence. Diff/whitespace review passed. The user confirmed desktop cartridge checks passed, exit 0, on 2026-11-09
-(America/New_York). Pi acceptance remains pending; no commit or merge has been
-made. Only acceptance documentation changed for this report; unchanged tests
-were not rerun. SugarBeats code
-and the read-only shared passdown were not modified.
+(America/New_York).
+
+Pi acceptance reported by the user on 2026-11-09 at synchronized commit
+`ee6255da74a176cde66aeaf2a24f56a894409554`: **111/111 tests passed**, exit 0.
+User reported successful listening checks, with “Cartridge music loading checks
+passed” and “Music Loading Check cartridge: PASS!” observations. Engine acceptance
+is complete; next priority is SugarBeats consumer regression and cartridge-loading
+contract review. Feature remains unmerged. Only acceptance documentation changed;
+unchanged tests were not rerun. SugarBeats code and the read-only shared passdown
+were not modified.
 
 ## Desktop listening, then Pi
 
@@ -98,5 +104,5 @@ for this check. No claim of support for arbitrary arrangements in this diagnosti
 
 After desktop acceptance, commit/push on the dev machine, synchronize that exact
 hash on the Pi, run the native test and full suite, and repeat this listening
-check via HDMI0. Record hash, test count, exits and listening results. Stop here
-for validation, then hand back to SugarBeats for bounded consumer/contract review.
+check via HDMI0. Record hash, test count, exits and listening results. Validation is now complete;
+hand back to SugarBeats for bounded consumer/contract review.

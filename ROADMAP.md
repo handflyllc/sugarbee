@@ -100,11 +100,13 @@ Cartridge file access, Lua music bindings and preview/editor expansion remain de
 SugarBeats ownership consumer completed at reviewed pin `af76f8d`: 7/7 checks,
 264 tracked allocations matched frees, no mismatch.
 
-Current checkpoint: [native cartridge music loading](tests/music-cartridge.md).
+Accepted checkpoint: [native cartridge music loading](tests/music-cartridge.md).
 Named `.vcart` members now load into the owned collection through the existing
 reader and JSON loader. Music's 1 MiB input cap is checked before decompression;
 existing asset-read limits and cartridge format are preserved. Desktop cartridge
-checks passed per the user on 2026-11-09, exit 0. Pi acceptance remains pending.
+checks passed per the user on 2026-11-09, exit 0. Pi acceptance reported at
+synchronized `ee6255d`: 111/111 tests passed, exit 0; listening checks passed.
+Next priority: SugarBeats consumer regression and cartridge-loading contract review.
 No Lua music API or composer changes.
 
 Remaining major milestones, each separately bounded and validated:
