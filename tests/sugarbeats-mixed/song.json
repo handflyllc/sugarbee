@@ -1,0 +1,188 @@
+{
+  "format": "sugarbee.music",
+  "version": 1,
+  "timeline_rate": 48000,
+  "end_frame": 192000,
+  "tracks": [
+    {
+      "instrument": {
+        "waveform": "triangle",
+        "attack": 0.01,
+        "decay": 0.04,
+        "sustain": 0.7,
+        "release": 0.05,
+        "volume": 0.4,
+        "pan": 0,
+        "filter": {
+          "cutoff": 2000,
+          "bypass": true
+        }
+      }
+    },
+    {
+      "instrument": {
+        "waveform": "saw",
+        "attack": 0.01,
+        "decay": 0.04,
+        "sustain": 0.7,
+        "release": 0.05,
+        "volume": 0.4,
+        "pan": 0,
+        "filter": {
+          "cutoff": 2000,
+          "bypass": true
+        }
+      }
+    },
+    {
+      "instrument": {
+        "waveform": "pulse",
+        "attack": 0.01,
+        "decay": 0.04,
+        "sustain": 0.7,
+        "release": 0.05,
+        "volume": 0.4,
+        "pan": 0,
+        "filter": {
+          "cutoff": 2000,
+          "bypass": true
+        },
+        "pulse_width": 0.5
+      }
+    }
+  ],
+  "events": [
+    {
+      "frame": 0,
+      "track": 1,
+      "type": "note_on",
+      "hz": 261.625565301
+    },
+    {
+      "frame": 0,
+      "track": 2,
+      "type": "note_on",
+      "hz": 329.627556913
+    },
+    {
+      "frame": 0,
+      "track": 3,
+      "type": "note_on",
+      "hz": 391.995435982
+    },
+    {
+      "frame": 42000,
+      "track": 1,
+      "type": "note_off"
+    },
+    {
+      "frame": 42000,
+      "track": 2,
+      "type": "note_off"
+    },
+    {
+      "frame": 42000,
+      "track": 3,
+      "type": "note_off"
+    },
+    {
+      "frame": 48000,
+      "track": 1,
+      "type": "note_on",
+      "hz": 261.625565301
+    },
+    {
+      "frame": 48000,
+      "track": 2,
+      "type": "note_on",
+      "hz": 349.228231433
+    },
+    {
+      "frame": 48000,
+      "track": 3,
+      "type": "note_on",
+      "hz": 440.0
+    },
+    {
+      "frame": 90000,
+      "track": 1,
+      "type": "note_off"
+    },
+    {
+      "frame": 90000,
+      "track": 2,
+      "type": "note_off"
+    },
+    {
+      "frame": 90000,
+      "track": 3,
+      "type": "note_off"
+    },
+    {
+      "frame": 96000,
+      "track": 1,
+      "type": "note_on",
+      "hz": 246.941650628
+    },
+    {
+      "frame": 96000,
+      "track": 2,
+      "type": "note_on",
+      "hz": 293.664767917
+    },
+    {
+      "frame": 96000,
+      "track": 3,
+      "type": "note_on",
+      "hz": 391.995435982
+    },
+    {
+      "frame": 138000,
+      "track": 1,
+      "type": "note_off"
+    },
+    {
+      "frame": 138000,
+      "track": 2,
+      "type": "note_off"
+    },
+    {
+      "frame": 138000,
+      "track": 3,
+      "type": "note_off"
+    },
+    {
+      "frame": 144000,
+      "track": 1,
+      "type": "note_on",
+      "hz": 261.625565301
+    },
+    {
+      "frame": 144000,
+      "track": 2,
+      "type": "note_on",
+      "hz": 329.627556913
+    },
+    {
+      "frame": 144000,
+      "track": 3,
+      "type": "note_on",
+      "hz": 391.995435982
+    },
+    {
+      "frame": 186000,
+      "track": 1,
+      "type": "note_off"
+    },
+    {
+      "frame": 186000,
+      "track": 2,
+      "type": "note_off"
+    },
+    {
+      "frame": 186000,
+      "track": 3,
+      "type": "note_off"
+    }
+  ]
+}

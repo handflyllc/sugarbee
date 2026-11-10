@@ -126,6 +126,75 @@ if(BUILD_TESTING)
     set_tests_properties(audio_bank PROPERTIES TIMEOUT 10)
 endif()
 
+add_library(sugarbee_music_sequence STATIC src/sb_music_sequence.c src/sb_music_host.c src/sb_music_shared.c src/sb_music_transport.c)
+target_link_libraries(sugarbee_music_sequence PUBLIC sugarbee_synth)
+sugarbee_warnings(sugarbee_music_sequence)
+if(BUILD_TESTING)
+    add_executable(test_music_sequence tests/test_music_sequence.c)
+    target_link_libraries(test_music_sequence PRIVATE sugarbee_music_sequence)
+    sugarbee_warnings(test_music_sequence)
+    add_executable(test_music_loop tests/test_music_loop.c)
+    target_link_libraries(test_music_loop PRIVATE sugarbee_music_sequence)
+    sugarbee_warnings(test_music_loop)
+    add_executable(test_music_stop tests/test_music_stop.c)
+    target_link_libraries(test_music_stop PRIVATE sugarbee_music_sequence)
+    sugarbee_warnings(test_music_stop)
+    add_executable(test_music_shared_pause tests/test_music_shared_pause.c)
+    target_link_libraries(test_music_shared_pause PRIVATE sugarbee_music_sequence)
+    sugarbee_warnings(test_music_shared_pause)
+    add_test(NAME music_shared_pause COMMAND test_music_shared_pause)
+    set_tests_properties(music_shared_pause PROPERTIES TIMEOUT 10)
+    add_executable(test_music_shared tests/test_music_shared.c)
+    target_link_libraries(test_music_shared PRIVATE sugarbee_music_sequence)
+    sugarbee_warnings(test_music_shared)
+    add_test(NAME music_shared COMMAND test_music_shared)
+    set_tests_properties(music_shared PROPERTIES TIMEOUT 10)
+    add_executable(test_music_pause tests/test_music_pause.c)
+    target_link_libraries(test_music_pause PRIVATE sugarbee_music_sequence)
+    sugarbee_warnings(test_music_pause)
+    add_test(NAME music_pause COMMAND test_music_pause)
+    set_tests_properties(music_pause PROPERTIES TIMEOUT 10)
+    add_executable(test_music_gain tests/test_music_gain.c)
+    target_link_libraries(test_music_gain PRIVATE sugarbee_music_sequence)
+    sugarbee_warnings(test_music_gain)
+    add_test(NAME music_gain COMMAND test_music_gain)
+    set_tests_properties(music_gain PROPERTIES TIMEOUT 10)
+    add_test(NAME music_stop COMMAND test_music_stop)
+    set_tests_properties(music_stop PROPERTIES TIMEOUT 10)
+    add_test(NAME music_loop COMMAND test_music_loop)
+    set_tests_properties(music_loop PROPERTIES TIMEOUT 10)
+    add_test(NAME music_sequence COMMAND test_music_sequence)
+    set_tests_properties(music_sequence PROPERTIES TIMEOUT 10)
+endif()
+
+# Pinned parser stays private to the memory-only music loader.
+add_library(sugarbee_yyjson STATIC third_party/yyjson/yyjson.c)
+target_include_directories(sugarbee_yyjson PUBLIC "${PROJECT_SOURCE_DIR}/third_party/yyjson")
+target_compile_definitions(sugarbee_yyjson PRIVATE YYJSON_DISABLE_WRITER=1 YYJSON_DISABLE_UTILS=1)
+add_library(sugarbee_music_load STATIC src/sb_music_load.c src/sb_music_assets.c)
+target_link_libraries(sugarbee_music_load PUBLIC sugarbee_music_sequence PRIVATE sugarbee_yyjson)
+sugarbee_warnings(sugarbee_music_load)
+if(BUILD_TESTING)
+    add_executable(test_music_assets tests/test_music_assets.c)
+    target_link_libraries(test_music_assets PRIVATE sugarbee_music_load)
+    target_link_options(test_music_assets PRIVATE "-Wl,--wrap=malloc" "-Wl,--wrap=free")
+    sugarbee_warnings(test_music_assets)
+    add_test(NAME music_assets COMMAND test_music_assets)
+    set_tests_properties(music_assets PROPERTIES TIMEOUT 20)
+    add_executable(test_music_load tests/test_music_load.c)
+    target_link_libraries(test_music_load PRIVATE sugarbee_music_load)
+    target_link_options(test_music_load PRIVATE "-Wl,--wrap=malloc" "-Wl,--wrap=free")
+    target_compile_definitions(test_music_load PRIVATE MUSIC_FIXTURES="${PROJECT_SOURCE_DIR}/tests/music-load")
+    sugarbee_warnings(test_music_load)
+    add_executable(test_music_loop_eligibility tests/test_music_loop_eligibility.c)
+    target_link_libraries(test_music_loop_eligibility PRIVATE sugarbee_music_load)
+    sugarbee_warnings(test_music_loop_eligibility)
+    add_test(NAME music_loop_eligibility COMMAND test_music_loop_eligibility)
+    set_tests_properties(music_loop_eligibility PROPERTIES TIMEOUT 10)
+    add_test(NAME music_load COMMAND test_music_load)
+    set_tests_properties(music_load PROPERTIES TIMEOUT 20)
+endif()
+
 add_library(sugarbee_wav STATIC src/sb_wav.c)
 target_include_directories(sugarbee_wav PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_link_libraries(sugarbee_wav PRIVATE m)
@@ -183,7 +252,7 @@ if(SUGARBEE_BUILD_HOST)
 
     add_library(sugarbee_audio STATIC src/sb_audio_sdl.c src/sb_audio_tone.c)
     target_include_directories(sugarbee_audio PUBLIC "${PROJECT_SOURCE_DIR}/include")
-    target_link_libraries(sugarbee_audio PRIVATE sugarbee_synth sugarbee_wav PkgConfig::SDL2 m)
+    target_link_libraries(sugarbee_audio PRIVATE sugarbee_assets sugarbee_music_load sugarbee_music_sequence sugarbee_synth sugarbee_wav PkgConfig::SDL2 m)
     sugarbee_warnings(sugarbee_audio)
 
     add_executable(generate_wav_lab tests/wav-lab/generate.c)
@@ -226,6 +295,44 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sbee-bank-test PRIVATE sugarbee_audio PkgConfig::SDL2)
     sugarbee_warnings(sbee-bank-test)
 
+    add_executable(sbee-music-session-test tools/sbee-music-session-test.c)
+    target_include_directories(sbee-music-session-test PRIVATE "${PROJECT_SOURCE_DIR}/src")
+    target_link_libraries(sbee-music-session-test PRIVATE sugarbee_audio PkgConfig::SDL2 m)
+    sugarbee_warnings(sbee-music-session-test)
+    if(BUILD_TESTING)
+        if(SUGARBEE_BUILD_PACKER)
+            add_test(NAME music_cartridge_pack COMMAND sbee-pack
+                -i "${PROJECT_SOURCE_DIR}/tests/music-cartridge"
+                -o "${PROJECT_BINARY_DIR}/music-cartridge.vcart" -t "Music Loading Check")
+            set_tests_properties(music_cartridge_pack PROPERTIES FIXTURES_SETUP music_cartridge TIMEOUT 10)
+            add_test(NAME music_cartridge_output COMMAND sbee-music-session-test
+                --cartridge "${PROJECT_BINARY_DIR}/music-cartridge.vcart" assets/music.json)
+            set_tests_properties(music_cartridge_output PROPERTIES FIXTURES_REQUIRED music_cartridge
+                TIMEOUT 25 ENVIRONMENT "SDL_AUDIODRIVER=dummy")
+        endif()
+        add_test(NAME music_assets_output COMMAND sbee-music-session-test --owned)
+        set_tests_properties(music_assets_output PROPERTIES TIMEOUT 25 ENVIRONMENT "SDL_AUDIODRIVER=dummy")
+        add_test(NAME music_production_output COMMAND sbee-music-session-test)
+        set_tests_properties(music_production_output PROPERTIES TIMEOUT 25 ENVIRONMENT "SDL_AUDIODRIVER=dummy")
+    endif()
+
+    add_executable(sbee-music-test tools/sbee-music-test.c)
+    target_link_libraries(sbee-music-test PRIVATE sugarbee_music_sequence PkgConfig::SDL2)
+    sugarbee_warnings(sbee-music-test)
+    if(BUILD_TESTING)
+        add_test(NAME music_pause_sdl COMMAND sbee-music-test --pause-smoke)
+        set_tests_properties(music_pause_sdl PROPERTIES ENVIRONMENT "SDL_AUDIODRIVER=dummy" TIMEOUT 10)
+        add_test(NAME music_gain_sdl COMMAND sbee-music-test --gain-smoke)
+        set_tests_properties(music_gain_sdl PROPERTIES ENVIRONMENT "SDL_AUDIODRIVER=dummy" TIMEOUT 10)
+        add_test(NAME music_stop_sdl COMMAND sbee-music-test --stop-smoke)
+        set_tests_properties(music_stop_sdl PROPERTIES ENVIRONMENT "SDL_AUDIODRIVER=dummy" TIMEOUT 10)
+        add_test(NAME music_loop_sdl COMMAND sbee-music-test --loop-smoke)
+        set_tests_properties(music_loop_sdl PROPERTIES ENVIRONMENT "SDL_AUDIODRIVER=dummy" TIMEOUT 10)
+        add_test(NAME music_sequence_sdl COMMAND sbee-music-test --smoke)
+        set_tests_properties(music_sequence_sdl PROPERTIES
+            ENVIRONMENT "SDL_AUDIODRIVER=dummy" TIMEOUT 10)
+    endif()
+
     add_executable(sbee-pan-test tools/sbee-pan-test.c)
     target_link_libraries(sbee-pan-test PRIVATE sugarbee_audio PkgConfig::SDL2)
     sugarbee_warnings(sbee-pan-test)
@@ -243,6 +350,11 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sugarbee_lua_synth PUBLIC sugarbee_audio PkgConfig::LUA54)
     sugarbee_warnings(sugarbee_lua_synth)
 
+    add_library(sugarbee_lua_music STATIC src/sb_lua_music.c)
+    target_include_directories(sugarbee_lua_music PUBLIC "${PROJECT_SOURCE_DIR}/include")
+    target_link_libraries(sugarbee_lua_music PUBLIC sugarbee_audio sugarbee_assets sugarbee_music_load PkgConfig::LUA54)
+    sugarbee_warnings(sugarbee_lua_music)
+
     add_library(sugarbee_lua_audio STATIC src/sb_lua_audio.c)
     target_include_directories(sugarbee_lua_audio PUBLIC "${PROJECT_SOURCE_DIR}/include")
     target_link_libraries(sugarbee_lua_audio PUBLIC sugarbee_audio sugarbee_assets sugarbee_wav PkgConfig::LUA54)
@@ -253,6 +365,7 @@ if(SUGARBEE_BUILD_HOST)
         sugarbee_save
         sugarbee_lua_synth
         sugarbee_lua_audio
+        sugarbee_lua_music
         sugarbee_audio
         sugarbee_graphics
         sugarbee_input
@@ -277,21 +390,41 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     add_test(NAME wav_output COMMAND sbee-wav-test)
     set_tests_properties(wav_output PROPERTIES TIMEOUT 15 ENVIRONMENT "SDL_AUDIODRIVER=dummy")
     add_executable(test_wav_sdl tests/test_wav_sdl.c src/sb_audio_tone.c)
-    target_link_libraries(test_wav_sdl PRIVATE sugarbee_synth sugarbee_wav PkgConfig::SDL2 m)
+    target_link_libraries(test_wav_sdl PRIVATE sugarbee_assets sugarbee_music_load sugarbee_music_sequence sugarbee_synth sugarbee_wav PkgConfig::SDL2 m)
     sugarbee_warnings(test_wav_sdl)
     add_test(NAME wav_sdl COMMAND test_wav_sdl)
     set_tests_properties(wav_sdl PROPERTIES TIMEOUT 5 ENVIRONMENT "SDL_AUDIODRIVER=dummy")
 
+    add_executable(test_music_cartridge tests/test_music_cartridge.c src/sb_audio_tone.c)
+    target_link_libraries(test_music_cartridge PRIVATE sugarbee_assets sugarbee_music_load sugarbee_wav PkgConfig::SDL2 m)
+    target_link_options(test_music_cartridge PRIVATE "-Wl,--wrap=malloc" "-Wl,--wrap=free" "-Wl,--wrap=unzOpenCurrentFile")
+    sugarbee_warnings(test_music_cartridge)
+    add_test(NAME music_cartridge COMMAND test_music_cartridge)
+    set_tests_properties(music_cartridge PROPERTIES TIMEOUT 20 ENVIRONMENT "SDL_AUDIODRIVER=dummy")
+
+    add_executable(test_music_assets_sdl tests/test_music_assets_sdl.c src/sb_audio_tone.c)
+    target_link_libraries(test_music_assets_sdl PRIVATE sugarbee_assets sugarbee_music_load sugarbee_wav PkgConfig::SDL2 m)
+    target_link_options(test_music_assets_sdl PRIVATE "-Wl,--wrap=malloc" "-Wl,--wrap=free")
+    sugarbee_warnings(test_music_assets_sdl)
+    add_test(NAME music_assets_sdl COMMAND test_music_assets_sdl)
+    set_tests_properties(music_assets_sdl PROPERTIES TIMEOUT 15 ENVIRONMENT "SDL_AUDIODRIVER=dummy")
+
+    add_executable(test_music_sdl tests/test_music_sdl.c src/sb_audio_tone.c)
+    target_link_libraries(test_music_sdl PRIVATE sugarbee_assets sugarbee_music_load sugarbee_music_sequence sugarbee_wav PkgConfig::SDL2 m)
+    sugarbee_warnings(test_music_sdl)
+    add_test(NAME music_production_sdl COMMAND test_music_sdl)
+    set_tests_properties(music_production_sdl PROPERTIES TIMEOUT 10 ENVIRONMENT "SDL_AUDIODRIVER=dummy")
+
     add_executable(test_audio_session tests/test_audio_session.c src/sb_audio_tone.c)
     target_include_directories(test_audio_session PRIVATE "${PROJECT_SOURCE_DIR}/include")
-    target_link_libraries(test_audio_session PRIVATE sugarbee_synth sugarbee_wav PkgConfig::SDL2 m)
+    target_link_libraries(test_audio_session PRIVATE sugarbee_assets sugarbee_music_load sugarbee_music_sequence sugarbee_synth sugarbee_wav PkgConfig::SDL2 m)
     sugarbee_warnings(test_audio_session)
     add_test(NAME audio_session COMMAND test_audio_session)
     set_tests_properties(audio_session PROPERTIES TIMEOUT 5 ENVIRONMENT "SDL_AUDIODRIVER=dummy")
 
     add_executable(test_audio_bank_sdl tests/test_audio_bank_sdl.c src/sb_audio_tone.c)
     target_include_directories(test_audio_bank_sdl PRIVATE "${PROJECT_SOURCE_DIR}/include")
-    target_link_libraries(test_audio_bank_sdl PRIVATE sugarbee_synth sugarbee_wav PkgConfig::SDL2 m)
+    target_link_libraries(test_audio_bank_sdl PRIVATE sugarbee_assets sugarbee_music_load sugarbee_music_sequence sugarbee_synth sugarbee_wav PkgConfig::SDL2 m)
     sugarbee_warnings(test_audio_bank_sdl)
     add_test(NAME audio_bank_sdl COMMAND test_audio_bank_sdl)
     add_test(NAME audio_session_output COMMAND sbee-session-test)
@@ -349,6 +482,98 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     add_test(NAME audio_tone_output COMMAND sbee-audio-test)
     set_tests_properties(audio_tone_output PROPERTIES TIMEOUT 10
         ENVIRONMENT "SDL_AUDIODRIVER=dummy")
+
+    add_executable(test_lua_music tests/test_lua_music.c)
+    target_link_libraries(test_lua_music PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    sugarbee_warnings(test_lua_music)
+    if(SUGARBEE_BUILD_PACKER)
+        add_test(NAME lua_music_pack COMMAND "${CMAKE_COMMAND}"
+            "-DPACKER=$<TARGET_FILE:sbee-pack>" "-DSOURCE_ROOT=${PROJECT_SOURCE_DIR}"
+            "-DTEST_ROOT=${PROJECT_BINARY_DIR}/music-lua-source"
+            "-DCART=${PROJECT_BINARY_DIR}/music-lua.vcart"
+            -P "${PROJECT_SOURCE_DIR}/tests/music_lua_pack.cmake")
+        set_tests_properties(lua_music_pack PROPERTIES FIXTURES_SETUP lua_music TIMEOUT 10)
+        foreach(mode device unavailable)
+            add_test(NAME lua_music_${mode} COMMAND test_lua_music "${PROJECT_BINARY_DIR}/music-lua.vcart" ${mode})
+            set_tests_properties(lua_music_${mode} PROPERTIES FIXTURES_REQUIRED lua_music TIMEOUT 15
+                ENVIRONMENT "SDL_AUDIODRIVER=dummy;SDL_VIDEODRIVER=dummy")
+        endforeach()
+    endif()
+
+    add_executable(test_music_lab tests/test_music_lab.c)
+    target_link_libraries(test_music_lab PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    sugarbee_warnings(test_music_lab)
+    if(SUGARBEE_BUILD_PACKER)
+        add_test(NAME music_lab_pack COMMAND sbee-pack
+            -i "${PROJECT_SOURCE_DIR}/examples/music-lab"
+            -o "${PROJECT_BINARY_DIR}/music-lab.vcart" -t "Music Lab")
+        set_tests_properties(music_lab_pack PROPERTIES FIXTURES_SETUP music_lab TIMEOUT 10)
+        foreach(mode device unavailable)
+            add_test(NAME music_lab_${mode} COMMAND test_music_lab "${PROJECT_BINARY_DIR}/music-lab.vcart" ${mode})
+            set_tests_properties(music_lab_${mode} PROPERTIES FIXTURES_REQUIRED music_lab TIMEOUT 15
+                ENVIRONMENT "SDL_AUDIODRIVER=dummy;SDL_VIDEODRIVER=dummy")
+        endforeach()
+    endif()
+
+    if(SUGARBEE_BUILD_PACKER)
+        add_test(NAME sugarbeats_export_pack COMMAND "${CMAKE_COMMAND}"
+            "-DPACKER=$<TARGET_FILE:sbee-pack>" "-DSOURCE_ROOT=${PROJECT_SOURCE_DIR}"
+            "-DTEST_ROOT=${PROJECT_BINARY_DIR}/sugarbeats-export-source"
+            "-DCART=${PROJECT_BINARY_DIR}/sugarbeats-export.vcart"
+            -P "${PROJECT_SOURCE_DIR}/tests/sugarbeats_export_pack.cmake")
+        set_tests_properties(sugarbeats_export_pack PROPERTIES FIXTURES_SETUP sugarbeats_export TIMEOUT 10)
+        foreach(mode device unavailable)
+            add_test(NAME sugarbeats_export_${mode} COMMAND test_music_lab
+                "${PROJECT_BINARY_DIR}/sugarbeats-export.vcart" ${mode})
+            set_tests_properties(sugarbeats_export_${mode} PROPERTIES FIXTURES_REQUIRED sugarbeats_export TIMEOUT 15
+                ENVIRONMENT "SDL_AUDIODRIVER=dummy;SDL_VIDEODRIVER=dummy")
+        endforeach()
+    endif()
+
+    if(SUGARBEE_BUILD_PACKER)
+        add_test(NAME sugarbeats_timing_pack COMMAND "${CMAKE_COMMAND}"
+            "-DPACKER=$<TARGET_FILE:sbee-pack>" "-DSOURCE_ROOT=${PROJECT_SOURCE_DIR}"
+            "-DTEST_ROOT=${PROJECT_BINARY_DIR}/sugarbeats-timing-source"
+            "-DCART=${PROJECT_BINARY_DIR}/sugarbeats-timing.vcart"
+            -P "${PROJECT_SOURCE_DIR}/tests/sugarbeats_timing_pack.cmake")
+        set_tests_properties(sugarbeats_timing_pack PROPERTIES FIXTURES_SETUP sugarbeats_timing TIMEOUT 10)
+        foreach(mode device unavailable)
+            add_test(NAME sugarbeats_timing_${mode} COMMAND test_music_lab
+                "${PROJECT_BINARY_DIR}/sugarbeats-timing.vcart" ${mode} 210219)
+            set_tests_properties(sugarbeats_timing_${mode} PROPERTIES FIXTURES_REQUIRED sugarbeats_timing TIMEOUT 15
+                ENVIRONMENT "SDL_AUDIODRIVER=dummy;SDL_VIDEODRIVER=dummy")
+        endforeach()
+    endif()
+
+    if(SUGARBEE_BUILD_PACKER)
+        add_test(NAME sugarbeats_mixed_pack COMMAND "${CMAKE_COMMAND}"
+            "-DPACKER=$<TARGET_FILE:sbee-pack>" "-DSOURCE_ROOT=${PROJECT_SOURCE_DIR}"
+            "-DTEST_ROOT=${PROJECT_BINARY_DIR}/sugarbeats-mixed-source"
+            "-DCART=${PROJECT_BINARY_DIR}/sugarbeats-mixed.vcart"
+            -P "${PROJECT_SOURCE_DIR}/tests/sugarbeats_mixed_pack.cmake")
+        set_tests_properties(sugarbeats_mixed_pack PROPERTIES FIXTURES_SETUP sugarbeats_mixed TIMEOUT 10)
+        foreach(mode device unavailable)
+            add_test(NAME sugarbeats_mixed_${mode} COMMAND test_music_lab
+                "${PROJECT_BINARY_DIR}/sugarbeats-mixed.vcart" ${mode} 192000)
+            set_tests_properties(sugarbeats_mixed_${mode} PROPERTIES FIXTURES_REQUIRED sugarbeats_mixed TIMEOUT 15
+                ENVIRONMENT "SDL_AUDIODRIVER=dummy;SDL_VIDEODRIVER=dummy")
+        endforeach()
+    endif()
+
+    if(SUGARBEE_BUILD_PACKER)
+        add_test(NAME sugarbeats_balanced_pack COMMAND "${CMAKE_COMMAND}"
+            "-DPACKER=$<TARGET_FILE:sbee-pack>" "-DSOURCE_ROOT=${PROJECT_SOURCE_DIR}"
+            "-DTEST_ROOT=${PROJECT_BINARY_DIR}/sugarbeats-balanced-source"
+            "-DCART=${PROJECT_BINARY_DIR}/sugarbeats-balanced.vcart"
+            -P "${PROJECT_SOURCE_DIR}/tests/sugarbeats_balanced_pack.cmake")
+        set_tests_properties(sugarbeats_balanced_pack PROPERTIES FIXTURES_SETUP sugarbeats_balanced TIMEOUT 10)
+        foreach(mode device unavailable)
+            add_test(NAME sugarbeats_balanced_${mode} COMMAND test_music_lab
+                "${PROJECT_BINARY_DIR}/sugarbeats-balanced.vcart" ${mode} 192000)
+            set_tests_properties(sugarbeats_balanced_${mode} PROPERTIES FIXTURES_REQUIRED sugarbeats_balanced TIMEOUT 15
+                ENVIRONMENT "SDL_AUDIODRIVER=dummy;SDL_VIDEODRIVER=dummy")
+        endforeach()
+    endif()
 
     add_executable(test_lua_wav tests/test_lua_wav.c)
     target_link_libraries(test_lua_wav PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})

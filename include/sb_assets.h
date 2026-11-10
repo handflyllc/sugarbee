@@ -28,6 +28,11 @@ typedef enum {
  */
 sb_asset_result_t sb_asset_read(const char *cartridge, const char *path,
                                  uint8_t **data, size_t *length);
+/* Same validation, with a caller-specific uncompressed entry cap checked
+ * before allocation/decompression. Cannot exceed SB_ASSET_MAX_ENTRY; zero
+ * permits only empty entries. Existing sb_asset_read retains its default cap. */
+sb_asset_result_t sb_asset_read_limited(const char *cartridge, const char *path,
+    size_t max_entry, uint8_t **data, size_t *length);
 const char *sb_asset_error_string(sb_asset_result_t result);
 
 #endif

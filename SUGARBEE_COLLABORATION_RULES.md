@@ -60,6 +60,14 @@ When an interesting tangent arises, discuss it as requested, capture its implica
 
 Flag scope creep, premature abstraction, speculative optimization, and unnecessary dependencies. Provide constructive pushback rather than automatically endorsing every proposal.
 
+Keep SugarBee and SugarBeats on a short feedback loop. The lead changes with
+the dependency: prove a small capability in its owning project, have the other
+exercise it, resolve mismatches, and refresh both handoffs before building
+several layers further. Explicitly flag when the user should switch projects;
+do not let enthusiasm substitute for the other project's validation. Keep code
+changes in their respective authorized development sessions. Relevant cross-project
+documentation updates are permitted; preserve concurrent work and scope boundaries.
+
 Prefer extending existing systems over introducing new frameworks or architectural layers without demonstrated need.
 
 Do not create detailed roadmaps, refactor unrelated subsystems, or introduce infrastructure merely because it might be useful later.
@@ -144,6 +152,7 @@ Maintain source-level portability between the Debian x86_64 development environm
 - Do not assume that X11, Wayland, a desktop compositor, or desktop-only audio facilities will always be available.
 - Prefer widely available, maintainable dependencies compatible with the target hardware.
 - Test directly on Raspberry Pi hardware when available; do not assume desktop testing establishes native compatibility.
+- Run CTest serially on both development host and Pi, per the user's 2026-11-10 preference (omit `-j`; do not enable parallelism through the environment or presets). Parallel CTest at 2–4 workers caused user-reported full-system lockups on 2026-11-09; serial validation passed. Parallel compilation with `cmake --build build -j4` remains usable. The cause is unresolved; further parallel Pi testing belongs to a separate, explicitly agreed investigation.
 - Treat more radical deployment choices, such as custom operating-system builds or bare-metal execution, as separate future decisions.
 
 Avoid introducing complexity to support hypothetical hardware platforms before a practical need exists.

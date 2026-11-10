@@ -30,7 +30,7 @@ int main(void) {
     CHECK(!sb_audio_voice_note_on(a,1,440));
     CHECK(!sb_audio_voice_filter_cutoff(a,1,500));
     sb_audio_session_begin(a);
-    CHECK(a->mode==AUDIO_SESSION && a->session_gain==1 && !a->paused);
+    CHECK(a->mode==AUDIO_SESSION && a->music.transport.fade.value==1 && !a->music.transport.paused);
     CHECK(!sb_audio_start_test_tone(a) && !sb_audio_start_triangle(a,440));
     CHECK(populate(a));
     render(a,113);
@@ -38,33 +38,33 @@ int main(void) {
     CHECK(sb_audio_voice_filter_cutoff(a,2,20));
     CHECK(sb_audio_voice_pulse_width(a,2,.95));
     CHECK(sb_audio_voice_volume(a,3,.4));
-    sb_audio_bank_t reference=a->bank;
+    sb_audio_bank_t reference=a->music.sequence.bank;
     sb_audio_session_pause(a,true);
-    CHECK(a->gain_left==480);
+    CHECK(a->music.transport.fade.left==480);
     CHECK(sb_audio_bank_render(&reference,expected,480));
     render(a,479);
     for (unsigned i=0;i<479;++i) for (unsigned ch=0;ch<2;++ch)
         CHECK(fabs(out[2*i+ch]-expected[2*i+ch]*bank_diagnostic_gain*(1-i/480.0))<1e-7);
-    CHECK(a->gain_left==1);
-    sb_audio_session_pause(a,true); CHECK(a->gain_left==1);
+    CHECK(a->music.transport.fade.left==1);
+    sb_audio_session_pause(a,true); CHECK(a->music.transport.fade.left==1);
     render(a,1);
-    CHECK(a->gain_left==0 && a->session_gain==0);
-    CHECK(memcmp(&a->bank,&reference,sizeof reference)==0);
+    CHECK(a->music.transport.fade.left==0 && a->music.transport.fade.value==0);
+    CHECK(memcmp(&a->music.sequence.bank,&reference,sizeof reference)==0);
     render(a,2048); CHECK(silence(2048));
-    CHECK(memcmp(&a->bank,&reference,sizeof reference)==0); /* ALL bank state frozen. */
+    CHECK(memcmp(&a->music.sequence.bank,&reference,sizeof reference)==0); /* ALL bank state frozen. */
     sb_audio_session_pause(a,false);
     CHECK(sb_audio_bank_render(&reference,expected,480));
     render(a,480);
     for (unsigned i=0;i<480;++i) for (unsigned ch=0;ch<2;++ch)
         CHECK(fabs(out[2*i+ch]-expected[2*i+ch]*bank_diagnostic_gain*i/480.0)<1e-7);
-    CHECK(a->session_gain==1 && !a->gain_left);
-    CHECK(memcmp(&a->bank,&reference,sizeof reference)==0);
+    CHECK(a->music.transport.fade.value==1 && !a->music.transport.fade.left);
+    CHECK(memcmp(&a->music.sequence.bank,&reference,sizeof reference)==0);
     /* Rapid reversal starts at current gain, without resetting voice state. */
     sb_audio_session_pause(a,true); render(a,120);
-    CHECK(a->session_gain==.75);
-    sb_audio_session_pause(a,false); CHECK(a->gain_from==.75 && a->gain_left==480);
+    CHECK(a->music.transport.fade.value==.75);
+    sb_audio_session_pause(a,false); CHECK(a->music.transport.fade.from==.75 && a->music.transport.fade.left==480);
     render(a,71);
-    sb_audio_session_pause(a,false); CHECK(a->gain_left==409);
+    sb_audio_session_pause(a,false); CHECK(a->music.transport.fade.left==409);
     /* Callback partitioning is transparent across the fade boundary. */
     sb_audio_t copy=*a;
     render(a,1000); memcpy(expected,out,2000*sizeof(float));
@@ -74,10 +74,10 @@ int main(void) {
         audio_output(&copy,(Uint8 *)(chunked+2*i),(int)(n*2*sizeof(float)));
     }
     CHECK(memcmp(expected,chunked,sizeof chunked)==0);
-    CHECK(memcmp(&a->bank,&copy.bank,sizeof a->bank)==0);
+    CHECK(memcmp(&a->music.sequence.bank,&copy.music.sequence.bank,sizeof a->music.sequence.bank)==0);
     /* Failure is sticky, rejects EVERY bank control, and clears after 480 frames. */
     sb_audio_session_fail(a);
-    reference=a->bank;
+    reference=a->music.sequence.bank;
     CHECK(!sb_audio_voice_configure(a,1,0,0,1,0));
     CHECK(!sb_audio_voice_note_on(a,1,440));
     CHECK(!sb_audio_voice_saw_on(a,1,440));
@@ -92,34 +92,34 @@ int main(void) {
     CHECK(!sb_audio_voice_seed(a,1,123)); CHECK(!sb_audio_voice_pulse_width(a,1,.05));
     CHECK(!sb_audio_voice_note_off(a,1)); CHECK(!sb_audio_voice_stop(a,1));
     CHECK(!sb_audio_voice_active(a,1));
-    CHECK(memcmp(&a->bank,&reference,sizeof reference)==0);
-    render(a,137); unsigned remaining=a->gain_left;
+    CHECK(memcmp(&a->music.sequence.bank,&reference,sizeof reference)==0);
+    render(a,137); unsigned remaining=a->music.transport.fade.left;
     sb_audio_session_fail(a); sb_audio_session_pause(a,false);
-    CHECK(a->mode==AUDIO_FAILED && a->gain_left==remaining);
+    CHECK(a->mode==AUDIO_FAILED && a->music.transport.fade.left==remaining);
     render(a,remaining); CHECK(!bank_active(a));
     sb_audio_bank_reset(&reference);
-    CHECK(memcmp(&a->bank,&reference,sizeof reference)==0);
+    CHECK(memcmp(&a->music.sequence.bank,&reference,sizeof reference)==0);
     render(a,1024); CHECK(silence(1024));
     /* Failure while fully paused clears immediately, never resumes. */
     sb_audio_session_begin(a); CHECK(populate(a));
     sb_audio_session_pause(a,true); render(a,480);
-    sb_audio_session_fail(a); CHECK(!a->gain_left && !bank_active(a));
+    sb_audio_session_fail(a); CHECK(!a->music.transport.fade.left && !bank_active(a));
     /* Shutdown while pause fade is pending: controls stay available but silent. */
     sb_audio_session_begin(a); CHECK(populate(a));
     sb_audio_session_pause(a,true); render(a,20);
     sb_audio_session_prepare_shutdown(a);
-    CHECK(a->session_gain==0 && !a->gain_left);
+    CHECK(a->music.transport.fade.value==0 && !a->music.transport.fade.left);
     CHECK(sb_audio_voice_start_selected(a,1,880));
-    reference=a->bank;
+    reference=a->music.sequence.bank;
     render(a,1024); CHECK(silence(1024));
-    CHECK(memcmp(&a->bank,&reference,sizeof reference)==0);
+    CHECK(memcmp(&a->music.sequence.bank,&reference,sizeof reference)==0);
     sb_audio_session_end(a);
-    CHECK(a->mode==AUDIO_CLOSED && !a->paused && !bank_active(a));
+    CHECK(a->mode==AUDIO_CLOSED && !a->music.transport.paused && !bank_active(a));
     CHECK(!sb_audio_voice_note_on(a,1,440));
     sb_audio_session_begin(a);
     CHECK(sb_audio_voice_note_on(a,1,440));
-    CHECK(a->bank.filters[0].wet==0 && a->bank.filters[0].cutoff==2000);
-    CHECK(a->bank.voices[0].volume==.5 && a->bank.seeds[0]==0);
+    CHECK(a->music.sequence.bank.filters[0].wet==0 && a->music.sequence.bank.filters[0].cutoff==2000);
+    CHECK(a->music.sequence.bank.voices[0].volume==.5 && a->music.sequence.bank.seeds[0]==0);
     /* Cleanup cannot depend on callback progress: the SDL device is paused. */
     sb_audio_session_end(a); sb_audio_session_end(a);
     render(a,1024); CHECK(silence(1024));

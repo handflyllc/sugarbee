@@ -3,7 +3,240 @@
 Reviewed 2026-11-06 against merged baseline `b304a00`. This is a revisable
 plan, not a release schedule or a promise of additional features.
 
-## Current baseline
+## Current coordination — merge authorized; execution pending
+
+2026-11-10: SugarBeats saved-project preview accepted per PASSDOWN.md and
+PROJECT_FORMAT.md: warning-free build, 13/13 serial tests and user desktop
+listening checks passed. `preview.py --project PATH` with optional `--loop`
+reuses project validation/export and native playback. Explicit-export parity,
+source preservation, temporary cleanup, invalid-input/loop refusal and existing
+preview workflows are covered. No concrete engine prerequisite remains before
+the GUI/editor boundary; no additional CLI checkpoint is proposed.
+
+Merge-readiness evidence reviewed at clean `7df7444`:
+- Target local `main` is `cca7c62`, an ancestor of the feature branch; no
+  main-only commits. This is a local-ref assessment, not a fresh remote fetch.
+- Scope: native music sequencing/loading, looping/transport, shared audio and
+  lifecycle, cartridge/Lua playback, vendored yyjson, examples and validation.
+- Runtime unchanged since `e2d7b7c`. Only documentation changed since `4993140`,
+  accepted on desktop/Pi with 129 serial tests, exit 0 and listening passed.
+- Branch diff/whitespace check passes. Existing evidence was reviewed; no new
+  test run or comprehensive source audit is claimed by this coordination review.
+
+User explicitly authorized the SugarBee merge on 2026-11-10. Commit
+coordination docs, merge without rewriting history, rebuild and run all 129
+CTest checks serially, then record the merged hash and arrange Pi post-merge
+confirmation. Preserve existing hardware evidence; report new checks separately.
+Git metadata is read-only in this session; user-side Git commands are required.
+
+SugarBeats reports user initialization on main with no commits yet; requested
+ignore rules including `.directory` are present. This supersedes the earlier
+Git-deferral plan. Synchronize its accepted work after SugarBee merges and before
+GUI/editor implementation. No SugarBeats commit/merge or GUI scope is authorized
+by this coordination handoff.
+
+## Accepted checkpoint — prepared native music sequencing
+
+2026-11-07: engine edits authorized for a small isolated sequencer, native
+timing tests, and early interval/chord listening. See
+[checkpoint and acceptance steps](tests/music-sequence.md). Production music
+loading, looping, reservations and Lua integration remain later checkpoints.
+Desktop listening and Pi acceptance passed per the user on 2026-11-07.
+Pi commit `49d6a8e`: 91 tests passed, listening passed, exit status 0.
+SugarBeats follower checkpoints 0B, 1A and 1B are accepted per the shared
+passdown: 6/6 automated checks and user-reported desktop listening acceptance.
+The bounded in-memory JSON loader is implemented. See [loading contract](docs/specifications/music-loading.md).
+The memory-only loader and fixtures are implemented with vendored yyjson 0.13.0.
+Desktop full suite passes 92/92; targeted and sanitizer checks pass. Pi acceptance
+reported 2026-11-08 for `10c3d80`: loader exit 0, full suite 92/92, exit 0.
+SugarBeats offline loader follower passed 7/7 checks at engine pin `8325d9c`,
+including input-buffer independence, repeated playback and balanced allocations.
+
+Accepted checkpoint: cached loop-eligibility analysis on loaded assets.
+Desktop 93/93 and targeted ASan/UBSan checks pass. Pi acceptance reported by user
+2026-11-08 for `93c598c`: eligibility checks passed; full suite 93/93 passed.
+SugarBeats eligibility consumer accepted at `d4e2a84`: 7/7 checks, eight boundary
+cases, no mismatch. Accepted checkpoint: native whole-song looping
+with deterministic bank reset and authored seams. See [validation](tests/music-loop.md).
+Desktop 95/95 and native ASan/UBSan checks pass. User confirmed all desktop
+listening checks, 95 passing tests and exit 0 on 2026-11-08. Pi acceptance
+reported at synchronized `cc281aa`: 95 tests passed, listening checks passed.
+SugarBeats native loop consumer passed 7/7 checks at clean pin `2041086`, with
+exact repeated-render parity, refusal/ownership checks and balanced allocations.
+Accepted checkpoint: [native audible stop](tests/music-stop.md), using
+the existing 10 ms fade. Desktop 97/97 and native ASan/UBSan checks pass.
+All four desktop listening checks and exit 0 confirmed by user.
+Pi acceptance reported 2026-11-08 at `0412c37`: native stop check confirmed,
+97/97 tests passed, exit 0; listening passed, exit 0. Next priority: SugarBeats
+bounded offline stop/replay/ownership consumer validation (now completed: 7/7
+checks at pin `556abbb`, seven stop scenarios and balanced allocations).
+Accepted checkpoint: [native music gain](tests/music-gain.md), with
+480-frame smoothing, mute advancing time and gain surviving loop boundaries.
+Desktop 99/99 and native ASan/UBSan checks pass.
+All five desktop gain listening checks and exit 0 confirmed by user.
+Pi acceptance reported by the user on 2026-11-09 (UTC) at synchronized
+`6fe04d9`: 99/99 tests passed, exit 0; validation checks passed, exit 0.
+SugarBeats gain consumer completed at `a6c80e7`: 7/7 checks, exact gain parity,
+whole/single-frame equivalence and 200 tracked allocations matched frees.
+Accepted checkpoint: [native host pause](tests/music-pause.md).
+A native adapter exercises fade/freeze/resume, held starts and paused stop using
+the existing session fade calculation, now shared with production SDL audio.
+Desktop 101/101 and seven native ASan/UBSan checks passed. Pi at `c46c17c`:
+101/101 tests passed, exit 0; listening exposed misleading short notes near the
+diagnostic's wall-clock controls. Exact capture reconstruction identified the
+fixture timing, not an engine fade defect. The fixture now uses a sustained chord.
+Revised desktop listening passed without artifacts, exit 0. On 2026-11-09 the
+user confirmed all Pi validation checks passed at synchronized `4a03f4e`.
+Host pause acceptance is complete. SugarBeats host consumer passed 7/7 plus
+expanded held-start checks at `dbf8735`, with 212 allocations matched by frees.
+Accepted checkpoint: [native shared voices](tests/music-shared.md).
+Explicit mapping/reservation, guarded direct controls, music-only gain and
+per-voice loop/cleanup operations are implemented in an offline native owner.
+Production shared-mixer/host-pause integration and cartridge/Lua remain deferred.
+Desktop 102/102 and nine native ASan/UBSan checks pass. Pi acceptance reported
+2026-11-09 at `3f1f849`: shared test exit 0; full suite 102/102, no failures.
+SugarBeats shared consumer passed 7/7 at `c3c176a`, with 220 allocations matched
+by frees and no playback/control allocations. No contract mismatch found.
+Accepted checkpoint: [combined native shared-owner host pause](tests/music-shared-pause.md).
+The private adapter and shared owner reuse one native lifecycle implementation.
+Held music starts preserve effect progression during fade-out; music cleanup
+preserves effects and host fade. Desktop 103/103, 19 focused checks and ten
+native ASan/UBSan checks pass. Pi acceptance reported 2026-11-09 at `8d6e69e`:
+103/103 passed, exit 0; shared-pause checks passed, owner size 7432 bytes.
+SugarBeats combined consumer completed at reviewed pin `4292b88`: 7/7 checks,
+224 allocations matched frees, no playback allocations or contract mismatch.
+
+Accepted checkpoint: [production SDL music routing](tests/music-production.md).
+Prepared songs now share the production bank with guarded synth effects; WAVs
+join the mix before one common host fade. Native session controls, reservation
+checks, lifecycle tests and an audible production diagnostic are implemented.
+Desktop automated results are recorded in the checkpoint document. On 2026-11-09
+the user confirmed all three desktop diagnostics and Musical Synth Lab
+pause/exit/resume/reload passed, followed by WAV Lab lifecycle acceptance.
+Pi acceptance reported by the user on 2026-11-09 at `92946e3`: 105/105 tests
+passed, all checks exited 0, and Synth/WAV Lab lifecycle checks passed.
+Desktop and Pi acceptance are complete. SugarBeats returned its consumer review
+at `df25be5`: 7/7 checks, 224 allocations matched frees, no mismatch.
+Accepted next checkpoint: native asset ownership and lifetime management.
+Starting limits: eight loaded assets, 1 MiB total actual prepared storage,
+existing 256 KiB per asset, one active song. Capacity refusal is atomic;
+no automatic eviction. See [accepted scope](docs/specifications/music-loading.md#accepted-next-checkpoint-native-asset-ownership--2026-11-09).
+The native collection and production handle controls are implemented, with
+capacity/lifetime regression tests and an owned-asset listening mode. See
+[ownership validation](tests/music-assets.md). Desktop listening accepted by the
+user on 2026-11-09, exit 0. Pi acceptance reported by the user at confirmed
+`d142156`: synchronized hash, 108/108 tests passed, exit 0; listening passed.
+Engine acceptance is complete. Next priority: SugarBeats bounded ownership
+consumer validation.
+Cartridge file access, Lua music bindings and preview/editor expansion remain deferred.
+SugarBeats ownership consumer completed at reviewed pin `af76f8d`: 7/7 checks,
+264 tracked allocations matched frees, no mismatch.
+
+Accepted checkpoint: [native cartridge music loading](tests/music-cartridge.md).
+Named `.vcart` members now load into the owned collection through the existing
+reader and JSON loader. Music's 1 MiB input cap is checked before decompression;
+existing asset-read limits and cartridge format are preserved. Desktop cartridge
+checks passed per the user on 2026-11-09, exit 0. Pi acceptance reported at
+synchronized `ee6255d`: 111/111 tests passed, exit 0; listening checks passed.
+SugarBeats returned review at `8bbc546`: 7/7 checks, 264 allocations matched
+frees, no mismatch.
+
+Accepted checkpoint: [Lua music asset access](tests/music-lua.md).
+`sugarbee.music.load/info/unload` and per-cartridge context are implemented,
+including bounded loading without an audio device. Metadata is copied and handles
+are owner-checked; native lifecycle and limits are preserved. Pi acceptance
+reported by the user on 2026-11-09 at synchronized `4910b38`: 114/114 tests passed,
+exit 0. SugarBeats returned review at documentation successor `1d6889f`:
+7/7 checks, 264 allocations matched frees, no mismatch; no follower source changes.
+
+Current checkpoint: [Lua playback and Music Lab](tests/music-playback.md).
+`play/state/stop/set_volume` now route to the established native player; explicit
+voice mapping and atomic initial volume preserve existing ownership and fades.
+The minimal Music Lab demonstrates a backing track plus an independent effect.
+Desktop: 117/117 tests and 36 selected ASan/UBSan-build checks passed
+(leak detection disabled). Desktop listening passed per the user on 2026-11-09.
+Pi acceptance reported at synchronized `e2d7b7c`: 117/117 tests, exit 0;
+all validation/listening checks passed. SugarBeats returned consumer/API review at
+`5eb43a11bd85d76c884cdaf8ffe08c00a5ff7895`: warning-free rebuild, 7/7 serial checks,
+264 tracked allocations matched frees, no mismatch. This was contract review and
+native consumer regression, not new Lua integration or listening evidence.
+The first backing-track runtime path is demonstrated; no further engine blocker
+was identified. Agreed next bounded checkpoint (2026-11-09): SugarBeats exports
+one small fixed-instrument song from note data and validates it with the existing
+engine loader. Return the reproducible asset and validation evidence here for
+desktop cartridge checks, then prepare Pi validation and pause before running it.
+GUI/editor and preview expansion remain separate. Next project: SugarBeats.
+Pi CTest must run serially: parallel runs at 2–4 workers caused user-reported
+system lockups requiring reboot. Cause unresolved; parallel builds remain usable.
+See the checkpoint validation record; no parallel Pi retest is required.
+
+Accepted checkpoint: [first SugarBeats export cartridge](tests/sugarbeats-export/README.md).
+SugarBeats returned a deterministic four-second C–F–G–C JSON asset with 9/9
+reported serial checks. Engine checkout `1ce1e83` retains runtime `e2d7b7c`.
+The asset is copied byte-for-byte into a self-contained acceptance fixture and
+packed with the unchanged Music Lab. Fresh export reproduction matches its hash.
+No runtime changes. Desktop warning-free build and 120/120 serial tests passed,
+exit 0; packed member bytes match. Desktop listening passed per the user on
+2026-11-09. Pi acceptance reported on 2026-11-10 at synchronized `bdb74b1`:
+120/120 tests, all listening checks passed, exit 0. The first exported soundtrack
+has completed desktop/Pi cartridge acceptance. SugarBeats code remains untouched.
+Next priority: SugarBeats records end-to-end acceptance and reviews the next
+bounded composer checkpoint before any further feature work.
+
+Accepted checkpoint: [137 BPM export validation](tests/sugarbeats-timing/README.md).
+Selected SugarBeats artifact is preserved unchanged; the original accepted export
+remains intact. Music Lab tests now accept the expected end frame and verify
+one-shot/loop boundaries at 210219 frames. No runtime change. Desktop warning-free
+build and 123/123 serial tests passed, exit 0. Desktop listening accepted per the
+user on 2026-11-10. Pi acceptance reported at synchronized `15aa063`:
+123 tests passed, exit 0; listening checks passed. Acceptance docs at `3382bb9`.
+SugarBeats subsequently accepted one-shot JSON preview: 11/11 serial checks and
+all four desktop listening checks passed (reported in its passdown, 2026-11-10).
+The stale "No exporter" README status is resolved; JSON preview now exists.
+
+SugarBeats looping JSON preview and graceful stop are now accepted (2026-11-10):
+11/11 serial tests and all four desktop listening checks passed per its passdown.
+No engine changes or new Pi run; existing artifact acceptance stands.
+
+Agreed next checkpoint (2026-11-10): SugarBeats per-track preset selection for
+triangle, saw and pulse. Keep three tracks and existing CSV/timing controls;
+export explicit instrument settings in the existing asset format. With no preset
+selection, preserve the accepted default export byte-for-byte. Validate deterministic
+exports, invalid preset refusal, native loading, preview regressions and desktop
+listening. Return one reproducible mixed-instrument export for SugarBee cartridge
+validation. Noise, custom instrument editing, GUI and engine expansion remain
+outside this slice. Next project: SugarBeats; no merge authorized.
+
+Accepted checkpoint: [mixed-instrument cartridge validation](tests/sugarbeats-mixed/README.md).
+SugarBeats preset export and desktop preview accepted: 11/11 serial checks and
+four listening checks per its passdown. Selected triangle/saw/pulse artifact is
+preserved unchanged, reproduced byte-for-byte, and packaged with existing Music
+Lab. No runtime change; previous fixtures remain intact. Desktop warning-free
+build and 126/126 serial tests passed, exit 0. Desktop cartridge checks/listening
+accepted per the user on 2026-11-10, exit 0. Pi acceptance reported at synchronized
+`f204bd5`: 126 tests passed, cartridge validation passed, exit 0. Return to
+SugarBeats for acceptance documentation and a bounded next-checkpoint proposal.
+No further feature implementation or merge authorized by this handoff.
+
+Accepted checkpoint: [per-track level cartridge validation](tests/sugarbeats-balanced/README.md).
+SugarBeats static instrument-volume export and desktop preview accepted: reported
+11/11 serial checks and four listening checks. Returned triangle/saw/pulse levels
+0.4/0.2/0.15; unchanged notes/timing and existing master-gain behavior. Selected
+artifact preserved unchanged and freshly reproduced. No runtime change; previous
+fixtures intact. Desktop warning-free build and 129/129 serial tests passed,
+exit 0. Desktop cartridge listening accepted per the user on 2026-11-10.
+Pi acceptance reported on 2026-11-10 at synchronized `4993140`: 129 tests
+passed, exit 0; all listening checks passed. Return to SugarBeats to record
+acceptance and propose one bounded next checkpoint. No additional feature scope.
+
+Remaining major milestones, each separately bounded and validated:
+- SugarBeats authoring/export and preview against demonstrated engine behavior.
+- End-to-end exported soundtrack validation and release integration; merge still
+  requires explicit authorization.
+
+Feature remains unmerged.
+
+## Validated RC1 baseline
 
 Implemented and validated on desktop and Raspberry Pi:
 
@@ -29,7 +262,10 @@ baseline. Historical checkpoints are labeled separately from current behavior.
 Local documentation links and whitespace checks pass. This documentation-only
 checkpoint awaits commit; no runtime or API behavior changed.
 
-## Active work — release preparation
+## Historical release preparation record
+
+Superseded by RC1 `cca7c62` / `v0.1.0-rc1`; publication was user-reported on
+2026-11-06. The following records preparation, not current remaining work.
 
 - Coastline fresh Release build: all 89 tests pass, no compiler warnings.
   Coastline manual checks passed per the user, including both controllers and
