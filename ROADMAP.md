@@ -3,7 +3,7 @@
 Reviewed 2026-11-06 against merged baseline `b304a00`. This is a revisable
 plan, not a release schedule or a promise of additional features.
 
-## Current coordination — merge authorized; execution pending
+## Current coordination — merge accepted; SugarBeats synchronization next
 
 2026-11-10: SugarBeats saved-project preview accepted per PASSDOWN.md and
 PROJECT_FORMAT.md: warning-free build, 13/13 serial tests and user desktop
@@ -23,10 +23,16 @@ Merge-readiness evidence reviewed at clean `7df7444`:
 - Branch diff/whitespace check passes. Existing evidence was reviewed; no new
   test run or comprehensive source audit is claimed by this coordination review.
 
-User explicitly authorized the SugarBee merge on 2026-11-10. Commit
-coordination docs, merge without rewriting history, rebuild and run all 129
-CTest checks serially, then record the merged hash and arrange Pi post-merge
-confirmation. Preserve existing hardware evidence; report new checks separately.
+User authorized and performed the merge on 2026-11-10:
+`2bf169c516a64d4ed22fe0e975fa88ba81d72aa2` on `main`.
+Verified merge parents: previous main `cca7c62` and feature tip `9e61c76`;
+merged tree exactly matches the feature tip. User reports 129 post-merge desktop
+tests passed. Pi post-merge acceptance reported by the user on 2026-11-10:
+synchronized `2bf169c`, 129 tests passed, exit 0, all cartridge checks passed.
+Local `main` and `origin/main` both resolve to the merge commit. SugarBee merge
+and post-merge validation are complete. Acceptance documentation only; no tests
+rerun here. Next: SugarBeats repository synchronization against the merged engine,
+then separately agree the first GUI/editor checkpoint.
 Git metadata is read-only in this session; user-side Git commands are required.
 
 SugarBeats reports user initialization on main with no commits yet; requested

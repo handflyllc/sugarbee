@@ -56,6 +56,15 @@ Pi acceptance reported by the user on 2026-11-10 at synchronized commit
 all listening checks passed. This completes cartridge acceptance.
 Acceptance documentation only; tests were not rerun.
 
+## Post-merge confirmation — 2026-11-10
+
+Merged to `main` at `2bf169c516a64d4ed22fe0e975fa88ba81d72aa2`.
+Merged tree matches the accepted feature tip. User reports 129 post-merge desktop
+tests passed. Pi synchronized to this merge: 129 tests passed, exit 0, all
+cartridge checks passed. Local `main` and `origin/main` match the merge commit.
+This completes post-merge acceptance; no runtime changes or test rerun accompany
+this documentation update. Next: SugarBeats repository synchronization.
+
 ## Listening checklist and Pi reproduction
 
 ```sh
@@ -88,6 +97,7 @@ env -u CTEST_PARALLEL_LEVEL ctest --test-dir build --output-on-failure
 ```
 
 Expected suite: 129 tests. Record synchronized hash, count, exit status and
-listening result. CTest stays serial on both machines. No merge, new runtime
-behavior or composer expansion. Return accepted evidence to SugarBeats, or stop
+listening result. CTest stays serial on both machines. The checklist above
+originated before the merge; post-merge acceptance is recorded separately. No new
+runtime behavior or composer expansion. Return accepted evidence to SugarBeats, or stop
 for a demonstrated mismatch. Canonical passdown remains read-only here.
