@@ -432,8 +432,10 @@ and SugarBeats develop independently; reconnect for a concrete engine dependency
 
 Planned next investigation, timing TBD; no runtime implementation authorized.
 Target playable note range: A0–C8, with continuous fractional frequencies still
-supported. Keep nine voices, existing mix gains, 48 kHz output and current
-cartridge behavior as the starting constraints. Resolve these questions first:
+supported. User-confirmed constraints (2026-11-12): keep nine synth voices,
+existing mixing gains and 48 kHz output unchanged during this investigation.
+Preserve current cartridge behavior; any proposed exception requires a separate
+scope decision. Resolve these questions first:
 
 - Endpoint representation: exact equal-tempered C8 versus a documented rounded
   ceiling; ensure producer rounding does not reject the highest intended note.
