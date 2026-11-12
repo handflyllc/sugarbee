@@ -301,6 +301,59 @@ bank is a separate user proposal, not an accepted capacity change. See
 [discussion scope and mixing considerations](docs/architecture/audio-design.md#discussion-directions--2026-11-12).
 Current engine limits remain unchanged; no implementation is authorized here.
 
+## Accepted future graphics work — sprite tinting (2026-11-12)
+
+Optional per-draw sprite tinting is accepted future work; implementation timing
+is TBD. Support PETSCII-inspired visuals using an original white-on-transparent
+glyph sheet and the existing sprite rendering path. Cartridge-side cells select
+a glyph and foreground color; rectangles can supply background colors. No native
+character mode, Commodore encoding or hardware emulation is planned.
+
+Default white tint must preserve existing sprite appearance and cartridge calls.
+Tint applies independently to each draw, including draws sharing a texture;
+source pixels/transparency remain intact and tint must not leak to later draws.
+Exact C/Lua API and validation are to be designed at implementation time. Verify
+color output, transparent pixels, successive different tints and unchanged legacy
+drawing, followed by desktop/Pi visual checks. Tinting is also useful for icons
+and player colors. Revisit the approach if later evidence warrants replacement;
+no implementation is authorized by this planning entry.
+
+## Future adventure discussion — panes and input (2026-11-12)
+
+Discussion only; implementation timing TBD. First choose the adventure's
+interaction style before designing additional engine input support. The proposed
+PETSCII-inspired world uses sprite/glyph sheets, not a native character mode.
+
+Proposed layout: left three quarters and right one quarter of the viewport;
+the left side splits into upper two thirds and lower one third. At the current
+1280x720 logical resolution this gives a 960x480 upper-left view, a 960x240
+lower-left typing console and a 320x720 sidebar. Each pane could receive focus
+and maximize to fill the viewport, then restore without losing game or command
+state. Layout, focus selection and maximize/restore are cartridge responsibilities;
+no OS windows or general-purpose window manager are required. Exact keyboard,
+click/double-click and controller gestures remain undecided.
+
+Input alternatives to revisit:
+- Explicit explore/command modes: movement mappings operate during exploration;
+  command entry suppresses conflicting keyboard-to-controller mappings. Returning
+  to exploration must not turn held typing keys into unintended movement.
+- A command-driven adventure with the keyboard dedicated to typing; movement
+  uses commands or selected actions. Controller support need not be required for
+  this cartridge. This option may avoid unnecessary mixed-input complexity.
+
+Neither alternative has been selected. If text entry is needed, distinguish
+platform text events from editing/action keys; define focus, submit/cancel and
+host-control precedence explicitly. Enter currently opens the host pause menu,
+so command submission cannot silently reuse it without a deliberate policy.
+Physical controller behavior during typing also remains an open decision.
+
+Potential engine work: text-entry/editing events and keyboard mapping suppression;
+mouse input and drawing clip rectangles only if the chosen interface needs them.
+These capabilities are not yet implemented or approved as an implementation
+checkpoint. Command parsing, room logic and pane contents belong in the cartridge.
+Start with a fixed three-pane prototype and a bounded command line when this work
+becomes active; settle text length/character support and input-conflict checks then.
+
 ## Limits and deferred work
 
 The runtime is not a hostile-cartridge sandbox. Native blocking, compilation,
