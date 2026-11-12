@@ -402,6 +402,50 @@ the output range. Synth equal-power pan, WAV pan/balance, non-resonant filtering
 combined-output attenuation are implemented. Any future resonance would require
 a fresh gain review. A more sophisticated limiter is deferred.
 
+## Discussion directions — 2026-11-12
+
+These are recorded discussion points, not implementation authorization. SugarBee
+and SugarBeats develop independently; reconnect for a concrete engine dependency.
+
+### Pitch range and percussion — agreed discussion sequence
+
+1. Review A0–C8 (approximately 27.5–4186.01 Hz, MIDI 21–108) as the next
+   supported musical pitch target for triangle, saw and pulse. The current
+   110–880 Hz range remains authoritative until implementation and acceptance.
+   This focused target supersedes the earlier exploratory 20–20,000 Hz pitched
+   oscillator aspiration. Assess low-register behavior and upper-register
+   aliasing/quality; do not merely widen validation constants. Future pitch-sweep
+   bounds are a separate decision.
+2. Audition percussion with the expanded range and existing amplitude ADSR before
+   adding synthesis features. Triangle is an existing candidate for pitched tom
+   and kick bodies; noise provides useful attack/rattle textures. Noise change
+   rate changes texture and spectrum rather than establishing a musical pitch.
+3. Consider a simple downward pitch envelope if those experiments justify it.
+   Pitch envelopes are distinct from the existing amplitude ADSR. Sine synthesis,
+   noise-rate controls and layered tone/noise instruments remain exploratory;
+   layering currently consumes separate synth voices.
+4. SugarBeats owns named presets, editing their settings and restoring preset
+   defaults without modifying notes. Edits should preserve the original preset
+   definition. Record this as a composer discussion, not an engine UI requirement
+   or authorization to modify SugarBeats from this repository.
+
+### Twelve synth voices — proposal for discussion
+
+User proposed increasing the synth maximum from nine to twelve. No increase is
+accepted or implemented. Separate arrangement density (masking/balance) from
+numeric output headroom: more available voices need not all sound simultaneously.
+The current fixed 1/9 attenuation and synth-plus-WAV bounds must be revisited for
+any capacity change. A simple change to 1/12 would make unchanged arrangements
+25 percent lower in amplitude (about 2.5 dB), so existing cartridge loudness is a
+compatibility consideration. Keeping 1/9 requires re-establishing combined peak
+bounds rather than assuming the old headroom proof still holds.
+
+Before accepting an increase, identify a practical music/effect allocation need,
+review voice maps, masks, loader limits and asset compatibility, and measure Pi
+callback cost with simultaneous synth/WAV playback. Keep gain independent of the
+instantaneous active-voice count. This is a separate checkpoint from pitch range;
+no limiter, automatic voice allocation or larger composer format is implied.
+
 ## Deferred decisions — not release blockers
 
 - Broader synth pitch and its aliasing/quality requirements.

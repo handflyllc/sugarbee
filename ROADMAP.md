@@ -292,6 +292,15 @@ are in [RELEASE_NOTES.md](RELEASE_NOTES.md). Preparation was committed as `f9958
 Release finalization is authorized. Commit the acceptance record and use the
 same tagged commit for all final artifacts; publication follows artifact verification.
 
+## Audio discussion directions — 2026-11-12
+
+Agreed discussion order: review A0–C8 pitch support and waveform quality, audition
+percussion using existing amplitude ADSR, then consider a small pitch envelope
+if needed. Editable/resettable presets belong to SugarBeats. A twelve-voice synth
+bank is a separate user proposal, not an accepted capacity change. See
+[discussion scope and mixing considerations](docs/architecture/audio-design.md#discussion-directions--2026-11-12).
+Current engine limits remain unchanged; no implementation is authorized here.
+
 ## Limits and deferred work
 
 The runtime is not a hostile-cartridge sandbox. Native blocking, compilation,
