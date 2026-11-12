@@ -7,14 +7,19 @@ for Raspberry Pi 4 (64-bit Linux). The primary developer environment is Debian
 **Status:** experimental 0.1 baseline; APIs are provisional. The current
 engine includes 2D graphics and PNG sprites, controller/keyboard input, fixed
 60 Hz simulation, cartridge launching and lifecycle limits, explicit saves,
-nine synth voices, and eight WAV playbacks with whole-sound looping. Lua 5.4
+nine synth voices, native music assets/sequencing with Lua playback controls,
+and eight WAV playbacks with whole-sound looping. Lua 5.4
 is the first cartridge language. Source targets Debian x86_64 and Raspberry
 Pi 4 ARM64; native binaries are platform-specific.
 
-At merge `b304a00`, all 89 tests passed after merge per the user. The audio
-checkpoints have desktop and Pi listening/lifecycle acceptance. The `v0.1.0-rc1` release target provides source and native Linux x86_64/ARM64
-packages; see the [release notes](RELEASE_NOTES.md) for scope and compatibility.
-No bootable console image is included. See the [roadmap](ROADMAP.md) for outstanding work.
+The current music baseline was merged at `2bf169c`: the user reported 129
+post-merge tests passing on desktop and Pi, with Pi exit 0 and cartridge checks
+accepted. Later documentation changes do not expand that validation claim.
+The published `v0.1.0-rc1` packages predate native music playback; see the
+[release notes](RELEASE_NOTES.md) for that release's scope and compatibility.
+No bootable console image is included. See the [roadmap](ROADMAP.md) for current
+priorities and future work. SugarBeats develops independently against a pinned
+engine revision; routine cross-project handoffs are no longer required.
 
 ## Build
 

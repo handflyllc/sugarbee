@@ -1,5 +1,8 @@
 # SugarBee 0.1.0-rc1 — release notes
 
+These notes describe the published RC1 tag `v0.1.0-rc1` (`cca7c62`), not current
+main. Native music playback was added after RC1; see the [roadmap](ROADMAP.md).
+
 Release candidate for the experimental 0.1 baseline: source plus Linux x86_64
 and ARM64 binaries. Package acceptance is complete. Official artifacts must be
 built from tag `v0.1.0-rc1`; binary BUILD-INFO files identify the exact commit.
@@ -54,8 +57,8 @@ identifies the final commit; runtime source is unchanged from the tested baselin
 
 A source archive of `f99583a` was extracted independently of the checkout:
 its clean Release build completed without warnings, all 89 tests passed, and
-the acceptance-fixture helper succeeded. Final artifacts are regenerated after the acceptance-documentation commit;
-verify their contents and checksums using the packaging procedure.
+the acceptance-fixture helper succeeded. For reproduction, generate artifacts from the final RC1 tag and verify their
+contents and checksums using the packaging procedure.
 
 ## Distribution and attribution
 

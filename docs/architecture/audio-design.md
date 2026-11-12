@@ -1,20 +1,18 @@
 # SugarBee audio — settled initial design
 
-Status reconciled with merged implementation `b304a00` on 2026-11-06. The initial design was
-settled on 2026-10-18; implementation decisions below refine that design.
-This document separates the current native/Lua synth implementation from
-remaining synthesis/WAV work. The current Lua contract is in
-[the synth API](../api/audio.md) and [WAV API](../api/wav.md).
-Group/master mixer examples below are deferred design sketches, not callable APIs. Historical checkpoint notes at the end describe their state at the time,
-not current limitations.
+Current summary reconciled 2026-11-12 with music merge `2bf169c`. The initial
+synthesis/WAV design and dated checkpoint evidence below remain historical context.
+Current contracts: [synth](../api/audio.md), [WAV](../api/wav.md),
+[music playback](../api/music.md) and [music assets](../specifications/music-loading.md).
+Group/master mixer examples below are deferred sketches, not callable APIs.
 
 ## Current implementation
 
-2026-11-07 experimental addition: the isolated prepared-song sequencer and
-`sbee-music-test` exercise the existing bank without changing the production
-host. See [native music checkpoint](../../tests/music-sequence.md) for its
-internal contract, timing tests, limits, and pending desktop/Pi listening gate.
-This is not yet native cartridge music playback or a `sugarbee.music` API.
+Native music assets, sequencing, loop eligibility and looping, shared synth voice
+reservations, stop/gain, host pause and cartridge/Lua playback are implemented.
+Post-merge desktop/Pi acceptance at `2bf169c`: 129 tests passed on each, with Pi
+exit 0 and cartridge checks accepted per the user. See
+[post-merge evidence](../../tests/sugarbeats-balanced/README.md).
 
 | Area | Implemented now | Still pending |
 | --- | --- | --- |
@@ -80,8 +78,8 @@ The adapter validates the complete request before native mutation. A single
 locked native transaction publishes all settings or rejects them unchanged.
 Configuration remains usable without output; playback reports unavailability.
 
-No separate setters, seed control, availability query, resonance, or WAV binding
-are included. A basic [Synth Lab](../../examples/synth-lab/README.md) exercises
+The synth namespace has no separate pitch-only setter, seed control, availability
+query or resonance. WAV and music bindings exist in their own namespaces. A basic [Synth Lab](../../examples/synth-lab/README.md) exercises
 real cartridge calls. The separate [Musical Synth Lab](../../examples/musical-synth-lab/README.md)
 now plays the first four bars of Mozart's Eine kleine Nachtmusik from a verified
 public-domain score, melody only one octave down. A local note/duration table
@@ -179,7 +177,7 @@ Envelope, volume, pan, and the native low-pass filter apply to noise.
 | Parameter | Current native implementation | Target / deferred design |
 | --- | --- | --- |
 | Synth voice number | Integers 1–9 | Same |
-| Triangle pitch | 110–880 Hz | 20–20,000 Hz, strictly below half the sample rate; requires aliasing work |
+| Triangle/saw/pulse pitch | 110–880 Hz | A0–C8 feasibility target; requires quality/aliasing review |
 | White noise | New value every sample at 48 kHz; no pitch argument | Rate-controlled noise deferred; original 20–20,000 Hz change-rate proposal is not implemented |
 | Noise seed | uint32; zero selects a distinct fixed default per bank slot | Lua seed exposure undecided |
 | Pulse width | Native and Lua: 0.05–0.95, 10 ms live ramps | No extension scheduled |
@@ -196,7 +194,8 @@ Zero envelope duration is implemented as an immediate stage transition; this
 deliberately does not promise click-free arbitrary settings. The
 10-second limit applies to transitions, not total note duration.
 
-WAV playback supports whole-sound loops; externally authored scores remain deferred.
+WAV playback supports whole-sound loops; externally authored music assets are
+loaded and played through the native sequencer and Lua music API.
 The foundation uses a 48,000 Hz internal sample rate.
 
 ## Filtering — first native checkpoint
@@ -429,6 +428,38 @@ and SugarBeats develop independently; reconnect for a concrete engine dependency
    definition. Record this as a composer discussion, not an engine UI requirement
    or authorization to modify SugarBeats from this repository.
 
+### Pitch-range feasibility — next investigation
+
+Planned next investigation, timing TBD; no runtime implementation authorized.
+Target playable note range: A0–C8, with continuous fractional frequencies still
+supported. Keep nine voices, existing mix gains, 48 kHz output and current
+cartridge behavior as the starting constraints. Resolve these questions first:
+
+- Endpoint representation: exact equal-tempered C8 versus a documented rounded
+  ceiling; ensure producer rounding does not reject the highest intended note.
+  Audit native, Lua and asset-loader checks together, including retained pitch.
+- Waveform quality: measure triangle aliasing and PolyBLEP saw/pulse behavior,
+  including pulse widths 0.05 and 0.95 at high notes. Define spectral/reference
+  and listening criteria before choosing a synthesis change. Do not promise
+  alias-free output or introduce oversampling without evidence it is needed.
+- Compatibility: compare the accepted 110–880 Hz band, gains, phase/retrigger,
+  transitions, filters, pause and loops. If quality fixes change the old sound,
+  present that tradeoff for acceptance rather than silently treating it as identical.
+- Low notes: assess oscillator/filter/DC behavior separately from the playback
+  speaker's ability to reproduce bass; capture/reference evidence supplements
+  listening. Do not compensate speaker limitations by changing global gain.
+- Performance: assess callback cost on Pi with nine synth voices plus WAVs;
+  preserve allocation-free rendering and adequate callback time margin.
+- Contract: existing assets must remain loadable; older engines will reject
+  newly out-of-range notes. Record the minimum engine dependency in consumer
+  guidance rather than automatically changing the asset format version.
+
+Deliver a feasibility assessment and bounded implementation recommendation.
+Decide numerical quality/performance thresholds during that investigation.
+Pitch envelopes/sweep bounds, sine synthesis, noise-rate control, twelve voices
+and SugarBeats editor changes remain outside it. A later implementation must
+include desktop/Pi tests and listening acceptance before the composer updates its pin.
+
 ### Twelve synth voices — proposal for discussion
 
 User proposed increasing the synth maximum from nine to twelve. No increase is
@@ -496,8 +527,8 @@ PolyBLEP is alias-suppressed, not an alias-free promise.
 
 ## Deferred topics
 
-- Externally authored SugarBee compositions containing sound definitions and
-  timed events; format, scheduling, tooling, and voice ownership remain open.
+- Extensions beyond the implemented music asset format, scheduling and explicit
+  voice ownership require separate demonstrated needs; the baseline is complete.
 - Actual C64 SID-file importing and chip emulation are outside the intended scope.
 - MIDI and possible instrument-provider plugins are distant exploratory topics.
   A built-in general-purpose instrument bank is not a requirement.

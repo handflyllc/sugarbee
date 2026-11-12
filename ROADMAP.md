@@ -1,47 +1,43 @@
 # Project SugarBee — Roadmap
 
-Reviewed 2026-11-06 against merged baseline `b304a00`. This is a revisable
-plan, not a release schedule or a promise of additional features.
+Reviewed 2026-11-12 against the merged music baseline `2bf169c` and subsequent
+documentation updates. This is a revisable plan, not a release schedule.
 
-## Current coordination — merge accepted; SugarBeats synchronization next
+## Current status and next investigation
 
-2026-11-10: SugarBeats saved-project preview accepted per PASSDOWN.md and
-PROJECT_FORMAT.md: warning-free build, 13/13 serial tests and user desktop
-listening checks passed. `preview.py --project PATH` with optional `--loop`
-reuses project validation/export and native playback. Explicit-export parity,
-source preservation, temporary cleanup, invalid-input/loop refusal and existing
-preview workflows are covered. No concrete engine prerequisite remains before
-the GUI/editor boundary; no additional CLI checkpoint is proposed.
+Native music loading, sequencing, looping, shared voices, transport and
+cartridge/Lua playback are merged. User-reported post-merge acceptance at
+`2bf169c516a64d4ed22fe0e975fa88ba81d72aa2`: desktop 129 tests passed;
+Pi 129 tests passed, exit 0, all cartridge checks passed. Runtime remains
+unchanged since `e2d7b7c`; the later checkpoints added fixtures and documentation.
+RC1 `cca7c62` / `v0.1.0-rc1` is an earlier published baseline, not a release of
+these music additions.
 
-Merge-readiness evidence reviewed at clean `7df7444`:
-- Target local `main` is `cca7c62`, an ancestor of the feature branch; no
-  main-only commits. This is a local-ref assessment, not a fresh remote fetch.
-- Scope: native music sequencing/loading, looping/transport, shared audio and
-  lifecycle, cartridge/Lua playback, vendored yyjson, examples and validation.
-- Runtime unchanged since `e2d7b7c`. Only documentation changed since `4993140`,
-  accepted on desktop/Pi with 129 serial tests, exit 0 and listening passed.
-- Branch diff/whitespace check passes. Existing evidence was reviewed; no new
-  test run or comprehensive source audit is claimed by this coordination review.
+SugarBee and SugarBeats develop independently. The composer owns its engine pin
+and consumer checks. Reconnect for a demonstrated defect, contract mismatch,
+required engine capability or intentional dependency update; GUI-only work does
+not trigger engine/Pi validation. SugarBee retains its Raspberry Pi 4 ARM64 and
+Debian x86_64 targets regardless of SugarBeats' Linux x86_64 scope.
 
-User authorized and performed the merge on 2026-11-10:
-`2bf169c516a64d4ed22fe0e975fa88ba81d72aa2` on `main`.
-Verified merge parents: previous main `cca7c62` and feature tip `9e61c76`;
-merged tree exactly matches the feature tip. User reports 129 post-merge desktop
-tests passed. Pi post-merge acceptance reported by the user on 2026-11-10:
-synchronized `2bf169c`, 129 tests passed, exit 0, all cartridge checks passed.
-Local `main` and `origin/main` both resolve to the merge commit. SugarBee merge
-and post-merge validation are complete. Acceptance documentation only; no tests
-rerun here. Next: SugarBeats repository synchronization against the merged engine,
-then separately agree the first GUI/editor checkpoint.
-Git metadata is read-only in this session; user-side Git commands are required.
+Next planned investigation, timing TBD: A0–C8 pitch-range feasibility across
+triangle, saw and pulse. Establish quality, compatibility, boundary semantics and
+Pi cost before authorizing runtime changes. See
+[open feasibility decisions](docs/architecture/audio-design.md#pitch-range-feasibility--next-investigation).
+Nine synth voices, current mixing gains and 110–880 Hz remain the implemented
+contract. Percussion, twelve voices and graphics work remain separate scopes.
 
-SugarBeats reports user initialization on main with no commits yet; requested
-ignore rules including `.directory` are present. This supersedes the earlier
-Git-deferral plan. Synchronize its accepted work after SugarBee merges and before
-GUI/editor implementation. No SugarBeats commit/merge or GUI scope is authorized
-by this coordination handoff.
+Known unresolved issue: user-reported full-system lockups, including parallel
+Pi CTest runs, have no established cause. CTest stays serial on both machines;
+parallel compilation remains usable. No reproduction or reliability guarantee is
+implied by this planning update.
 
-## Accepted checkpoint — prepared native music sequencing
+## Music checkpoint history
+
+The following acceptance sequence records each checkpoint at its original stage.
+Statements such as “next” or “deferred” in this history are superseded by the
+current status above and current API specifications.
+
+### Prepared native music sequencing
 
 2026-11-07: engine edits authorized for a small isolated sequencer, native
 timing tests, and early interval/chord listening. See
@@ -261,12 +257,13 @@ This evidence does not establish every hardware/input combination or a fresh
 Release-build acceptance run. The user confirmed both controllers work during coastline Release acceptance;
 disconnect/reconnect coverage has not been separately reported.
 
-## Release documentation cleanup — prepared
+## Historical release documentation cleanup
 
 Current guidance and API references are reconciled with the implemented
 baseline. Historical checkpoints are labeled separately from current behavior.
 Local documentation links and whitespace checks pass. This documentation-only
-checkpoint awaits commit; no runtime or API behavior changed.
+checkpoint formed part of RC1 preparation and is complete; no runtime or API
+behavior changed.
 
 ## Historical release preparation record
 
@@ -282,9 +279,10 @@ Superseded by RC1 `cca7c62` / `v0.1.0-rc1`; publication was user-reported on
 - Source plus x86_64/ARM64 binary contents and provisional API policy accepted.
   x86_64 preview automated and manual extraction checks pass, exit 0;
   ARM64 extracted-package acceptance passed at `409c505` per the user.
-  Final same-commit artifacts, merge/tag and publication remain.
+  Finalization was subsequently completed at `cca7c62` / `v0.1.0-rc1`;
+  publication was user-reported.
 - Prepare release notes and tag the exact accepted commit; `v0.1.0-rc1` is the
-  accepted target name, not an existing release.
+  release tag, now present at `cca7c62`.
 
 Track evidence and exact remaining gates in the
 [release checklist](docs/development/release-checklist.md). Release notes
@@ -361,7 +359,7 @@ memory exhaustion and repeatedly caught errors are outside general recovery
 guarantees. Use trusted cartridges; see [lifecycle limits](docs/api/timing.md).
 Save validation does not establish hardware power-loss durability.
 
-Streaming, resonance, broader synth pitch, music-authoring formats, MIDI,
+Streaming, resonance, broader synth pitch, expanded music formats, MIDI,
 master/group controls and additional game labs are not RC prerequisites.
 Actual OS shutdown, bootable appliance images, update/recovery deployment,
 analog input and configurable logical resolutions remain separate work.
