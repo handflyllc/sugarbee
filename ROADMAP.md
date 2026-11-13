@@ -19,10 +19,12 @@ required engine capability or intentional dependency update; GUI-only work does
 not trigger engine/Pi validation. SugarBee retains its Raspberry Pi 4 ARM64 and
 Debian x86_64 targets regardless of SugarBeats' Linux x86_64 scope.
 
-Next planned investigation, timing TBD: A0–C8 pitch-range feasibility across
+Active isolated investigation: A0–C8 pitch-range feasibility across
 triangle, saw and pulse. Establish quality, compatibility, boundary semantics and
 Pi cost before authorizing runtime changes. See
 [open feasibility decisions](docs/architecture/audio-design.md#pitch-range-feasibility--next-investigation).
+Initial [oscillator experiments](tests/audio-piano-feasibility.md) are recorded;
+production pitch limits remain unchanged, with listening and Pi checks pending.
 Nine synth voices, current mixing gains and 110–880 Hz remain the implemented
 contract. Percussion, twelve voices and graphics work remain separate scopes.
 

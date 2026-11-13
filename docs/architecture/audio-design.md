@@ -430,16 +430,21 @@ and SugarBeats develop independently; reconnect for a concrete engine dependency
 
 ### Pitch-range feasibility — next investigation
 
-Planned next investigation, timing TBD; no runtime implementation authorized.
+Isolated oscillator investigation started 2026-11-13; no production runtime
+implementation authorized. See the [initial experiment and remaining gates](../../tests/audio-piano-feasibility.md).
 Target playable note range: A0–C8, with continuous fractional frequencies still
 supported. User-confirmed constraints (2026-11-12): keep nine synth voices,
 existing mixing gains and 48 kHz output unchanged during this investigation.
 Preserve current cartridge behavior; any proposed exception requires a separate
 scope decision. Resolve these questions first:
 
-- Endpoint representation: exact equal-tempered C8 versus a documented rounded
-  ceiling; ensure producer rounding does not reject the highest intended note.
-  Audit native, Lua and asset-loader checks together, including retained pitch.
+- Endpoint contract agreed 2026-11-13: accept finite frequencies from 27.5 through
+  4186.01 Hz inclusive. This accepts calculated C8 (~4186.009045 Hz) and C8
+  rounded to two decimal places. Play accepted frequencies unchanged: no
+  rounding, snapping, clamping or additional boundary tolerance. Reject values
+  outside the interval consistently across native, Lua, sequencer and asset
+  validation, including retained pitch. This is the implementation target;
+  production still accepts 110–880 Hz.
 - Waveform quality: measure triangle aliasing and PolyBLEP saw/pulse behavior,
   including pulse widths 0.05 and 0.95 at high notes. Define spectral/reference
   and listening criteria before choosing a synthesis change. Do not promise

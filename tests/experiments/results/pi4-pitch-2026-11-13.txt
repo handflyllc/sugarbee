@@ -1,0 +1,17 @@
+baseline-old-band
+frames=512 blocks=1000 deadline_ms=10.6667 range=110-880
+pulse mean_ms=0.5113 p99_ms=0.5238 max_ms=0.5732 p99_deadline_pct=4.91 max_deadline_pct=5.37 misses=0 heap_calls=0 peak=0.302777
+mixed mean_ms=0.3698 p99_ms=0.3853 max_ms=0.4592 p99_deadline_pct=3.61 max_deadline_pct=4.30 misses=0 heap_calls=0 peak=0.310174
+transitions mean_ms=0.6752 p99_ms=0.6968 max_ms=0.7353 p99_deadline_pct=6.53 max_deadline_pct=6.89 misses=0 heap_calls=0 peak=0.468881
+
+candidate-old-band
+frames=512 blocks=1000 deadline_ms=10.6667 range=110-880
+pulse mean_ms=0.5486 p99_ms=0.5648 max_ms=0.6207 p99_deadline_pct=5.29 max_deadline_pct=5.82 misses=0 heap_calls=0 peak=0.302777
+mixed mean_ms=0.3855 p99_ms=0.4005 max_ms=0.4604 p99_deadline_pct=3.75 max_deadline_pct=4.32 misses=0 heap_calls=0 peak=0.310174
+transitions mean_ms=0.7384 p99_ms=0.7606 max_ms=0.8051 p99_deadline_pct=7.13 max_deadline_pct=7.55 misses=0 heap_calls=0 peak=0.468881
+
+candidate-wide
+frames=512 blocks=1000 deadline_ms=10.6667 range=A0-C8
+pulse mean_ms=0.5493 p99_ms=0.5691 max_ms=0.6414 p99_deadline_pct=5.34 max_deadline_pct=6.01 misses=0 heap_calls=0 peak=0.290012
+mixed mean_ms=0.3887 p99_ms=0.4040 max_ms=0.4784 p99_deadline_pct=3.79 max_deadline_pct=4.49 misses=0 heap_calls=0 peak=0.337688
+transitions mean_ms=0.7518 p99_ms=0.7791 max_ms=0.8100 p99_deadline_pct=7.30 max_deadline_pct=7.59 misses=0 heap_calls=0 peak=0.478112
