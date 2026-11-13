@@ -433,6 +433,9 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     set_tests_properties(audio_filter_output PROPERTIES TIMEOUT 25
         ENVIRONMENT "SDL_AUDIODRIVER=dummy")
 
+    add_test(NAME audio_piano_output COMMAND sbee-pitch-test --piano)
+    set_tests_properties(audio_piano_output PROPERTIES TIMEOUT 40
+        ENVIRONMENT "SDL_AUDIODRIVER=dummy")
     add_test(NAME audio_pitch_output COMMAND sbee-pitch-test)
     set_tests_properties(audio_pitch_output PROPERTIES TIMEOUT 30
         ENVIRONMENT "SDL_AUDIODRIVER=dummy")

@@ -100,8 +100,8 @@ int main(void) {
         CHECK(frequency(&b,kinds[k]) == 110 && b.retained_pitch[0] == 110);
         snapshot = b;
         CHECK(!sb_audio_bank_pitch(&b,1,NAN));
-        CHECK(!sb_audio_bank_pitch(&b,1,109));
-        CHECK(!sb_audio_bank_pitch(&b,1,881));
+        CHECK(!sb_audio_bank_pitch(&b,1,27.499));
+        CHECK(!sb_audio_bank_pitch(&b,1,4186.011));
         CHECK(!sb_audio_bank_waveform(&b,1,(sb_audio_voice_kind_t)99));
         CHECK(memcmp(&b,&snapshot,sizeof b) == 0);
         CHECK(sb_audio_bank_render(&b,out,360));

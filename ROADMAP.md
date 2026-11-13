@@ -19,14 +19,13 @@ required engine capability or intentional dependency update; GUI-only work does
 not trigger engine/Pi validation. SugarBee retains its Raspberry Pi 4 ARM64 and
 Debian x86_64 targets regardless of SugarBeats' Linux x86_64 scope.
 
-Active isolated investigation: A0–C8 pitch-range feasibility across
-triangle, saw and pulse. Establish quality, compatibility, boundary semantics and
-Pi cost before authorizing runtime changes. See
-[open feasibility decisions](docs/architecture/audio-design.md#pitch-range-feasibility--next-investigation).
-Initial [oscillator experiments](tests/audio-piano-feasibility.md) are recorded;
-production pitch limits remain unchanged, with listening and Pi checks pending.
-Nine synth voices, current mixing gains and 110–880 Hz remain the implemented
-contract. Percussion, twelve voices and graphics work remain separate scopes.
+Active runtime integration: A0–C8 pitch support (finite 27.5–4186.01 Hz,
+inclusive) across native, Lua and music APIs. Feasibility and Pi offline
+render-cost screening passed; integrated desktop validation was accepted by
+the user on 2026-11-13. Pi runtime validation remains pending. See [runtime validation](tests/audio-piano-runtime.md) and the
+[feasibility evidence](tests/audio-piano-feasibility.md).
+Nine synth voices, existing mixing gains and 48 kHz remain unchanged.
+Percussion, twelve voices and graphics work remain separate scopes.
 
 Known unresolved issue: user-reported full-system lockups, including parallel
 Pi CTest runs, have no established cause. CTest stays serial on both machines;
@@ -249,7 +248,7 @@ Implemented and validated on desktop and Raspberry Pi:
 - Restricted Lua libraries and instruction budgets for ordinary runaway loops.
 - Explicit UUID-based saves with bounded reads and synchronized replacement.
 - Nine synth voices: triangle, saw, pulse and noise; ADSR, pan/volume, transitions
-  and simple low-pass filtering. Pitched notes support 110–880 Hz.
+  and simple low-pass filtering. Pitched notes support 27.5–4186.01 Hz (desktop accepted; Pi runtime validation pending).
 - Eight WAV playbacks with shared loaded assets, one-shots, whole-sound loops,
   pan/volume/stop, and cartridge-owned cleanup.
 

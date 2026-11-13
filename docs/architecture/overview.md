@@ -123,7 +123,7 @@ saving and hardware power-loss guarantees are not provided.
 The host owns one SDL2 audio device across cartridge sessions. The
 [synth API](../api/audio.md) controls nine voices with triangle/saw/pulse/noise,
 ADSR, volume/pan, waveform transitions and a simple low-pass filter. Pitched
-notes support 110–880 Hz. The [WAV API](../api/wav.md) loads bounded PCM assets
+notes support 27.5–4186.01 Hz. The [WAV API](../api/wav.md) loads bounded PCM assets
 and exposes eight independent one-shot or whole-sound looping playbacks.
 `sb_wav` decodes and mixes samples; `sb_lua_audio` owns the cartridge binding
 context. Repeated playback shares decoded asset storage.

@@ -1,4 +1,4 @@
-/* Private prototype: normalized output, native volume/pan, 110--880 Hz only. */
+/* Private prototype: normalized output, native volume/pan, 27.5--4186.01 Hz only. */
 #ifndef SB_AUDIO_TRIANGLE_H
 #define SB_AUDIO_TRIANGLE_H
 #include <stdbool.h>

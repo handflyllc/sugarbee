@@ -1,5 +1,10 @@
 # A0–C8 feasibility: isolated oscillator experiment
 
+Historical investigation checkpoint: `de04c52`. Runtime integration is now
+tracked in [runtime validation](audio-piano-runtime.md). Reproduce the isolated
+source-patching scripts from `de04c52`; they intentionally refuse the integrated
+source tree. Statements below about unchanged runtime describe that checkpoint.
+
 2026-11-13, source baseline `b4b6bcf`. Investigation only; production still
 accepts 110–880 Hz. Nine voices, mixing gains and 48 kHz remain unchanged.
 This is preliminary oscillator evidence, not completed engine/Pi acceptance.

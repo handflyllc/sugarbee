@@ -9,8 +9,8 @@ int main(void) {
     CHECK(!sb_audio_triangle_pitch(&v, 440));
     CHECK(!sb_audio_triangle_start(&v, NAN));
     CHECK(!sb_audio_triangle_start(&v, INFINITY));
-    CHECK(!sb_audio_triangle_start(&v, 109));
-    CHECK(!sb_audio_triangle_start(&v, 881));
+    CHECK(!sb_audio_triangle_start(&v, 27.499));
+    CHECK(!sb_audio_triangle_start(&v, 4186.011));
     sb_audio_triangle_stop(&v);
     sb_audio_triangle_render(&v, a, 10);
     for (unsigned i = 0; i < 20; ++i) CHECK(a[i] == 0);

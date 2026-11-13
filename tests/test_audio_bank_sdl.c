@@ -171,7 +171,7 @@ int main(void) {
     CHECK(audio->music.sequence.bank.pulse[0].phase == phase);
     memcpy(snapshot, &audio->music.sequence.bank, sizeof(snapshot));
     CHECK(!sb_audio_voice_pulse_width(audio, 1, NAN));
-    CHECK(!sb_audio_voice_pulse_on(audio, 1, 881));
+    CHECK(!sb_audio_voice_pulse_on(audio, 1, 4186.011));
     CHECK(!sb_audio_voice_pulse_on(audio, 10, 440));
     CHECK(!sb_audio_voice_saw_on(audio, 1, 440));
     CHECK(!sb_audio_start_test_tone(audio) && !sb_audio_start_triangle(audio, 440));
@@ -254,8 +254,8 @@ int main(void) {
     sb_audio_bank_reset(&audio->music.sequence.bank);
     /* Expanded range through every public pitched start, pitch control, and
      * selected retrigger during a fade; failures must leave all state intact. */
-    const double limits[] = {110, 880};
-    const double bad_pitch[] = {109.999, 880.001, NAN, INFINITY, -INFINITY};
+    const double limits[] = {27.5, 4186.01};
+    const double bad_pitch[] = {27.499, 4186.011, NAN, INFINITY, -INFINITY};
     for (unsigned k=0;k<3;++k) for (unsigned f=0;f<2;++f) {
         sb_audio_bank_reset(&audio->music.sequence.bank);
         CHECK(sb_audio_voice_configure(audio,1,0,0,1,0));

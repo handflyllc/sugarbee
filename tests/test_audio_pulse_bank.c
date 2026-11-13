@@ -53,7 +53,7 @@ int main(void) {
     CHECK(memcmp(&envelope, &bank.voices[0].envelope, sizeof(envelope)) == 0);
     unsigned char snapshot[sizeof(bank)];
     memcpy(snapshot, &bank, sizeof(bank));
-    CHECK(!sb_audio_bank_pulse_on(&bank, 1, 881));
+    CHECK(!sb_audio_bank_pulse_on(&bank, 1, 4186.011));
     CHECK(!sb_audio_bank_pitch(&bank, 1, INFINITY));
     CHECK(!sb_audio_bank_note_on(&bank, 1, 440));
     CHECK(!sb_audio_bank_noise_on(&bank, 1));

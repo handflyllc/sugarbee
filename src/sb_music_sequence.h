@@ -21,7 +21,7 @@ typedef struct {
     uint64_t frame;
     unsigned track; /* Logical 1..track_count; identity in private mode. */
     sb_music_event_kind_t kind;
-    double hz; /* Zero for off/noise; 110..880 for pitched on. */
+    double hz; /* Zero for off/noise; 27.5..4186.01 for pitched on. */
 } sb_music_event_t;
 typedef struct {
     unsigned timeline_rate, track_count;

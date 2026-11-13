@@ -97,7 +97,7 @@ int main(void) {
     BAD(events[7].hz=1, events[7].hz=0);
     BAD(events[7].kind=SB_MUSIC_NOTE_ON, events[7].kind=SB_MUSIC_NOTE_OFF);
     BAD(events[6].hz=INFINITY, events[6].hz=440);
-    BAD(events[6].hz=109, events[6].hz=440);
+    BAD(events[6].hz=27.499, events[6].hz=440);
     BAD(events[6].frame=116, events[6].frame=117);
     BAD(events[2].track=2, events[2].track=3);
     BAD(events[0].kind=SB_MUSIC_NOTE_OFF, events[0].kind=SB_MUSIC_NOTE_ON);
@@ -129,6 +129,23 @@ int main(void) {
     CHECK(!sb_music_sequence_start(&a,NULL));
     CHECK(!sb_music_sequence_render(NULL,whole,1));
     sb_music_sequence_reset(NULL);
+    /* Expanded endpoints traverse sequencer validation and actual rendering. */
+    const double good_hz[]={27.5,4186.009044809578,4186.01};
+    ins[0]=instrument(SB_AUDIO_VOICE_PULSE);
+    short_events[1]=(sb_music_event_t){1024,1,SB_MUSIC_NOTE_OFF,0};
+    song=(sb_music_song_t){48000,1,1024,ins,short_events,2};
+    for (unsigned i=0;i<3;++i) {
+        sb_music_sequence_reset(&a);
+        short_events[0]=(sb_music_event_t){0,1,SB_MUSIC_NOTE_ON,good_hz[i]};
+        CHECK(sb_music_sequence_start(&a,&song));
+        CHECK(sb_music_sequence_render(&a,whole,512));
+        CHECK(a.bank.retained_pitch[0]==good_hz[i]);
+        for (unsigned j=0;j<1024;++j) CHECK(isfinite(whole[j]) && fabs(whole[j])<=1);
+    }
+    sb_music_sequence_reset(&a);
+    memcpy(snapshot,&a,sizeof(a));
+    BAD(short_events[0].hz=nextafter(27.5,-INFINITY),short_events[0].hz=440);
+    BAD(short_events[0].hz=nextafter(4186.01,INFINITY),short_events[0].hz=440);
     puts("Prepared music sequence checks passed.");
     return 0;
 }

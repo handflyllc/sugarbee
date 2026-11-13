@@ -65,7 +65,11 @@ used. Settings are copied, so editing the table later has no effect.
 
 The filter is a simple low-pass. Setting its cutoff does not enable it; set
 `bypass=false`. There is no `mode`, resonance, seed, or pitch configuration field.
-Pitched note frequencies are **110–880 Hz**, including fractional frequencies.
+Pitched note frequencies are **27.5–4186.01 Hz**, inclusive, including fractional frequencies.
+The supplied value is played unchanged: no rounding, snapping or clamping.
+The ceiling accepts exact C8 and C8 rounded to two decimals. Nonfinite and
+out-of-range values are rejected. This expansion is implemented in the current
+working tree; desktop validation is accepted and Pi runtime validation is pending.
 Noise takes no frequency. Each voice uses its existing deterministic noise seed.
 
 Envelope edits apply to the next note. A retrigger attacks from the current

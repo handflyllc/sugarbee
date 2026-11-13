@@ -42,7 +42,7 @@ int main(void) {
     CHECK(sb_audio_pulse_reset(&pulse, 440, SB_AUDIO_PULSE_DEFAULT_WIDTH));
     CHECK(pulse.phase == 0 && pulse.width == .5);
     copy = pulse;
-    const double bad_pitch[] = {0, 109.99, 880.01, NAN, INFINITY, -INFINITY};
+    const double bad_pitch[] = {0, 27.49, 4186.02, NAN, INFINITY, -INFINITY};
     const double bad_width[] = {0, .04999, .95001, 1, NAN, INFINITY, -INFINITY};
     for (unsigned i = 0; i < sizeof(bad_pitch)/sizeof(bad_pitch[0]); ++i) {
         CHECK(!sb_audio_pulse_reset(&pulse, bad_pitch[i], .25));

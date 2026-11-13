@@ -1,4 +1,7 @@
-# Native pitch range: 110–880 Hz
+# Historical native pitch checkpoint: 110–880 Hz
+
+This records the previously accepted range. The new 27.5–4186.01 Hz runtime
+checkpoint is tracked in [piano runtime validation](audio-piano-runtime.md).
 
 Triangle, saw, and pulse accept finite frequencies from **110 through 880 Hz**,
 inclusive, with fractional values. This applies to standalone oscillators,

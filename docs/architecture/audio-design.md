@@ -18,9 +18,9 @@ exit 0 and cartridge checks accepted per the user. See
 | --- | --- | --- |
 | Output | Host-owned SDL2 device, 48 kHz float stereo, silent fallback, clean close | Live device-failure detection/reconnection and measured end-to-end latency |
 | Voice bank | Nine explicit native slots, triangle, white noise, saw, or pulse, independent state; 10 ms transitions including noise | Broader pitch |
-| Triangle | Direct waveform, 110–880 Hz, phase-preserving pitch/retrigger | Aliasing control and broader supported pitch range |
-| Saw | PolyBLEP, 110–880 Hz, native bank/SDL integration and automated checks | Broader pitch |
-| Pulse | Bank/SDL PolyBLEP, 110–880 Hz, width 0.05–0.95, default 0.5, 10 ms ramps, explicit DC conditioning | Broader pitch |
+| Triangle | Direct waveform, 27.5–4186.01 Hz, phase-preserving pitch/retrigger | Pi expanded-range runtime acceptance |
+| Saw | PolyBLEP, 27.5–4186.01 Hz, native bank/SDL integration | Pi expanded-range runtime acceptance |
+| Pulse | Signed-edge PolyBLEP, 27.5–4186.01 Hz, width 0.05–0.95, default 0.5, 10 ms ramps, DC conditioning | Pi expanded-range runtime acceptance |
 | Noise | Deterministic per-sample white noise, distinct default seeds, repeatable idle starts | Rate-controlled/tonal noise remains deferred; no current noise frequency control |
 | Envelope | Linear ADSR, captured per note, current-level active retrigger | No additional envelope model planned for this checkpoint |
 | Controls | Volume 0–1, equal-power stereo pan -1–1, 10 ms smoothing, 10 ms short stop | Group/master controls |
@@ -42,7 +42,7 @@ with every audio device or live output switching. See
 [saw validation](../../tests/audio-saw.md#pi-validation) and
 [Pi output observations](../../tests/audio-bank.md#pi-validation-and-output-observations).
 
-The current 110–880 Hz extension preserves oscillator methods, 10 ms ramps,
+The previously validated 110–880 Hz extension preserves oscillator methods, 10 ms ramps,
 pulse width limits, and fixed headroom. Automated coverage includes the new
 endpoints, fractional pitches, transitions, retained pitch, and spectral/reference
 checks. Triangle remains non-band-limited; PolyBLEP remains alias-suppressed.
@@ -177,7 +177,7 @@ Envelope, volume, pan, and the native low-pass filter apply to noise.
 | Parameter | Current native implementation | Target / deferred design |
 | --- | --- | --- |
 | Synth voice number | Integers 1–9 | Same |
-| Triangle/saw/pulse pitch | 110–880 Hz | A0–C8 feasibility target; requires quality/aliasing review |
+| Triangle/saw/pulse pitch | 27.5–4186.01 Hz | Runtime integrated; desktop accepted, Pi pending |
 | White noise | New value every sample at 48 kHz; no pitch argument | Rate-controlled noise deferred; original 20–20,000 Hz change-rate proposal is not implemented |
 | Noise seed | uint32; zero selects a distinct fixed default per bank slot | Lua seed exposure undecided |
 | Pulse width | Native and Lua: 0.05–0.95, 10 ms live ramps | No extension scheduled |
@@ -409,8 +409,8 @@ and SugarBeats develop independently; reconnect for a concrete engine dependency
 ### Pitch range and percussion — agreed discussion sequence
 
 1. Review A0–C8 (approximately 27.5–4186.01 Hz, MIDI 21–108) as the next
-   supported musical pitch target for triangle, saw and pulse. The current
-   110–880 Hz range remains authoritative until implementation and acceptance.
+   supported musical pitch target for triangle, saw and pulse. Runtime integration now implements 27.5–4186.01 Hz inclusive;
+   desktop validation is accepted and Pi runtime validation remains pending.
    This focused target supersedes the earlier exploratory 20–20,000 Hz pitched
    oscillator aspiration. Assess low-register behavior and upper-register
    aliasing/quality; do not merely widen validation constants. Future pitch-sweep
@@ -430,8 +430,8 @@ and SugarBeats develop independently; reconnect for a concrete engine dependency
 
 ### Pitch-range feasibility — next investigation
 
-Isolated oscillator investigation started 2026-11-13; no production runtime
-implementation authorized. See the [initial experiment and remaining gates](../../tests/audio-piano-feasibility.md).
+Investigation completed and runtime integration authorized after checkpoint
+`de04c52` on 2026-11-13. Desktop validation is accepted; Pi runtime validation remains pending. See the [initial experiment and remaining gates](../../tests/audio-piano-feasibility.md).
 Target playable note range: A0–C8, with continuous fractional frequencies still
 supported. User-confirmed constraints (2026-11-12): keep nine synth voices,
 existing mixing gains and 48 kHz output unchanged during this investigation.
@@ -444,7 +444,8 @@ scope decision. Resolve these questions first:
   rounding, snapping, clamping or additional boundary tolerance. Reject values
   outside the interval consistently across native, Lua, sequencer and asset
   validation, including retained pitch. This is the implementation target;
-  production still accepts 110–880 Hz.
+  the current runtime now applies this range. See
+  [runtime validation](../../tests/audio-piano-runtime.md).
 - Waveform quality: measure triangle aliasing and PolyBLEP saw/pulse behavior,
   including pulse widths 0.05 and 0.95 at high notes. Define spectral/reference
   and listening criteria before choosing a synthesis change. Do not promise

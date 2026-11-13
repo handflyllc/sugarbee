@@ -1,5 +1,10 @@
 # Isolated pitch candidate: Pi render-cost checkpoint
 
+Historical investigation checkpoint: `de04c52`. Runtime integration is now
+tracked in [runtime validation](audio-piano-runtime.md). Reproduce the isolated
+source-patching scripts from `de04c52`; they intentionally refuse the integrated
+source tree. Statements below about unchanged runtime describe that checkpoint.
+
 Prepared 2026-11-13. Runtime unchanged; Pi offline render-cost screening passed.
 Live SDL/gameplay validation remains pending.
 The uncommitted source bundle supports validation without touching the Pi checkout.

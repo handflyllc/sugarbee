@@ -43,7 +43,7 @@ int main(void) {
     CHECK(sb_audio_saw_reset(&saw, 440));
     CHECK(saw.phase == .5 && saw.frequency == 440);
     copy = saw;
-    const double invalid[] = {0, -1, 109.99, 880.01, NAN, INFINITY, -INFINITY};
+    const double invalid[] = {0, -1, 27.49, 4186.02, NAN, INFINITY, -INFINITY};
     for (unsigned i = 0; i < sizeof(invalid)/sizeof(invalid[0]); ++i) {
         CHECK(!sb_audio_saw_reset(&saw, invalid[i]));
         CHECK(!sb_audio_saw_pitch(&saw, invalid[i]));

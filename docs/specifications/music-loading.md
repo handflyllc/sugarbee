@@ -29,7 +29,7 @@ and the upstream-verification limitation. Parser types stay private to loader.
 - Waveforms: triangle, saw, pulse, noise. Attack/decay/release 0–10 seconds;
   sustain/volume 0–1; pan -1–1; filter cutoff 20–20000 Hz even when bypassed;
   bypass boolean. Pulse width 0.05–0.95, required for pulse, forbidden otherwise.
-- Pitched note_on requires hz in 110–880. Noise note_on and all note_off events
+- Pitched note_on requires finite hz in 27.5–4186.01 inclusive, played unchanged. Noise note_on and all note_off events
   forbid hz. Track indices must exist.
 - Canonical event ordering: frame, off before on, then track. Reject duplicates
   of the same event kind on one track at one frame. Each on pairs with a later
@@ -382,3 +382,7 @@ Desktop and Pi listening accepted per the user on 2026-11-09; Pi synchronized
 to `e2d7b7c`, 117/117 tests passed, exit 0. See validation for the serial Pi
 CTest requirement and unresolved parallel-run lockups.
 No composer changes or merge.
+
+The expanded pitch range requires the updated engine; older engines reject
+notes outside 110–880 Hz. Existing assets and format version 1 remain unchanged.
+Consumer dependency pins should change only after integrated engine acceptance.

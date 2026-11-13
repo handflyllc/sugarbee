@@ -1,3 +1,4 @@
+#include "sb_audio_pitch.h"
 #include "sb_lua_synth.h"
 #include <lauxlib.h>
 #include <math.h>
@@ -94,7 +95,7 @@ static int note_on(lua_State *L) {
     synth_context_t *ctx=context(L);
     bool noise=ctx->voices[voice-1].waveform==SB_AUDIO_VOICE_NOISE;
     arity(L,noise ? 1 : 2);
-    double frequency=noise ? 0 : number(L,2,voice,"frequency",110,880);
+    double frequency=noise ? 0 : number(L,2,voice,"frequency",SB_AUDIO_PITCH_MIN,SB_AUDIO_PITCH_MAX);
     return result(L,noise ? sb_audio_voice_start_selected_noise(ctx->audio,voice) :
                   sb_audio_voice_start_selected(ctx->audio,voice,frequency));
 }

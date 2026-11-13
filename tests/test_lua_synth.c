@@ -154,11 +154,19 @@ int main(int argc, char **argv) {
         "bad(function() s.configure(1,{},true) end) "
         "bad(function() s.note_on(1) end) "
         "bad(function() s.note_on(1,'440') end) "
-        "bad(function() s.note_on(1,881) end) "
+        "bad(function() s.note_on(1,4186.011) end) "
+        "bad(function() s.note_on(1,27.499999999999996) end) "
+        "bad(function() s.note_on(1,4186.010000000001) end) "
+        "bad(function() s.note_on(1,math.huge) end) "
+        "bad(function() s.note_on(1,0/0) end) "
         "bad(function() s.note_off(1,2) end) "
         "bad(function() s.stop() end)"));
     CHECK(!memcmp(&before,&a->music.sequence.bank,sizeof before));
-    CHECK(run("assert(s.note_on(1,440)); assert(s.note_on(2,110)); assert(s.note_on(9,880))"));
+    CHECK(run("assert(s.note_on(1,440)); assert(s.note_on(2,27.5)); assert(s.note_on(9,4186.01))"));
+    CHECK(a->music.sequence.bank.retained_pitch[1]==27.5);
+    CHECK(a->music.sequence.bank.retained_pitch[8]==4186.01);
+    CHECK(run("assert(s.note_on(9,4186.009044809578))"));
+    CHECK(a->music.sequence.bank.retained_pitch[8]==4186.009044809578);
     float out[2048];
     audio_output(a,(Uint8 *)out,sizeof out);
     CHECK(bank_active(a));

@@ -131,7 +131,7 @@ int main(void) {
         {"\"end_frame\": 317","\"end_frame\": 316"}, {"\"frame\": 0","\"frame\": -0"},
         {"\"frame\": 0","\"frame\": 1.5"}, {"\"frame\": 0","\"frame\": 318"},
         {"\"track\": 1","\"track\": 0"}, {"\"track\": 1","\"track\": 2"},
-        {"\"hz\": 440","\"hz\": 109"}, {"\"hz\": 440","\"hz\": 881"},
+        {"\"hz\": 440","\"hz\": 27.499999999999996"}, {"\"hz\": 440","\"hz\": 4186.010000000001"},
         {"\"hz\": 440","\"hz\": 1e999"}, {"\"hz\": 440","\"hz\": null"},
         {"\"hz\": 440","\"hz\": NaN"}, {"\"hz\": 440","\"hz\": 0440"},
         {"triangle","noise"}, {"triangle","pulse"}, {"triangle","other"},
@@ -169,6 +169,8 @@ int main(void) {
     CHECK(replace("triangle","{{{{{{"));
     a=sb_music_load(edited,strlen(edited),&r); CHECK(!a && r.code==SB_MUSIC_LOAD_SCHEMA);
     const char *boundaries[][2] = {
+        {"\"hz\": 440","\"hz\": 27.5"}, {"\"hz\": 440","\"hz\": 4186.01"},
+        {"\"hz\": 440","\"hz\": 4186.009044809578"},
         {"\"hz\": 440","\"hz\": 110"}, {"\"hz\": 440","\"hz\": 880"},
         {"\"attack\": 0","\"attack\": 10"}, {"\"decay\": 0","\"decay\": 10"},
         {"\"release\": 0.002","\"release\": 10"}, {"\"release\": 0.002","\"release\": 0"},

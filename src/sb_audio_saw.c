@@ -1,9 +1,10 @@
+#include "sb_audio_pitch.h"
 #include "sb_audio_saw.h"
 #include <math.h>
 #include <stdint.h>
 
 static bool valid_frequency(double frequency) {
-    return isfinite(frequency) && frequency >= 110.0 && frequency <= 880.0;
+    return sb_audio_pitch_valid(frequency);
 }
 static bool valid_state(const sb_audio_saw_t *saw) {
     return saw && valid_frequency(saw->frequency) &&

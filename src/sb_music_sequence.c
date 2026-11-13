@@ -1,3 +1,4 @@
+#include "sb_audio_pitch.h"
 #include "sb_music_sequence.h"
 #include <math.h>
 #include <string.h>
@@ -50,7 +51,7 @@ static bool events_valid(const sb_music_song_t *song) {
             if (held[slot]) return false;
             if (song->instruments[slot].waveform == SB_AUDIO_VOICE_NOISE) {
                 if (e->hz != 0) return false;
-            } else if (!isfinite(e->hz) || e->hz < 110 || e->hz > 880) return false;
+            } else if (!sb_audio_pitch_valid(e->hz)) return false;
             held[slot] = true;
             started[slot] = e->frame;
         }

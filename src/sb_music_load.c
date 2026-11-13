@@ -1,3 +1,4 @@
+#include "sb_audio_pitch.h"
 #include "sb_music_load.h"
 #include "yyjson.h"
 #include <math.h>
@@ -178,7 +179,7 @@ static bool events(yyjson_val *array, sb_music_asset_t *a, sb_music_load_result_
         unsigned slot = e->track - 1;
         snprintf(loc, sizeof(loc), "%s.hz", path);
         if (e->kind == SB_MUSIC_NOTE_ON && a->instruments[slot].waveform != SB_AUDIO_VOICE_NOISE) {
-            if (!number(v[3], 110, 880, &e->hz, loc, r)) return false;
+            if (!number(v[3], SB_AUDIO_PITCH_MIN, SB_AUDIO_PITCH_MAX, &e->hz, loc, r)) return false;
         } else if (v[3]) return fail(r, SB_MUSIC_LOAD_SCHEMA, loc, "forbidden for this event");
         if (k) {
             const sb_music_event_t *p = e - 1;

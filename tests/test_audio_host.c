@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
         CHECK(sb_audio_set_triangle_pan(g_engine.audio, 1));
         CHECK(!sb_audio_set_triangle_volume(g_engine.audio, 2));
         CHECK(!sb_audio_set_triangle_pan(g_engine.audio, -2));
-        CHECK(!sb_audio_set_triangle_pitch(g_engine.audio, 1000));
+        CHECK(!sb_audio_set_triangle_pitch(g_engine.audio, 5000));
         sb_audio_note_off_triangle(g_engine.audio);
         sb_audio_stop_triangle(g_engine.audio);
         sb_audio_stop_triangle(g_engine.audio);
