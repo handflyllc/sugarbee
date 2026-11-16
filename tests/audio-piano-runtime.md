@@ -1,7 +1,9 @@
 # A0–C8 runtime integration
 
-2026-11-13, based on investigation commit `de04c52`. Runtime edits are
-uncommitted; desktop validation is accepted, and Pi validation remains pending.
+Runtime commit `4d7ca11`, based on investigation commit `de04c52`.
+Desktop validation is accepted. Pi serial tests and piano listening passed on
+2026-11-16. The user also confirmed all remaining live music, cartridge/lifecycle,
+Pong/Pac-Man and Exit to system checks passed, completing Pi acceptance.
 The earlier Pi benchmark measured the isolated candidate, not this exact build.
 
 ## Contract and implementation
@@ -77,7 +79,7 @@ About 25 seconds, with printed section labels:
    and normal exit. The no-argument tool preserves the previous listening sequence.
 
 Confirm exit status 0. For Pi acceptance also run the full serial suite, record
-SDL's actual obtained buffer/driver, check existing music pause/resume/loop and
+the audio output route if known, check existing music pause/resume/loop and
 cartridge exit/relaunch, and play the existing Pong/Pac-Man cartridges before
 Exit to system. Existing CTest cartridge fixtures remain unchanged to exercise
 old-content compatibility. Pi benchmark headroom is supporting evidence; live
@@ -89,7 +91,13 @@ playback under game load remains required.
 - Runtime desktop build: passed without compiler warnings.
 - Runtime serial suite: **130/130 passed** on desktop, exit 0, run serially.
 - Runtime desktop listening: accepted by the user on 2026-11-13 ("Desktop validation is good").
-- Runtime Pi build/tests/listening: pending.
-- Commit/push: not performed; Git metadata is read-only in this session.
-- Paused at user request after desktop acceptance. Resume with runtime commit/transfer,
-  then Pi build, full serial tests, piano listening and cartridge lifecycle checks.
+- Runtime Pi serial suite: **130/130 passed**, user-reported 2026-11-16 at `4d7ca11`.
+- Runtime Pi piano listening: clean, user-confirmed 2026-11-16; supplied photo
+  shows `4d7ca117` and successful diagnostic completion.
+- Runtime Pi live music pause/resume/stop/loop, cartridge exit/relaunch,
+  Pong/Pac-Man and Exit to system (status 0): all passed per the user on
+  2026-11-16 at `4d7ca11`. Pi validation is complete.
+- Runtime committed/pushed as `4d7ca11`; this acceptance-record update is uncommitted.
+- The piano diagnostic does not print obtained SDL driver/buffer information;
+  the previous request to capture that line was mistaken. No actual buffer size
+  is inferred from the photograph or earlier offline benchmark.

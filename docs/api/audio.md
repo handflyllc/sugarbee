@@ -68,8 +68,7 @@ The filter is a simple low-pass. Setting its cutoff does not enable it; set
 Pitched note frequencies are **27.5–4186.01 Hz**, inclusive, including fractional frequencies.
 The supplied value is played unchanged: no rounding, snapping or clamping.
 The ceiling accepts exact C8 and C8 rounded to two decimals. Nonfinite and
-out-of-range values are rejected. This expansion is implemented in the current
-working tree; desktop validation is accepted and Pi runtime validation is pending.
+out-of-range values are rejected. This expansion is implemented and desktop/Pi validated at `4d7ca11`.
 Noise takes no frequency. Each voice uses its existing deterministic noise seed.
 
 Envelope edits apply to the next note. A retrigger attacks from the current

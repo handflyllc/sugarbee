@@ -19,10 +19,12 @@ required engine capability or intentional dependency update; GUI-only work does
 not trigger engine/Pi validation. SugarBee retains its Raspberry Pi 4 ARM64 and
 Debian x86_64 targets regardless of SugarBeats' Linux x86_64 scope.
 
-Active runtime integration: A0–C8 pitch support (finite 27.5–4186.01 Hz,
+Completed runtime checkpoint: A0–C8 pitch support (finite 27.5–4186.01 Hz,
 inclusive) across native, Lua and music APIs. Feasibility and Pi offline
 render-cost screening passed; integrated desktop validation was accepted by
-the user on 2026-11-13. Pi runtime validation remains pending. See [runtime validation](tests/audio-piano-runtime.md) and the
+the user on 2026-11-13. The user confirmed full Pi validation at `4d7ca11` on 2026-11-16: 130/130
+serial tests, clean piano listening, music and cartridge lifecycle checks,
+Pong/Pac-Man and Exit to system. See [runtime validation](tests/audio-piano-runtime.md) and the
 [feasibility evidence](tests/audio-piano-feasibility.md).
 Nine synth voices, existing mixing gains and 48 kHz remain unchanged.
 Percussion, twelve voices and graphics work remain separate scopes.
@@ -248,7 +250,7 @@ Implemented and validated on desktop and Raspberry Pi:
 - Restricted Lua libraries and instruction budgets for ordinary runaway loops.
 - Explicit UUID-based saves with bounded reads and synchronized replacement.
 - Nine synth voices: triangle, saw, pulse and noise; ADSR, pan/volume, transitions
-  and simple low-pass filtering. Pitched notes support 27.5–4186.01 Hz (desktop accepted; Pi runtime validation pending).
+  and simple low-pass filtering. Pitched notes support 27.5–4186.01 Hz (desktop/Pi accepted at 4d7ca11).
 - Eight WAV playbacks with shared loaded assets, one-shots, whole-sound loops,
   pan/volume/stop, and cartridge-owned cleanup.
 
