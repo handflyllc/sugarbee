@@ -31,12 +31,14 @@ function update(dt)
 end
 function draw()
     sugarbee.cls(8, 12, 32)
-    sugarbee.rect(x, 100, 32, 32, 240, 180, 50, true)
+    sugarbee.rect(math.floor(x), 100, 32, 32, 240, 180, 50, true)
 end
 ```
 
 Movement now uses a nominal fixed 60 Hz simulation timestep. `dt` is measured
-in seconds and is currently always 1/60. See [timing](timing.md).
+in seconds and is currently always 1/60. Keep `x` fractional during updates;
+`math.floor(x)` converts only the drawing coordinate to the required integer.
+This remains valid when the movement speed changes. See [timing](timing.md).
 
 ## Host pause menu
 

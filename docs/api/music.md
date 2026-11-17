@@ -116,6 +116,9 @@ start checks player busy, loop eligibility, then voice availability. An absent
 device refuses playback without simulating eligibility or voice contention.
 
 Music reserves its assigned voices through pause, authored rests and finishing.
+Every declared track needs a voice, even when it has no exported notes.
+SugarBeats currently retains empty and export-disabled tracks in that count;
+a nine-track asset reserves all nine synth voices and leaves none for synth SFX.
 Direct synth commands cannot change reserved slots; unreserved synth effects and
 WAV playback remain independent. Unload refuses a borrowed song until idle.
 
@@ -124,6 +127,13 @@ It never resumes the stopped song, and repeated calls do not extend the fade.
 `finishing` includes stop fades and natural release tails. Cleanup restores silent
 defaults and releases reservations; if no active voices remain, stop is immediately
 idle. A new `play` always starts at frame zero; there is no queue or restart command.
+
+For cartridge-managed song changes, retain the requested next song separately
+from the currently playing song. After a successful `stop()`, clear the current
+song record immediately; wait for `state() == "idle"`, and record a new current
+song only after `play()` succeeds. This includes requesting the same song during
+its stop fade. Handle playback refusals explicitly. `state()` reports transport
+state, not song identity; it cannot repair a stale cartridge-side song variable.
 
 `set_volume(value)` changes only music, ramps over 480 frames, and works while
 playing/finishing. Repeating the same target does not restart its ramp. It does

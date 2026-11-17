@@ -45,12 +45,19 @@ ctest --test-dir build-tools --output-on-failure
 `ctest` runs the examples selected in `CMakeLists.txt` through
 [`tests/cartridge_smoke.lua`](../../tests/cartridge_smoke.lua) when a `lua5.4`
 interpreter is installed (`sudo apt install lua5.4`). The script replaces the
-`sugarbee` table with a stand-in that performs the same argument validation as
-the real bindings — integer coordinates, RGBA buffer length, sprite regions
-inside their texture, valid handles, host-reserved `start` — then calls
+`sugarbee` table with a stand-in that approximates selected binding checks —
+integer coordinates, RGBA buffer length, sprite regions inside their texture,
+valid handles, host-reserved `start` — then calls
 `init()`, 3000 fixed-step `update(dt)`/`draw()` pairs with seeded random
-input, and `shutdown()`. Any Lua error that would have produced Guru
-Meditation on the console fails the test with a traceback.
+input, and `shutdown()`. Lua errors reached during this run fail with a traceback;
+a passing stub run does not establish that the cartridge will run in the host.
+
+The runner currently lacks music, WAV and save/load APIs. Synth calls are
+success-only stubs, with no audio or ownership simulation. It also does not
+reproduce the restricted Lua libraries, callback budgets, every native integer
+range check, archive validation or image decoding. Use the real host/native
+tests for those contracts. Expanding this runner is a proposed follow-up, not
+part of the documentation reconciliation.
 
 CMake checks the selected executable's `_VERSION` at configuration time. Only
 `Lua 5.4` enables these optional tests. Missing, incompatible, or unusable

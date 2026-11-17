@@ -97,7 +97,8 @@ playback under game load remains required.
 - Runtime Pi live music pause/resume/stop/loop, cartridge exit/relaunch,
   Pong/Pac-Man and Exit to system (status 0): all passed per the user on
   2026-11-16 at `4d7ca11`. Pi validation is complete.
-- Runtime committed/pushed as `4d7ca11`; this acceptance-record update is uncommitted.
+- Runtime committed/pushed as `4d7ca11`; complete Pi acceptance was recorded in
+  documentation commit `7085043`.
 - The piano diagnostic does not print obtained SDL driver/buffer information;
   the previous request to capture that line was mistaken. No actual buffer size
   is inferred from the photograph or earlier offline benchmark.

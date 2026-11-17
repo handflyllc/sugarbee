@@ -12,9 +12,10 @@ and eight WAV playbacks with whole-sound looping. Lua 5.4
 is the first cartridge language. Source targets Debian x86_64 and Raspberry
 Pi 4 ARM64; native binaries are platform-specific.
 
-The current music baseline was merged at `2bf169c`: the user reported 129
-post-merge tests passing on desktop and Pi, with Pi exit 0 and cartridge checks
-accepted. Later documentation changes do not expand that validation claim.
+Native music was merged at `2bf169c`. The subsequent A0–C8 runtime at
+`4d7ca11` has user-accepted desktop and Pi validation: 130/130 serial tests,
+listening and cartridge/lifecycle checks. Acceptance is recorded in `7085043`;
+see [runtime evidence](tests/audio-piano-runtime.md).
 The published `v0.1.0-rc1` packages predate native music playback; see the
 [release notes](RELEASE_NOTES.md) for that release's scope and compatibility.
 No bootable console image is included. See the [roadmap](ROADMAP.md) for current
@@ -34,6 +35,7 @@ See [dependencies](docs/development/dependencies.md) and
 - [Release notes](RELEASE_NOTES.md)
 - [Build and testing](docs/development/building.md)
 - [Dependencies](docs/development/dependencies.md)
+- [Friction reconciliation and focused review](docs/development/friction-review-2026-11-16.md)
 - [Current `.vcart` format](docs/specifications/cartridge-format.md)
 - [2D graphics API](docs/api/graphics.md)
 - [Cartridge asset loading](docs/api/assets.md)

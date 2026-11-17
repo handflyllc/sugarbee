@@ -18,7 +18,11 @@ presents the frame. Game code does not own or access an SDL renderer.
 
 All coordinates and dimensions are in **logical pixels**. Color arguments
 are integer red, green, and blue components; use values from 0 to 255. The
-current Lua bindings convert values to 8-bit channels. Rectangles and text are opaque; RGBA sprite textures support transparency.
+current Lua bindings convert values to 8-bit channels. Rectangles and text are
+opaque. RGBA sprite textures blend partial alpha with
+the pixels already drawn: alpha 0 is transparent, 255 is opaque, and intermediate
+values are translucent. This is per-pixel texture alpha, not a draw-time tint or
+opacity parameter.
 
 | Lua call | Behavior |
 | --- | --- |
@@ -32,6 +36,10 @@ current Lua bindings convert values to 8-bit channels. Rectangles and text are o
 | `sugarbee.texture_free(handle)` | Release a texture handle; returns `true` when successful. |
 
 `x`, `y`, `w`, `h`, and `scale` are integral values in the current binding.
+Keep fractional positions in simulation state and convert at the drawing boundary,
+for example `sugarbee.sprite(bee, math.floor(x), math.floor(y))`. Do not round
+the simulation position every update; doing so loses subpixel motion.
+
 Lua treats every value except `false` and `nil` as true, including `0`;
 therefore pass an actual boolean for `filled`.
 

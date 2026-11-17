@@ -16,7 +16,12 @@ the host closes the cartridge's Lua state and releases its textures. Input and
 graphics services remain available during the callback. It receives no arguments,
 and its return values are ignored.
 
-The callback is skipped if cartridge initialization failed or Guru
+Counting updates per draw is a useful catch-up indicator, not an exact FPS or
+frame-deadline measurement. Elapsed-time clamping and bounded catch-up can drop
+backlog. Establish performance with host timing measurements before claiming a
+sustained frame rate or a portable draw-call limit.
+
+`shutdown()` is skipped if cartridge initialization failed or Guru
 Meditation is active. An absent or non-function `shutdown` value is
 ignored. Errors raised by the callback are reported to the console;
 native cleanup still continues. Shutdown has its own fresh provisional allowance

@@ -1,15 +1,17 @@
 # Project SugarBee — Roadmap
 
-Reviewed 2026-11-12 against the merged music baseline `2bf169c` and subsequent
-documentation updates. This is a revisable plan, not a release schedule.
+Reviewed 2026-11-16 against `7085043` (runtime `4d7ca11`), the updated
+SugarBeats passdown and five-game friction report. This is a revisable plan,
+not a release schedule.
 
 ## Current status and next investigation
 
 Native music loading, sequencing, looping, shared voices, transport and
 cartridge/Lua playback are merged. User-reported post-merge acceptance at
 `2bf169c516a64d4ed22fe0e975fa88ba81d72aa2`: desktop 129 tests passed;
-Pi 129 tests passed, exit 0, all cartridge checks passed. Runtime remains
-unchanged since `e2d7b7c`; the later checkpoints added fixtures and documentation.
+Pi 129 tests passed, exit 0, all cartridge checks passed. That is historical
+music acceptance; the later pitch checkpoint below supersedes it as the current
+runtime baseline.
 RC1 `cca7c62` / `v0.1.0-rc1` is an earlier published baseline, not a release of
 these music additions.
 
@@ -33,6 +35,26 @@ Known unresolved issue: user-reported full-system lockups, including parallel
 Pi CTest runs, have no established cause. CTest stays serial on both machines;
 parallel compilation remains usable. No reproduction or reliability guarantee is
 implied by this planning update.
+
+## Current review checkpoint and proposed follow-up
+
+Documentation reconciliation and focused code review are complete; no runtime
+implementation is included. See the [findings and all 33 friction dispositions](docs/development/friction-review-2026-11-16.md)
+and the preserved [original report](docs/development/friction-report-2026-11-16.md).
+
+SugarBeats reports 17/17 consumer checks against pin `7085043`, A0–C8 and
+one through nine tracks accepted at code `0851633` (docs `08e841d`). This is
+not fresh nine-track cartridge/Pi acceptance. Empty or export-disabled tracks
+still consume declared voice slots. Noise/envelope editing and dynamics remain
+composer discussions, not engine requests.
+
+Recommended next discussion: bounded graphics argument/text-arithmetic repairs
+(R1/R2 in the review), followed by smoke-runner coverage and a tested song-change
+example. Implementation is not yet authorized. Clip rectangles lead the new
+graphics candidates; camera offsets, tint/alpha and line drawing should remain
+separate checkpoints. Sprite tinting retains its existing accepted-future status.
+Modules/data access and diagnostics need bounded contracts before implementation.
+No budget, voice-count, mixing-gain or sample-rate increase is proposed.
 
 ## Music checkpoint history
 

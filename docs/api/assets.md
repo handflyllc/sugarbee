@@ -23,6 +23,11 @@ Lua errors. As with other Lua runtime errors, SugarBee displays Guru Meditation.
 Pixel buffers are not exposed to Lua; asset bytes and decoded pixels are freed
 after upload. Persistent texture handles are owned by the graphics context.
 
+The image loader supports PNG; it is not the only cartridge asset loader.
+[WAV audio](wav.md) and [native music JSON](music.md) have dedicated loaders.
+There is currently no general Lua text/binary-file reader or cartridge-local
+`require` for additional Lua files. Those remain separate design candidates.
+
 ## Resource validation and limitations
 
 SugarBee 0.1 applies these provisional hard limits in the cartridge reader:
