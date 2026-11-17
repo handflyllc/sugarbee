@@ -52,8 +52,10 @@ Completed checkpoint: graphics argument/text-arithmetic repairs (R1/R2) at
 `d2ee33c`. Desktop: 131/131 serial tests, UBSan and accepted visual checks.
 On 2026-11-17 the user also confirmed all Pi serial, visual/lifecycle and Exit
 to system checks passed. See [repair validation](tests/graphics-bounds.md).
-Smoke-runner coverage and a tested song-change example remain proposed follow-ups;
-neither is started or authorized by this acceptance. Clip rectangles lead the new
+The subsequently authorized smoke-runner checkpoint adds in-memory saves,
+explicit-scenario music state and unsupported-API diagnostics; 19 targeted serial
+checks pass. See [scope and limitations](tests/smoke-runner.md). The tested
+song-change example remains a separate proposed checkpoint. Clip rectangles lead the new
 graphics candidates; camera offsets, tint/alpha and line drawing should remain
 separate checkpoints. Sprite tinting retains its existing accepted-future status.
 Modules/data access and diagnostics need bounded contracts before implementation.

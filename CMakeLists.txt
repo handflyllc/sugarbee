@@ -833,6 +833,27 @@ if(BUILD_TESTING)
     endif()
 
     if(LUA54_INTERPRETER_COMPATIBLE)
+        add_test(NAME smoke_service_model COMMAND "${LUA54_INTERPRETER}"
+            "${PROJECT_SOURCE_DIR}/tests/smoke-runner/test.lua"
+            "${PROJECT_SOURCE_DIR}/tests/smoke_services.lua")
+        add_test(NAME smoke_service_lifecycle COMMAND "${LUA54_INTERPRETER}"
+            "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua"
+            "${PROJECT_SOURCE_DIR}/tests/smoke-runner/cart" 3 1
+            "${PROJECT_SOURCE_DIR}/tests/smoke-runner/scenario.lua")
+        add_test(NAME cartridge_smoke_music-lab COMMAND "${LUA54_INTERPRETER}"
+            "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua"
+            "${PROJECT_SOURCE_DIR}/examples/music-lab" 3000 1
+            "${PROJECT_SOURCE_DIR}/tests/smoke-runner/music-lab.lua")
+        add_test(NAME cartridge_smoke_save-lab COMMAND "${LUA54_INTERPRETER}"
+            "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua"
+            "${PROJECT_SOURCE_DIR}/examples/save-lab" 3000 1)
+        add_test(NAME smoke_service_diagnostics COMMAND "${CMAKE_COMMAND}"
+            "-DLUA=${LUA54_INTERPRETER}" "-DSOURCE_ROOT=${PROJECT_SOURCE_DIR}"
+            "-DTEST_ROOT=${PROJECT_BINARY_DIR}/smoke-diagnostics"
+            -P "${PROJECT_SOURCE_DIR}/tests/smoke-runner/diagnostics.cmake")
+        set_tests_properties(smoke_service_model smoke_service_lifecycle
+            cartridge_smoke_music-lab cartridge_smoke_save-lab
+            smoke_service_diagnostics PROPERTIES TIMEOUT 10)
         add_test(NAME pong_audio_behavior COMMAND "${LUA54_INTERPRETER}"
             "${PROJECT_SOURCE_DIR}/tests/pong-audio/test.lua"
             "${PROJECT_SOURCE_DIR}/examples/pong-lab/main.lua")

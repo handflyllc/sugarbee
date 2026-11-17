@@ -1,28 +1,26 @@
 -- cartridge_smoke.lua: run a cartridge's Lua against a stand-in `sugarbee`
 -- table, without SDL or the host binary.
 --
---   lua5.4 tests/cartridge_smoke.lua <game-dir> [frames] [seed]
+--   lua5.4 tests/cartridge_smoke.lua <game-dir> [frames] [seed] [scenario.lua]
 --
--- The stub mirrors the argument validation performed by the real bindings
--- in src/main.c and src/sb_graphics_sdl.c, so a cartridge that would hit
--- Guru Meditation on the console (non-integer coordinates, a sprite region
--- outside its texture, a stale texture handle, an RGBA buffer of the wrong
--- length, a typo'd API name) fails here instead, with a Lua traceback.
---
--- It does not render anything and cannot judge how a game looks or plays;
--- it is a crash test, not a gameplay test. Input is pseudo-random with a
--- fixed seed so failures reproduce.
+-- Approximate argument/logic checks only: not a native runtime or audio test.
+-- Optional fourth argument: trusted harness scenario Lua file (see smoke-runner.md).
+-- Saves stay in memory. Music uses explicit scenario metadata and synthetic time.
 
 local game_dir = arg[1]
 local frames = tonumber(arg[2]) or 3000
 local seed = tonumber(arg[3]) or 1
+local runner_dir = arg[0]:match('^(.*[/\\])') or './'
+local services = dofile(runner_dir .. 'smoke_services.lua')
+local scenario = arg[4] and assert(loadfile(arg[4], 't'))() or {}
+assert(type(scenario)=='table', 'smoke scenario must return a table')
 
 if _VERSION ~= "Lua 5.4" then
     io.stderr:write("cartridge_smoke: needs Lua 5.4, found " .. _VERSION .. "\n")
     os.exit(1)
 end
 if not game_dir then
-    io.stderr:write("usage: lua5.4 tests/cartridge_smoke.lua <game-dir> [frames] [seed]\n")
+    io.stderr:write("usage: lua5.4 tests/cartridge_smoke.lua <game-dir> [frames] [seed] [scenario.lua]\n")
     os.exit(2)
 end
 
@@ -110,7 +108,9 @@ end
 -- Asset paths follow docs/api/graphics.md: relative, forward slashes, no
 -- "." or ".." segments, no NUL bytes.
 local function check_asset_path(path)
-    if path:find("\0", 1, true) then return "asset path contains a NUL byte" end
+    if #path==0 or #path>240 or path:find('[%z\1-\31\127\\:]') then
+        return "invalid asset path"
+    end
     if path:sub(1, 1) == "/" then return "absolute paths are rejected" end
     for segment in (path .. "/"):gmatch("([^/]*)/") do
         if segment == "" or segment == "." or segment == ".." then
@@ -123,7 +123,15 @@ end
 -- ---------------------------------------------------------------------------
 -- The stand-in API
 -- ---------------------------------------------------------------------------
-sugarbee = {}
+local service_api, service_control = services.new(scenario, function(path)
+    local problem=check_asset_path(path)
+    assert(not problem, problem)
+    local f=io.open(game_dir .. '/' .. path, 'rb')
+    if not f then return false end
+    f:close(); return true
+end)
+sugarbee = setmetatable(service_api, services.unsupported('sugarbee'))
+sugarbee.audio = setmetatable({}, services.unsupported('sugarbee.audio'))
 -- Synth stubs supply execution coverage only; test_lua_synth checks the real
 -- argument contract. No sound or timing is modeled by this smoke runner.
 sugarbee.synth = {
@@ -132,6 +140,7 @@ sugarbee.synth = {
     note_off = function() return true end,
     stop = function() return true end
 }
+setmetatable(sugarbee.synth, services.unsupported('sugarbee.synth'))
 
 function sugarbee.cls(r, g, b)
     opt_int("cls", 1, r, 0); opt_int("cls", 2, g, 0); opt_int("cls", 3, b, 0)
@@ -232,6 +241,7 @@ if not chunk then fail("load", load_err) end
 local ok, run_err = xpcall(chunk, debug.traceback)
 if not ok then fail("load", run_err) end
 
+service_control.begin()
 call("init", "init()")
 
 -- Input script: a held direction that changes now and then, occasional
@@ -258,6 +268,7 @@ for frame = 1, frames do
     end
     if frame % 300 == 0 then pressed.b = true; held.b = true end
 
+    service_control.advance()
     call("update", "update() at frame " .. frame, DT)
     call("draw", "draw() at frame " .. frame)
 
@@ -267,5 +278,5 @@ end
 
 call("shutdown", "shutdown()")
 
-print(string.format("cartridge_smoke OK: %s, %d frames, %d textures, %d draw calls",
+print(string.format("cartridge_smoke OK (simulated services; no native validation): %s, %d frames, %d textures, %d draw calls",
                     game_dir, frames, counts.textures, counts.draw_calls))

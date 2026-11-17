@@ -1,0 +1,110 @@
+# Cartridge smoke-runner services
+
+Tooling checkpoint based on `6d50b23`. No engine runtime, public API, asset format
+or SugarBeats dependency changes. R3's missing music/save execution coverage is
+addressed; the runner remains a partial simulation, not a second engine.
+
+## Run
+
+```sh
+lua5.4 tests/cartridge_smoke.lua examples/save-lab 3000 1
+lua5.4 tests/cartridge_smoke.lua examples/music-lab 3000 1 tests/smoke-runner/music-lab.lua
+```
+
+Existing three-argument invocations still work. The optional fourth argument is
+a **trusted test-side Lua scenario** returning a table. It is not loaded from the
+cartridge automatically and is not a new cartridge format. For your own game:
+
+```lua
+return {
+    songs = {
+        ['assets/music.json'] = {
+            track_count = 3,
+            end_frame = 192000,
+            loop_eligible = true,
+        },
+    },
+    audio_available = true, -- optional; false exercises unavailable playback
+}
+```
+
+Use metadata from a native-validated asset and update the scenario when that
+asset changes. The runner checks safe relative names and file existence, but
+**does not parse or validate the music JSON**. Missing files return nil plus an
+asset error; existing files without scenario metadata fail with an explicit
+harness diagnostic. Track count, end frame and loop eligibility are required;
+there are no invented defaults. The model reports timeline rate 48000. Scenarios
+can deliberately supply synthetic metadata for logic tests, as the small runner
+lifecycle fixture does. Passing those tests says nothing about JSON correctness.
+
+## Save behavior
+
+One in-memory string per invocation, initially absent. No player save files,
+UUID storage directories, HOME/XDG paths or persistence across invocations are
+accessed by these stubs. Empty strings and embedded zero bytes round-trip.
+`save`/`load_save` check argument counts and types and return exactly two results.
+More than 65536 bytes returns `nil, 'too_large'` without replacing the old value;
+missing data returns `nil, 'not_found'`. Valid calls during top-level loading
+return `nil, 'io_error'`; init/update/draw/shutdown can use the memory slot.
+
+Disk errors, durability, filesystem permissions and failure injection are not
+modeled. Use the real storage tests for those. The runner and scenario execute
+trusted Lua in the ordinary interpreter: this is not a sandbox restricting what
+cartridge/scenario code itself can do through `io` or `os`.
+
+## Music behavior
+
+The test-only module `smoke_services.lua` models:
+
+- `load`, `info`, `unload`: distinct opaque table tokens, copied metadata,
+  stale/foreign-handle errors, eight loaded slots, in-use unload refusal.
+  Native handles are userdata; do not use stub token type as an API guarantee.
+- `play`: exact argument count, explicit options, one distinct integer voice
+  in 1–9 per declared track, loop/volume validation, `music_busy`,
+  `loop_ineligible` and optional `audio_unavailable` refusals.
+- `state`, `stop`, `set_volume`: idle/playing/finishing states, repeated stop,
+  and `music_idle` when setting idle volume. Gain is validated but no sound or
+  smoothing is produced.
+
+Before each update, the harness advances 800 synthetic timeline frames (one
+60 Hz step). A nonlooping song reaches `finishing` at its declared end, then
+becomes idle at the next advance. Stop enters finishing until the next advance;
+repeated stops do not prolong it. Looping songs remain playing until stopped.
+This exposes a busy interval for cartridge logic without copying native release
+or pause algorithms. It does **not** reproduce the 480-frame stop fade, natural
+release lengths, silent immediate stop, sample/event timing, host pause,
+voice activity, or synth/music contention. Synth stubs still always succeed;
+`voice_busy` and reserved-voice synth refusals are not simulated.
+
+Prepared-memory/parser limits, native collection identities, shutdown/failure
+state transitions, real loop eligibility, event scheduling and sound remain the
+responsibility of native loader/Lua/transport tests and listening checks. The
+song-change example and its real-engine validation are a separate checkpoint.
+
+## Unsupported functionality and other limits
+
+Unknown `sugarbee`, music and synth members, and WAV methods, fail explicitly
+with `cartridge_smoke: unsupported API ...`. WAV support is deferred. Optional
+feature probing through absent fields therefore also raises a diagnostic here.
+
+Existing graphics and input checks are retained. The runner still approximates
+binding validation; it does not reproduce all native integer bounds, restricted
+Lua libraries, instruction budgets, ZIP checks, image decoding, rendering or
+physical input. Success output explicitly says services are simulated. Random
+input is seeded, but passing a single run is not exhaustive gameplay coverage.
+
+## Verification
+
+19 targeted serial CTests passed on desktop, including all eight existing
+cartridge smoke games, Music Lab, Save Lab, service-model unit checks, a runner
+lifecycle fixture, explicit error-message checks, and existing native Lua
+music/synth and host save tests. No full native-suite rerun or new Pi runtime
+acceptance is needed for this tooling-only change. Five new CTest registrations
+bring the configured total to 136 when the Lua interpreter is present.
+
+The model tests cover save boundaries/binary/empty values and per-run isolation;
+metadata copying; missing/foreign/stale handles; malformed mappings/options;
+busy/unload/loop refusals; natural end and repeated stop; same-asset replay after
+finishing; capacity recovery; and unavailable audio. Integration checks exercise
+actual runner callback wiring and require both a failing process and the expected
+diagnostic for unsupported APIs, absent metadata and unsafe paths.

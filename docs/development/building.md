@@ -52,12 +52,16 @@ valid handles, host-reserved `start` — then calls
 input, and `shutdown()`. Lua errors reached during this run fail with a traceback;
 a passing stub run does not establish that the cartridge will run in the host.
 
-The runner currently lacks music, WAV and save/load APIs. Synth calls are
-success-only stubs, with no audio or ownership simulation. It also does not
-reproduce the restricted Lua libraries, callback budgets, every native integer
-range check, archive validation or image decoding. Use the real host/native
-tests for those contracts. Expanding this runner is a proposed follow-up, not
-part of the documentation reconciliation.
+The runner supports in-memory saves and a small music-state model configured
+through an optional fourth argument: a trusted scenario Lua file with explicit
+song metadata. It checks asset existence but does not decode music JSON or
+validate native playback. WAV remains unsupported; unknown APIs produce explicit
+diagnostics. Synth calls remain success-only stubs. See the
+[smoke-runner contract and examples](../../tests/smoke-runner.md).
+
+It does not reproduce the restricted Lua libraries, callback budgets, every
+native integer range check, archive validation or image decoding. Use the real
+host/native tests for those contracts.
 
 CMake checks the selected executable's `_VERSION` at configuration time. Only
 `Lua 5.4` enables these optional tests. Missing, incompatible, or unusable

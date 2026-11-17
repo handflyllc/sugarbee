@@ -27,8 +27,10 @@ This is a focused review, not a whole-engine audit or hostile-code certification
 
 After review commit `e005b5d`, R1/R2 repairs were authorized and implemented in
 a separate checkpoint. See [repair validation](../../tests/graphics-bounds.md)
-for current results and pending acceptance. The findings below retain the
-original review evidence; R3 runner changes remain unimplemented.
+for desktop/Pi acceptance at `d2ee33c`. R3 music/save execution coverage is now
+implemented in a separate [tooling checkpoint](../../tests/smoke-runner.md),
+with explicit simulation limits and WAV deferred. The findings below retain the
+original review evidence; they are not claims about the updated runner.
 
 ## Findings, in recommended repair order
 
