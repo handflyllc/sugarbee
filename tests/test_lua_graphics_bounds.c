@@ -12,6 +12,7 @@ int main(void) {
     open_cartridge_libraries(L);
     const luaL_Reg bindings[]={{"rect",l_sugarbee_rect},{"text",l_sugarbee_print},
         {"sprite",l_sugarbee_sprite},{"region",l_sugarbee_sprite_region},
+        {"camera",l_sugarbee_camera},{"camera_reset",l_sugarbee_camera_reset},
         {"clip",l_sugarbee_clip},{"clip_reset",l_sugarbee_clip_reset},
         {"btn",l_sugarbee_btn},{"btnp",l_sugarbee_btnp},{NULL,NULL}};
     for (const luaL_Reg *b=bindings;b->name;++b) {
@@ -55,9 +56,29 @@ int main(void) {
     CHECK(clip.x==2 && clip.y==3 && clip.w==4 && clip.h==5);
     CHECK(luaL_dostring(L,"assert(select('#',clip_reset())==0)")==LUA_OK);
     CHECK(!SDL_RenderIsClipEnabled(renderer));
+    sb_graphics_clear(g_engine.graphics,0,0,0);
+    CHECK(luaL_dostring(L,
+        "assert(select('#',camera(10.0,-20.0))==0); "
+        "for _,args in ipairs({{0},{0,0,0},{0.5,0},{0,imax+1},{imin-1,0},"
+        "{0,math.huge},{false,0}}) do assert(not pcall(camera,table.unpack(args))) end; "
+        "assert(not pcall(camera_reset,nil)); "
+        "rect(10,-20,1,1,255,255,255,true)")==LUA_OK);
+    Uint8 pixel[4]; SDL_Rect area={0,0,1,1};
+    CHECK(SDL_RenderReadPixels(renderer,&area,SDL_PIXELFORMAT_RGBA32,pixel,4)==0);
+    CHECK(pixel[0]==255 && pixel[1]==255 && pixel[2]==255);
+    CHECK(luaL_dostring(L,"assert(select('#',camera_reset())==0)")==LUA_OK);
+    sb_graphics_clear(g_engine.graphics,0,0,0);
+    CHECK(luaL_dostring(L,"rect(0,0,1,1,255,255,255,true)")==LUA_OK);
+    CHECK(SDL_RenderReadPixels(renderer,&area,SDL_PIXELFORMAT_RGBA32,pixel,4)==0);
+    CHECK(pixel[0]==255);
+    sb_graphics_camera(g_engine.graphics,INT_MAX,INT_MIN);
     CHECK(sb_graphics_clip(g_engine.graphics,0,0,0,0));
     trigger_guru_meditation(1,"Test","Expected clip isolation test",NULL);
     render_guru_meditation(); CHECK(!SDL_RenderIsClipEnabled(renderer));
+    sb_graphics_rect(g_engine.graphics,0,0,1,1,255,255,255,true);
+    CHECK(SDL_RenderReadPixels(renderer,&area,SDL_PIXELFORMAT_RGBA32,pixel,4)==0);
+    CHECK(pixel[0]==255 && pixel[1]==255 && pixel[2]==255);
+    CHECK(lua_gettop(L)==0);
     lua_close(L); sb_input_destroy(g_engine.input);
     sb_graphics_destroy(g_engine.graphics); SDL_Quit(); return 0;
 }

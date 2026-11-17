@@ -4,6 +4,7 @@ local data,why=sugarbee.load_save()
 assert(data==nil and why=='io_error')
 local song, ticks
 function init()
+    sugarbee.camera(-2147483648,2147483647); sugarbee.camera_reset()
     sugarbee.clip(-2,0,0,3); sugarbee.clip_reset()
     data,why=sugarbee.load_save(); assert(data==nil and why=='not_found')
     assert(sugarbee.save('checkpoint\0data'))

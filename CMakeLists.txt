@@ -702,6 +702,12 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     set_tests_properties(lua_graphics_bounds PROPERTIES
         ENVIRONMENT "SDL_VIDEODRIVER=dummy" TIMEOUT 10)
 
+    add_executable(test_camera tests/test_camera.c)
+    target_link_libraries(test_camera PRIVATE sugarbee_graphics PkgConfig::SDL2)
+    sugarbee_warnings(test_camera)
+    add_test(NAME graphics_camera COMMAND test_camera)
+    set_tests_properties(graphics_camera PROPERTIES ENVIRONMENT "SDL_VIDEODRIVER=dummy" TIMEOUT 10)
+
     add_executable(test_clip tests/test_clip.c)
     target_link_libraries(test_clip PRIVATE sugarbee_graphics PkgConfig::SDL2)
     sugarbee_warnings(test_clip)

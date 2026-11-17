@@ -21,6 +21,8 @@ struct sb_graphics {
     SDL_Texture *game_frame;
     int width;
     int height;
+    int camera_x;
+    int camera_y;
     texture_slot_t *slots;
     size_t slot_count;
     size_t slot_capacity;
@@ -108,6 +110,30 @@ int sb_graphics_height(const sb_graphics_t *graphics) {
     return graphics ? graphics->height : 0;
 }
 
+void sb_graphics_camera(sb_graphics_t *graphics, int x, int y) {
+    if (!graphics) return;
+    graphics->camera_x = x;
+    graphics->camera_y = y;
+}
+
+void sb_graphics_camera_reset(sb_graphics_t *graphics) {
+    sb_graphics_camera(graphics, 0, 0);
+}
+
+/* Clip in wide screen coordinates before narrowing for SDL. Used for filled
+ * rectangles and individual outline edges, so clipping never invents an edge. */
+static void fill_screen_rect(sb_graphics_t *graphics, int64_t x, int64_t y,
+                             int64_t width, int64_t height) {
+    int64_t right = x + width, bottom = y + height;
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
+    if (right > graphics->width) right = graphics->width;
+    if (bottom > graphics->height) bottom = graphics->height;
+    if (x >= right || y >= bottom) return;
+    SDL_Rect rect = {(int)x, (int)y, (int)(right-x), (int)(bottom-y)};
+    SDL_RenderFillRect(graphics->renderer, &rect);
+}
+
 bool sb_graphics_clip_reset(sb_graphics_t *graphics) {
     return graphics && SDL_RenderSetClipRect(graphics->renderer, NULL) == 0;
 }
@@ -135,10 +161,28 @@ void sb_graphics_clear(sb_graphics_t *graphics, uint8_t r, uint8_t g, uint8_t b)
 void sb_graphics_rect(sb_graphics_t *graphics, int x, int y, int width,
                       int height, uint8_t r, uint8_t g, uint8_t b, bool filled) {
     if (!graphics) return;
-    SDL_Rect rect = { x, y, width, height };
+    int64_t left = (int64_t)x - graphics->camera_x;
+    int64_t top = (int64_t)y - graphics->camera_y;
     SDL_SetRenderDrawColor(graphics->renderer, r, g, b, 255);
-    if (filled) SDL_RenderFillRect(graphics->renderer, &rect);
-    else SDL_RenderDrawRect(graphics->renderer, &rect);
+    /* Preserve SDL's ordinary rectangle rasterization (including degenerate
+     * dimensions) and single-call outline path. Wide fallback is needed only
+     * when translated endpoints cannot safely be represented by SDL integers. */
+    if (left >= INT_MIN && left <= INT_MAX && top >= INT_MIN && top <= INT_MAX &&
+        left + width >= INT_MIN && left + width <= INT_MAX &&
+        top + height >= INT_MIN && top + height <= INT_MAX) {
+        SDL_Rect rect = {(int)left, (int)top, width, height};
+        if (filled) SDL_RenderFillRect(graphics->renderer, &rect);
+        else SDL_RenderDrawRect(graphics->renderer, &rect);
+        return;
+    }
+    if (width <= 0 || height <= 0) return;
+    if (filled) fill_screen_rect(graphics, left, top, width, height);
+    else {
+        fill_screen_rect(graphics, left, top, width, 1);
+        fill_screen_rect(graphics, left, top + height - 1, width, 1);
+        fill_screen_rect(graphics, left, top, 1, height);
+        fill_screen_rect(graphics, left + width - 1, top, 1, height);
+    }
 }
 
 static void draw_char(sb_graphics_t *graphics, unsigned char c, int64_t x, int64_t y,
@@ -170,7 +214,8 @@ static void draw_char(sb_graphics_t *graphics, unsigned char c, int64_t x, int64
 void sb_graphics_text(sb_graphics_t *graphics, const char *text, int x, int y,
                       uint8_t r, uint8_t g, uint8_t b, int scale) {
     if (!graphics || !text || scale <= 0) return;
-    int64_t cursor_x = x, cursor_y = y;
+    const int64_t origin_x = (int64_t)x - graphics->camera_x;
+    int64_t cursor_x = origin_x, cursor_y = (int64_t)y - graphics->camera_y;
     SDL_SetRenderDrawColor(graphics->renderer, r, g, b, 255);
     for (const unsigned char *p = (const unsigned char *)text; *p; ++p) {
         /* Rows only move down. Columns stop advancing once offscreen, but
@@ -179,7 +224,7 @@ void sb_graphics_text(sb_graphics_t *graphics, const char *text, int x, int y,
         if (cursor_y >= graphics->height) break;
         if (*p == '\n') {
             cursor_y += (int64_t)10 * scale;
-            cursor_x = x;
+            cursor_x = origin_x;
         } else if (cursor_x < graphics->width) {
             if (cursor_x + (int64_t)8 * scale > 0 &&
                 cursor_y + (int64_t)8 * scale > 0)
@@ -196,6 +241,7 @@ bool sb_graphics_begin_game_frame(sb_graphics_t *graphics) {
         return false;
     }
 
+    sb_graphics_camera_reset(graphics);
     if (!sb_graphics_clip_reset(graphics) ||
         SDL_SetRenderDrawColor(graphics->renderer, 0, 0, 0, 255) != 0) {
         return false;
@@ -211,6 +257,7 @@ bool sb_graphics_show_game_frame(sb_graphics_t *graphics) {
         return false;
     }
 
+    sb_graphics_camera_reset(graphics);
     if (!sb_graphics_clip_reset(graphics) ||
         SDL_SetRenderDrawColor(graphics->renderer, 0, 0, 0, 255) != 0 ||
         SDL_RenderClear(graphics->renderer) != 0) {
@@ -315,7 +362,13 @@ bool sb_graphics_sprite_region(sb_graphics_t *graphics, sb_texture_t texture,
         src_y > slot->height - src_height) return false;
 
     SDL_Rect source = { src_x, src_y, src_width, src_height };
-    SDL_Rect destination = { x, y, dest_width, dest_height };
+    int64_t left = (int64_t)x - graphics->camera_x;
+    int64_t top = (int64_t)y - graphics->camera_y;
+    /* Cull before narrowing. A visible positive-sized destination necessarily
+     * has an origin representable as int, even for opposite camera extremes. */
+    if (left >= graphics->width || top >= graphics->height ||
+        left + dest_width <= 0 || top + dest_height <= 0) return true;
+    SDL_Rect destination = { (int)left, (int)top, dest_width, dest_height };
     SDL_RendererFlip flip = SDL_FLIP_NONE;
     if (flip_x) flip = (SDL_RendererFlip)(flip | SDL_FLIP_HORIZONTAL);
     if (flip_y) flip = (SDL_RendererFlip)(flip | SDL_FLIP_VERTICAL);
@@ -346,6 +399,7 @@ bool sb_graphics_texture_destroy(sb_graphics_t *graphics, sb_texture_t texture) 
 
 void sb_graphics_clear_cartridge_textures(sb_graphics_t *graphics) {
     if (!graphics) return;
+    sb_graphics_camera_reset(graphics);
     if (!sb_graphics_clip_reset(graphics)) SDL_Log("SugarBee: clip reset failed: %s", SDL_GetError());
 
     for (size_t i = 0; i < graphics->slot_count; ++i) {

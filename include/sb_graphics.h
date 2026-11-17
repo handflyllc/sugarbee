@@ -30,6 +30,12 @@ void sb_graphics_destroy(sb_graphics_t *graphics);
 int sb_graphics_width(const sb_graphics_t *graphics);
 int sb_graphics_height(const sb_graphics_t *graphics);
 
+/* Drawing uses screen = world - camera for rectangles, text and sprites.
+ * Replaces the position; reset is (0,0). Clip and clear remain screen-space.
+ * Frame start, host presentation and cartridge cleanup reset the camera. */
+void sb_graphics_camera(sb_graphics_t *graphics, int x, int y);
+void sb_graphics_camera_reset(sb_graphics_t *graphics);
+
 /* Replace the clip with a screen-logical rectangle intersected with the viewport.
  * Zero dimensions hide drawing; negative dimensions fail without changing state.
  * Edges are half-open. Clear ignores the clip. No coordinate translation. */

@@ -142,6 +142,18 @@ sugarbee.synth = {
 }
 setmetatable(sugarbee.synth, services.unsupported('sugarbee.synth'))
 
+function sugarbee.camera(...)
+    assert(select('#',...)==2, 'camera: expected x, y')
+    local args={...}
+    for i=1,2 do
+        local v=check_int('camera',i,args[i])
+        assert(v>=-2147483648 and v<=2147483647, 'camera: integer outside supported range')
+    end
+end
+function sugarbee.camera_reset(...)
+    assert(select('#',...)==0, 'camera_reset: expected no arguments')
+end
+
 function sugarbee.clip(...)
     assert(select('#',...)==4, 'clip: expected x, y, width, height')
     local values={...}

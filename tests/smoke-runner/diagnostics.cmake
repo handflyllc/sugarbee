@@ -23,3 +23,8 @@ check_failure("sugarbee.music.load('a:bad')" "invalid asset path")
 check_failure("sugarbee.clip(0,0,-1,4)" "dimensions must be nonnegative")
 check_failure("sugarbee.clip(2147483648,0,4,4)" "integer outside supported range")
 check_failure("sugarbee.clip_reset(nil)" "expected no arguments")
+
+check_failure("sugarbee.camera(0,2147483648)" "integer outside supported range")
+check_failure("sugarbee.camera(0)" "expected x, y")
+check_failure("sugarbee.camera(nil,0)" "integer expected")
+check_failure("sugarbee.camera_reset(nil)" "expected no arguments")

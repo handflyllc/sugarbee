@@ -26,6 +26,8 @@ opacity parameter.
 
 | Lua call | Behavior |
 | --- | --- |
+| `sugarbee.camera(x, y)` | Replace the camera position used by drawing. |
+| `sugarbee.camera_reset()` | Restore screen coordinates (camera at zero). |
 | `sugarbee.clip(x, y, w, h)` | Replace the drawing clip; dimensions must be nonnegative. |
 | `sugarbee.clip_reset()` | Disable the drawing clip. |
 | `sugarbee.cls(r, g, b)` | Clear the frame to a color. Missing channels default to 0. |
@@ -74,7 +76,7 @@ Sprite and shape positions are expressed in logical coordinates and **may be
 outside the viewport**. SugarBee does not clamp object positions or stop game
 objects at the screen edge. The SDL renderer clips drawing to the visible
 viewport; offscreen pixels are not displayed. Games implement their own
-movement limits, cameras, and world boundaries when needed.
+movement limits, camera following, and world boundaries when needed.
 
 For an example of primitive drawing and text order, see
 [`examples/graphics-demo/main.lua`](../../examples/graphics-demo/main.lua).
@@ -98,7 +100,8 @@ it; there is no nested stack. The visible area is the intersection with the
 viewport, with half-open edges: `x <= pixel_x < x+w`, `y <= pixel_y < y+h`.
 Negative/offscreen positions are allowed; a disjoint rectangle hides drawing.
 Sprites (including regions/scaling/flips), filled/outline rectangles and text
-obey the clip. Positions are not translated, and the window is not resized.
+obey the clip. Clipping itself does not translate positions or resize the window. A camera
+translates drawing independently; the clip always remains in screen coordinates.
 
 `cls()` always clears the whole frame and **preserves** the selected clip.
 At the start of each game frame, before `draw()`, clipping is disabled. Set
@@ -120,7 +123,7 @@ end
 See the [clip demo and acceptance checklist](../../examples/clip-demo/README.md).
 This API requires the clip-enabled engine; earlier engines have no `clip` or
 `clip_reset` functions. Existing cartridges that never call them retain full-frame
-drawing. Configurable resolution, camera transforms and nested clipping remain
+drawing. Configurable resolution and nested clipping remain
 separate future capabilities.
 
 ## Prototype sprites and texture ownership (Milestone 3A)
@@ -266,3 +269,36 @@ check color and transparency. This remains a headless smoke test, **not** full v
 
 The earlier gold-rectangle test cartridge remains the manual end-to-end
 regression test for Lua bindings, cartridge loading, and on-screen output.
+
+## Camera position
+
+`sugarbee.camera(x, y)` takes exactly two integer-valued numbers in the native
+signed integer range (signed 32-bit on supported targets). Negative positions
+are allowed. `sugarbee.camera_reset()` takes no arguments. Both return no values.
+Invalid arguments raise a Lua error without changing the previous camera.
+
+Drawing uses **screen position = world position - camera position** for `rect`,
+`print`, `sprite` and `sprite_region`. Dimensions, source crops, flips, text
+spacing and scaling are unchanged. Camera calls replace the position rather
+than accumulating it. Reset selects `(0, 0)`.
+
+`clip` remains in screen coordinates regardless of call order. `cls` clears the
+whole frame while preserving camera and clip. Both states reset before each
+`draw()` and are isolated from host screens and subsequent cartridge sessions.
+Set the camera inside `draw()`; setting it only in `init()` or `update()` does
+not carry through to drawing. Existing cartridges default to screen coordinates.
+
+```lua
+sugarbee.clip(panel_x, panel_y, panel_w, panel_h)
+-- Put the desired world origin at the panel's upper-left corner.
+sugarbee.camera(world_left - panel_x, world_top - panel_y)
+draw_world()
+sugarbee.camera_reset()
+sugarbee.clip_reset()
+draw_hud()
+```
+
+Keep fractional movement in game state and round at the drawing boundary.
+Following, smoothing, world bounds and collision coordinates belong to game
+logic. No zoom, rotation or camera stack is introduced. Earlier engine versions
+lack these functions. See the [camera demo](../../examples/camera-demo/README.md).
