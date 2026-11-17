@@ -123,7 +123,7 @@ void sb_graphics_rect(sb_graphics_t *graphics, int x, int y, int width,
     else SDL_RenderDrawRect(graphics->renderer, &rect);
 }
 
-static void draw_char(sb_graphics_t *graphics, unsigned char c, int x, int y,
+static void draw_char(sb_graphics_t *graphics, unsigned char c, int64_t x, int64_t y,
                       int scale) {
     if (c < 32 || c > 126) c = '?';
     const unsigned char *glyph = font8x8_basic[c];
@@ -131,7 +131,18 @@ static void draw_char(sb_graphics_t *graphics, unsigned char c, int x, int y,
     for (int row = 0; row < 8; row++) {
         for (int col = 0; col < 8; col++) {
             if (glyph[row] & (1u << (7 - col))) {
-                SDL_Rect pixel = {x + col * scale, y + row * scale, scale, scale};
+                /* Clip in wide arithmetic before passing coordinates to SDL.
+                 * Even a single scaled glyph can extend beyond INT_MAX. */
+                int64_t left = x + (int64_t)col * scale;
+                int64_t top = y + (int64_t)row * scale;
+                int64_t right = left + scale, bottom = top + scale;
+                if (left < 0) left = 0;
+                if (top < 0) top = 0;
+                if (right > graphics->width) right = graphics->width;
+                if (bottom > graphics->height) bottom = graphics->height;
+                if (left >= right || top >= bottom) continue;
+                SDL_Rect pixel = {(int)left, (int)top,
+                                  (int)(right - left), (int)(bottom - top)};
                 SDL_RenderFillRect(graphics->renderer, &pixel);
             }
         }
@@ -141,15 +152,21 @@ static void draw_char(sb_graphics_t *graphics, unsigned char c, int x, int y,
 void sb_graphics_text(sb_graphics_t *graphics, const char *text, int x, int y,
                       uint8_t r, uint8_t g, uint8_t b, int scale) {
     if (!graphics || !text || scale <= 0) return;
-    int start_x = x;
+    int64_t cursor_x = x, cursor_y = y;
     SDL_SetRenderDrawColor(graphics->renderer, r, g, b, 255);
     for (const unsigned char *p = (const unsigned char *)text; *p; ++p) {
+        /* Rows only move down. Columns stop advancing once offscreen, but
+         * keep scanning for a newline that can bring the next row back. This
+         * bounds cursor arithmetic independently of string length. */
+        if (cursor_y >= graphics->height) break;
         if (*p == '\n') {
-            y += 10 * scale;
-            x = start_x;
-        } else {
-            draw_char(graphics, *p, x, y, scale);
-            x += 8 * scale;
+            cursor_y += (int64_t)10 * scale;
+            cursor_x = x;
+        } else if (cursor_x < graphics->width) {
+            if (cursor_x + (int64_t)8 * scale > 0 &&
+                cursor_y + (int64_t)8 * scale > 0)
+                draw_char(graphics, *p, cursor_x, cursor_y, scale);
+            cursor_x += (int64_t)8 * scale;
         }
     }
 }

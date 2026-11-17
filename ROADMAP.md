@@ -48,9 +48,10 @@ not fresh nine-track cartridge/Pi acceptance. Empty or export-disabled tracks
 still consume declared voice slots. Noise/envelope editing and dynamics remain
 composer discussions, not engine requests.
 
-Recommended next discussion: bounded graphics argument/text-arithmetic repairs
-(R1/R2 in the review), followed by smoke-runner coverage and a tested song-change
-example. Implementation is not yet authorized. Clip rectangles lead the new
+Active checkpoint: graphics argument/text-arithmetic repairs (R1/R2) are
+implemented and desktop-accepted (131/131 serial tests, UBSan and user-confirmed
+visual/lifecycle checks on 2026-11-17); Pi acceptance remains pending. See [repair validation](tests/graphics-bounds.md). Smoke-runner coverage
+and a tested song-change example remain proposed follow-ups. Clip rectangles lead the new
 graphics candidates; camera offsets, tint/alpha and line drawing should remain
 separate checkpoints. Sprite tinting retains its existing accepted-future status.
 Modules/data access and diagnostics need bounded contracts before implementation.

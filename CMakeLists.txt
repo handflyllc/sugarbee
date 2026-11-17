@@ -678,6 +678,13 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
         set_tests_properties(lua_close_${close_case} PROPERTIES TIMEOUT 5)
     endforeach()
 
+    add_executable(test_lua_graphics_bounds tests/test_lua_graphics_bounds.c)
+    target_link_libraries(test_lua_graphics_bounds PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    sugarbee_warnings(test_lua_graphics_bounds)
+    add_test(NAME lua_graphics_bounds COMMAND test_lua_graphics_bounds)
+    set_tests_properties(lua_graphics_bounds PROPERTIES
+        ENVIRONMENT "SDL_VIDEODRIVER=dummy" TIMEOUT 10)
+
     add_executable(test_font tests/test_font.c)
     target_link_libraries(test_font PRIVATE sugarbee_graphics PkgConfig::SDL2)
     sugarbee_warnings(test_font)

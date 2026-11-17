@@ -14,7 +14,8 @@ This interface may change before a stable SugarBee SDK is released.
 | `sugarbee.btnp(name [, player])` | `true` during the first simulation `update(dt)` after a released-to-held transition. |
 
 `player` defaults to `0` and is zero-based (0–3). Invalid button names and
-out-of-range players return `false`. Button names are lowercase and
+out-of-range players return `false`, including integers outside the native C
+range (they cannot wrap into a valid player slot). Button names are lowercase and
 case-sensitive: `up`, `down`, `left`, `right`, `a`, `b`, `x`, `y`, `start`,
 `select`.
 

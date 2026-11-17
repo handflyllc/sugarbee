@@ -35,7 +35,13 @@ opacity parameter.
 | `sugarbee.sprite_region(handle, x, y, sx, sy, sw, sh [, dw, dh, flip_x, flip_y])` | Crop from a sprite sheet, optionally resize and mirror. |
 | `sugarbee.texture_free(handle)` | Release a texture handle; returns `true` when successful. |
 
-`x`, `y`, `w`, `h`, and `scale` are integral values in the current binding.
+`x`, `y`, `w`, `h`, and `scale` must be integer-valued and fit the native signed
+32-bit range on supported desktop/Pi builds (-2147483648 through 2147483647).
+Out-of-range values raise Lua argument errors before drawing; they do not wrap
+or clamp. Integer-valued floats such as `12.0` remain accepted. Color-channel
+conversion is unchanged. Text positions and scaled glyphs are clipped safely
+at the viewport, including extreme coordinates and scales; nonpositive text
+scale still draws nothing.
 Keep fractional positions in simulation state and convert at the drawing boundary,
 for example `sugarbee.sprite(bee, math.floor(x), math.floor(y))`. Do not round
 the simulation position every update; doing so loses subpixel motion.

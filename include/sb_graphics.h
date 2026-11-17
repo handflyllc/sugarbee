@@ -36,6 +36,8 @@ void sb_graphics_rect(sb_graphics_t *graphics, int x, int y, int width,
                       int height, uint8_t r, uint8_t g, uint8_t b, bool filled);
 
 /* Temporary 8x8 bitmap font; scale is logical pixels per bitmap pixel. */
+/* Text arithmetic is clipped safely to the viewport for all int coordinates
+ * and scales. Nonpositive scale draws nothing. */
 void sb_graphics_text(sb_graphics_t *graphics, const char *text, int x, int y,
                       uint8_t r, uint8_t g, uint8_t b, int scale);
 

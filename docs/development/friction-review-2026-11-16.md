@@ -23,6 +23,13 @@ Reviewed graphics bindings/backend, asset reader and Lua library/budget setup,
 music binding/shared ownership paths, timing, and smoke-runner coverage.
 This is a focused review, not a whole-engine audit or hostile-code certification.
 
+## Follow-up status
+
+After review commit `e005b5d`, R1/R2 repairs were authorized and implemented in
+a separate checkpoint. See [repair validation](../../tests/graphics-bounds.md)
+for current results and pending acceptance. The findings below retain the
+original review evidence; R3 runner changes remain unimplemented.
+
 ## Findings, in recommended repair order
 
 ### R1 — High: text coordinates can overflow signed C arithmetic

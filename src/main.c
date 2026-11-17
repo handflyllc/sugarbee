@@ -257,6 +257,14 @@ bool load_virtual_cartridge(const char* filepath) {
 
 // --- C LUA API BINDINGS ---
 
+/* Stack unchanged; reject values before narrowing to the native interface. */
+static int graphics_int_arg(lua_State *L, int arg) {
+    lua_Integer value = luaL_checkinteger(L, arg);
+    if (value < INT_MIN || value > INT_MAX)
+        luaL_argerror(L, arg, "integer outside supported range");
+    return (int)value;
+}
+
 static int l_sugarbee_cls(lua_State* L) {
     int r = (int)luaL_optinteger(L, 1, 0);
     int g = (int)luaL_optinteger(L, 2, 0);
@@ -266,10 +274,10 @@ static int l_sugarbee_cls(lua_State* L) {
 }
 
 static int l_sugarbee_rect(lua_State* L) {
-    int x = (int)luaL_checkinteger(L, 1);
-    int y = (int)luaL_checkinteger(L, 2);
-    int w = (int)luaL_checkinteger(L, 3);
-    int h = (int)luaL_checkinteger(L, 4);
+    int x = graphics_int_arg(L, 1);
+    int y = graphics_int_arg(L, 2);
+    int w = graphics_int_arg(L, 3);
+    int h = graphics_int_arg(L, 4);
     int r = (int)luaL_optinteger(L, 5, 255);
     int g = (int)luaL_optinteger(L, 6, 255);
     int b = (int)luaL_optinteger(L, 7, 255);
@@ -282,12 +290,12 @@ static int l_sugarbee_rect(lua_State* L) {
 
 static int l_sugarbee_print(lua_State* L) {
     const char* text = luaL_checkstring(L, 1);
-    int x = (int)luaL_checkinteger(L, 2);
-    int y = (int)luaL_checkinteger(L, 3);
+    int x = graphics_int_arg(L, 2);
+    int y = graphics_int_arg(L, 3);
     int r = (int)luaL_optinteger(L, 4, 255);
     int g = (int)luaL_optinteger(L, 5, 255);
     int b = (int)luaL_optinteger(L, 6, 255);
-    int scale = (int)luaL_optinteger(L, 7, 1);
+    int scale = lua_isnoneornil(L, 7) ? 1 : graphics_int_arg(L, 7);
 
     sb_graphics_text(g_engine.graphics, text, x, y,
                      (uint8_t)r, (uint8_t)g, (uint8_t)b, scale);
@@ -349,8 +357,8 @@ static int l_sugarbee_texture_load(lua_State *L) {
 
 static int l_sugarbee_sprite(lua_State *L) {
     lua_Integer texture = luaL_checkinteger(L, 1);
-    int x = (int)luaL_checkinteger(L, 2);
-    int y = (int)luaL_checkinteger(L, 3);
+    int x = graphics_int_arg(L, 2);
+    int y = graphics_int_arg(L, 3);
     if (texture <= 0 || (uint64_t)texture > UINT32_MAX ||
         !sb_graphics_sprite(g_engine.graphics, (sb_texture_t)texture, x, y))
         return luaL_error(L, "invalid texture handle or sprite drawing failed");
@@ -359,23 +367,16 @@ static int l_sugarbee_sprite(lua_State *L) {
 
 /* Additional 3C sprite features stay in the same SDL-free C graphics API.
  * Keep sprite(handle, x, y) unchanged for existing cartridges. */
-static int sprite_int_arg(lua_State *L, int arg) {
-    lua_Integer value = luaL_checkinteger(L, arg);
-    if (value < INT_MIN || value > INT_MAX)
-        luaL_argerror(L, arg, "integer outside supported range");
-    return (int)value;
-}
-
 static int l_sugarbee_sprite_region(lua_State *L) {
     lua_Integer handle = luaL_checkinteger(L, 1);
-    int x = sprite_int_arg(L, 2);
-    int y = sprite_int_arg(L, 3);
-    int src_x = sprite_int_arg(L, 4);
-    int src_y = sprite_int_arg(L, 5);
-    int src_w = sprite_int_arg(L, 6);
-    int src_h = sprite_int_arg(L, 7);
-    int dest_w = lua_isnoneornil(L, 8) ? src_w : sprite_int_arg(L, 8);
-    int dest_h = lua_isnoneornil(L, 9) ? src_h : sprite_int_arg(L, 9);
+    int x = graphics_int_arg(L, 2);
+    int y = graphics_int_arg(L, 3);
+    int src_x = graphics_int_arg(L, 4);
+    int src_y = graphics_int_arg(L, 5);
+    int src_w = graphics_int_arg(L, 6);
+    int src_h = graphics_int_arg(L, 7);
+    int dest_w = lua_isnoneornil(L, 8) ? src_w : graphics_int_arg(L, 8);
+    int dest_h = lua_isnoneornil(L, 9) ? src_h : graphics_int_arg(L, 9);
     bool flip_x = lua_toboolean(L, 10);
     bool flip_y = lua_toboolean(L, 11);
     if (handle <= 0 || (uint64_t)handle > UINT32_MAX ||
@@ -421,7 +422,9 @@ static bool cartridge_button_allowed(int player, sb_button_t button) {
 
 static int l_sugarbee_btn(lua_State* L) {
     const char *name = luaL_checkstring(L, 1);
-    int player = (int)luaL_optinteger(L, 2, 0);
+    lua_Integer player_value = luaL_optinteger(L, 2, 0);
+    int player = player_value >= 0 && player_value < SB_MAX_PLAYERS
+        ? (int)player_value : -1;
     sb_button_t button = button_from_name(name);
 
     lua_pushboolean(L, cartridge_button_allowed(player, button) &&
@@ -432,7 +435,9 @@ static int l_sugarbee_btn(lua_State* L) {
 /* True for one host update when a button changes from up to down. */
 static int l_sugarbee_btnp(lua_State* L) {
     const char *name = luaL_checkstring(L, 1);
-    int player = (int)luaL_optinteger(L, 2, 0);
+    lua_Integer player_value = luaL_optinteger(L, 2, 0);
+    int player = player_value >= 0 && player_value < SB_MAX_PLAYERS
+        ? (int)player_value : -1;
     sb_button_t button = button_from_name(name);
 
     lua_pushboolean(L, cartridge_button_allowed(player, button) &&
