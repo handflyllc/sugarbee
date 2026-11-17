@@ -265,6 +265,22 @@ static int graphics_int_arg(lua_State *L, int arg) {
     return (int)value;
 }
 
+static int l_sugarbee_clip(lua_State *L) {
+    if (lua_gettop(L) != 4) return luaL_error(L, "clip: expected x, y, width, height");
+    int x=graphics_int_arg(L,1), y=graphics_int_arg(L,2);
+    int w=graphics_int_arg(L,3), h=graphics_int_arg(L,4);
+    if (w < 0 || h < 0) return luaL_error(L, "clip: dimensions must be nonnegative");
+    if (!sb_graphics_clip(g_engine.graphics,x,y,w,h))
+        return luaL_error(L, "clip: renderer failure");
+    return 0;
+}
+static int l_sugarbee_clip_reset(lua_State *L) {
+    if (lua_gettop(L)) return luaL_error(L, "clip_reset: expected no arguments");
+    if (!sb_graphics_clip_reset(g_engine.graphics))
+        return luaL_error(L, "clip_reset: renderer failure");
+    return 0;
+}
+
 static int l_sugarbee_cls(lua_State* L) {
     int r = (int)luaL_optinteger(L, 1, 0);
     int g = (int)luaL_optinteger(L, 2, 0);
@@ -504,6 +520,8 @@ static int l_sugarbee_load_save(lua_State *L) {
 void register_sugarbee_api(lua_State* L) {
     lua_newtable(L);
     lua_pushcfunction(L, l_sugarbee_cls);   lua_setfield(L, -2, "cls");
+    lua_pushcfunction(L, l_sugarbee_clip); lua_setfield(L, -2, "clip");
+    lua_pushcfunction(L, l_sugarbee_clip_reset); lua_setfield(L, -2, "clip_reset");
     lua_pushcfunction(L, l_sugarbee_rect);  lua_setfield(L, -2, "rect");
     lua_pushcfunction(L, l_sugarbee_print); lua_setfield(L, -2, "print");
     lua_pushcfunction(L, l_sugarbee_texture_rgba); lua_setfield(L, -2, "texture_rgba");
@@ -602,6 +620,11 @@ static bool draw_guru_message(const char *text) {
 }
 
 void render_guru_meditation(void) {
+    if (!sb_graphics_clip_reset(g_engine.graphics)) {
+        SDL_Log("SugarBee: could not reset Guru clip: %s", SDL_GetError());
+        g_engine.is_running=false;
+        return;
+    }
     sb_graphics_clear(g_engine.graphics, 0, 0, 0);
 
     static uint32_t frame = 0;
@@ -1143,6 +1166,13 @@ void main_loop(void) {
             last_counter = SDL_GetPerformanceCounter();
         }
 
+        /* Update/init may have set a clip, including immediately before a
+         * failure. Host screens must never inherit cartridge drawing state. */
+        if (!sb_graphics_clip_reset(g_engine.graphics)) {
+            SDL_Log("SugarBee: could not reset clip: %s", SDL_GetError());
+            g_engine.is_running=false;
+            break;
+        }
         if (g_engine.guru_active) {
             render_guru_meditation();
         } else if (!g_engine.cart_loaded && g_engine.cartridge_directory) {

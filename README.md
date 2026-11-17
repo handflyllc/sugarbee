@@ -38,6 +38,7 @@ See [dependencies](docs/development/dependencies.md) and
 - [Friction reconciliation and focused review](docs/development/friction-review-2026-11-16.md)
 - [Current `.vcart` format](docs/specifications/cartridge-format.md)
 - [2D graphics API](docs/api/graphics.md)
+- [Clip-rectangle demo](examples/clip-demo/README.md)
 - [Cartridge asset loading](docs/api/assets.md)
 - [Controller/keyboard input API](docs/api/input.md)
 - [Simulation timing and callbacks](docs/api/timing.md)

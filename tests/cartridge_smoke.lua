@@ -142,6 +142,20 @@ sugarbee.synth = {
 }
 setmetatable(sugarbee.synth, services.unsupported('sugarbee.synth'))
 
+function sugarbee.clip(...)
+    assert(select('#',...)==4, 'clip: expected x, y, width, height')
+    local values={...}
+    for i=1,4 do
+        local v=check_int('clip',i,values[i])
+        assert(v>=-2147483648 and v<=2147483647, 'clip: integer outside supported range')
+        if i>=3 then assert(v>=0, 'clip: dimensions must be nonnegative') end
+    end
+    -- Validation only: the smoke runner never renders pixels.
+end
+function sugarbee.clip_reset(...)
+    assert(select('#',...)==0, 'clip_reset: expected no arguments')
+end
+
 function sugarbee.cls(r, g, b)
     opt_int("cls", 1, r, 0); opt_int("cls", 2, g, 0); opt_int("cls", 3, b, 0)
 end

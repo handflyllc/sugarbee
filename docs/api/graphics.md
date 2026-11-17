@@ -26,6 +26,8 @@ opacity parameter.
 
 | Lua call | Behavior |
 | --- | --- |
+| `sugarbee.clip(x, y, w, h)` | Replace the drawing clip; dimensions must be nonnegative. |
+| `sugarbee.clip_reset()` | Disable the drawing clip. |
 | `sugarbee.cls(r, g, b)` | Clear the frame to a color. Missing channels default to 0. |
 | `sugarbee.rect(x, y, w, h, r, g, b, filled)` | Draw a rectangle. Color channels default to 255. `filled` is false when omitted or `false`. |
 | `sugarbee.print(text, x, y, r, g, b, scale)` | Draw text with the built-in 8x8 font. Color defaults to white. `scale` is an optional integer scale factor, defaulting to 1; values of 0 or less draw nothing. |
@@ -82,6 +84,44 @@ public-domain declaration, and bit-order adaptation are documented in
 [`third_party/font8x8/README.md`](../../third_party/font8x8/README.md).
 A newline advances 10 scaled logical pixels and resets the text cursor to its
 initial x position. Unsupported characters are rendered as `?`.
+
+## Clip rectangles
+
+`clip(x, y, w, h)` takes exactly four integer-valued arguments within the native
+signed integer range. `clip_reset()` takes none. Both return no values. Invalid
+arguments raise Lua errors before changing the clip; a renderer failure also
+raises an error. Negative width/height is invalid. Zero width or height creates
+an empty clip that hides drawing until reset or replacement.
+
+There is one active clip, in screen logical pixels. Setting another **replaces**
+it; there is no nested stack. The visible area is the intersection with the
+viewport, with half-open edges: `x <= pixel_x < x+w`, `y <= pixel_y < y+h`.
+Negative/offscreen positions are allowed; a disjoint rectangle hides drawing.
+Sprites (including regions/scaling/flips), filled/outline rectangles and text
+obey the clip. Positions are not translated, and the window is not resized.
+
+`cls()` always clears the whole frame and **preserves** the selected clip.
+At the start of each game frame, before `draw()`, clipping is disabled. Set
+clips inside `draw()`; a setting made only during `init()` or `update()` does
+not carry into that drawing callback. Reset explicitly when drawing UI outside
+a playfield. Host menus, Guru screens and subsequent cartridge sessions do not
+inherit the cartridge clip.
+
+```lua
+function draw()
+    sugarbee.cls(0, 0, 0)
+    sugarbee.clip(160, 0, 960, 720) -- centered 4:3 playfield in 1280x720
+    sugarbee.rect(100, 100, 200, 100, 255, 200, 60, true)
+    sugarbee.clip_reset()
+    sugarbee.print("HUD", 10, 10)
+end
+```
+
+See the [clip demo and acceptance checklist](../../examples/clip-demo/README.md).
+This API requires the clip-enabled engine; earlier engines have no `clip` or
+`clip_reset` functions. Existing cartridges that never call them retain full-frame
+drawing. Configurable resolution, camera transforms and nested clipping remain
+separate future capabilities.
 
 ## Prototype sprites and texture ownership (Milestone 3A)
 

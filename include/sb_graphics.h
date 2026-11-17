@@ -30,6 +30,12 @@ void sb_graphics_destroy(sb_graphics_t *graphics);
 int sb_graphics_width(const sb_graphics_t *graphics);
 int sb_graphics_height(const sb_graphics_t *graphics);
 
+/* Replace the clip with a screen-logical rectangle intersected with the viewport.
+ * Zero dimensions hide drawing; negative dimensions fail without changing state.
+ * Edges are half-open. Clear ignores the clip. No coordinate translation. */
+bool sb_graphics_clip(sb_graphics_t *graphics, int x, int y, int width, int height);
+bool sb_graphics_clip_reset(sb_graphics_t *graphics);
+
 /* Colors are RGB, with each channel in the range 0..255 and opaque alpha. */
 void sb_graphics_clear(sb_graphics_t *graphics, uint8_t r, uint8_t g, uint8_t b);
 void sb_graphics_rect(sb_graphics_t *graphics, int x, int y, int width,

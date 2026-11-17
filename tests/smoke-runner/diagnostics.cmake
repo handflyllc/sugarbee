@@ -19,3 +19,7 @@ check_failure("sugarbee.music.load('song.json')" "music metadata required in sce
 check_failure("sugarbee.music.load('../song.json')" "path segment '..' is rejected")
 check_failure("sugarbee.music.load('/tmp/song.json')" "absolute paths are rejected")
 check_failure("sugarbee.music.load('a:bad')" "invalid asset path")
+
+check_failure("sugarbee.clip(0,0,-1,4)" "dimensions must be nonnegative")
+check_failure("sugarbee.clip(2147483648,0,4,4)" "integer outside supported range")
+check_failure("sugarbee.clip_reset(nil)" "expected no arguments")

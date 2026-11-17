@@ -87,7 +87,9 @@ Unknown `sugarbee`, music and synth members, and WAV methods, fail explicitly
 with `cartridge_smoke: unsupported API ...`. WAV support is deferred. Optional
 feature probing through absent fields therefore also raises a diagnostic here.
 
-Existing graphics and input checks are retained. The runner still approximates
+Existing graphics and input checks are retained. `clip` and `clip_reset` validate
+argument counts, native integer bounds and nonnegative dimensions, but do not
+simulate clipped pixels. The runner still approximates
 binding validation; it does not reproduce all native integer bounds, restricted
 Lua libraries, instruction budgets, ZIP checks, image decoding, rendering or
 physical input. Success output explicitly says services are simulated. Random

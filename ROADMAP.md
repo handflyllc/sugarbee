@@ -58,8 +58,15 @@ checks pass (committed as `247b95f`). See [scope and limitations](tests/smoke-ru
 The subsequently authorized [song-change example](examples/song-change/README.md)
 is implemented with 24 targeted serial checks passing against modeled and native
 playback. The user confirmed desktop listening/UI acceptance on 2026-11-17.
-No runtime API changes. Clip rectangles lead the new
-graphics candidates; camera offsets, tint/alpha and line drawing should remain
+No runtime API changes in that example.
+
+Active checkpoint after `16f408a`: the agreed single clip rectangle is implemented
+with explicit reset, full-frame clears and frame/host/session isolation.
+Desktop validation is complete: 142/142 serial tests and user-reported visual,
+Guru, lifecycle and Pong checks passed on 2026-11-17. Pi acceptance remains
+pending; see the [demo](examples/clip-demo/README.md)
+and [API contract](docs/api/graphics.md#clip-rectangles).
+Camera offsets, tint/alpha and line drawing should remain
 separate checkpoints. Sprite tinting retains its existing accepted-future status.
 Modules/data access and diagnostics need bounded contracts before implementation.
 No budget, voice-count, mixing-gain or sample-rate increase is proposed.

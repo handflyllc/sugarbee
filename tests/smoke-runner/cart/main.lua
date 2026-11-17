@@ -4,6 +4,7 @@ local data,why=sugarbee.load_save()
 assert(data==nil and why=='io_error')
 local song, ticks
 function init()
+    sugarbee.clip(-2,0,0,3); sugarbee.clip_reset()
     data,why=sugarbee.load_save(); assert(data==nil and why=='not_found')
     assert(sugarbee.save('checkpoint\0data'))
     song=assert(m.load('song.json')); ticks=0

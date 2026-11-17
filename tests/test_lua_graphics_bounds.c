@@ -12,6 +12,7 @@ int main(void) {
     open_cartridge_libraries(L);
     const luaL_Reg bindings[]={{"rect",l_sugarbee_rect},{"text",l_sugarbee_print},
         {"sprite",l_sugarbee_sprite},{"region",l_sugarbee_sprite_region},
+        {"clip",l_sugarbee_clip},{"clip_reset",l_sugarbee_clip_reset},
         {"btn",l_sugarbee_btn},{"btnp",l_sugarbee_btnp},{NULL,NULL}};
     for (const luaL_Reg *b=bindings;b->name;++b) {
         lua_pushcfunction(L,b->func); lua_setglobal(L,b->name);
@@ -43,6 +44,20 @@ int main(void) {
     int status=luaL_dostring(L,script);
     if (status) fprintf(stderr,"%s\n",lua_tostring(L,-1));
     CHECK(status==LUA_OK); CHECK(lua_gettop(L)==0);
+    CHECK(luaL_dostring(L,
+        "assert(select('#',clip(2,3,4,5))==0); "
+        "for _,args in ipairs({{0,0,-1,1},{0,0,1,-1},{0.5,0,1,1},"
+        "{imax+1,0,1,1},{0,0,1,1,5},{0,0,1}}) do "
+        "assert(not pcall(clip,table.unpack(args))) end; "
+        "assert(not pcall(clip_reset,nil))") == LUA_OK);
+    SDL_Renderer *renderer=SDL_GetRenderer(SDL_GetWindowFromID(1));
+    SDL_Rect clip; SDL_RenderGetClipRect(renderer,&clip);
+    CHECK(clip.x==2 && clip.y==3 && clip.w==4 && clip.h==5);
+    CHECK(luaL_dostring(L,"assert(select('#',clip_reset())==0)")==LUA_OK);
+    CHECK(!SDL_RenderIsClipEnabled(renderer));
+    CHECK(sb_graphics_clip(g_engine.graphics,0,0,0,0));
+    trigger_guru_meditation(1,"Test","Expected clip isolation test",NULL);
+    render_guru_meditation(); CHECK(!SDL_RenderIsClipEnabled(renderer));
     lua_close(L); sb_input_destroy(g_engine.input);
     sb_graphics_destroy(g_engine.graphics); SDL_Quit(); return 0;
 }

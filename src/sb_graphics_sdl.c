@@ -108,6 +108,24 @@ int sb_graphics_height(const sb_graphics_t *graphics) {
     return graphics ? graphics->height : 0;
 }
 
+bool sb_graphics_clip_reset(sb_graphics_t *graphics) {
+    return graphics && SDL_RenderSetClipRect(graphics->renderer, NULL) == 0;
+}
+
+bool sb_graphics_clip(sb_graphics_t *graphics, int x, int y, int width, int height) {
+    if (!graphics || width < 0 || height < 0) return false;
+    int64_t left=x, top=y, right=(int64_t)x+width, bottom=(int64_t)y+height;
+    if (left < 0) left=0;
+    if (top < 0) top=0;
+    if (right > graphics->width) right=graphics->width;
+    if (bottom > graphics->height) bottom=graphics->height;
+    SDL_Rect clip={0,0,0,0};
+    if (left < right && top < bottom) {
+        clip=(SDL_Rect){(int)left,(int)top,(int)(right-left),(int)(bottom-top)};
+    }
+    return SDL_RenderSetClipRect(graphics->renderer, &clip) == 0;
+}
+
 void sb_graphics_clear(sb_graphics_t *graphics, uint8_t r, uint8_t g, uint8_t b) {
     if (!graphics) return;
     SDL_SetRenderDrawColor(graphics->renderer, r, g, b, 255);
@@ -178,7 +196,8 @@ bool sb_graphics_begin_game_frame(sb_graphics_t *graphics) {
         return false;
     }
 
-    if (SDL_SetRenderDrawColor(graphics->renderer, 0, 0, 0, 255) != 0) {
+    if (!sb_graphics_clip_reset(graphics) ||
+        SDL_SetRenderDrawColor(graphics->renderer, 0, 0, 0, 255) != 0) {
         return false;
     }
 
@@ -192,7 +211,8 @@ bool sb_graphics_show_game_frame(sb_graphics_t *graphics) {
         return false;
     }
 
-    if (SDL_SetRenderDrawColor(graphics->renderer, 0, 0, 0, 255) != 0 ||
+    if (!sb_graphics_clip_reset(graphics) ||
+        SDL_SetRenderDrawColor(graphics->renderer, 0, 0, 0, 255) != 0 ||
         SDL_RenderClear(graphics->renderer) != 0) {
             return false;
         }
@@ -326,6 +346,7 @@ bool sb_graphics_texture_destroy(sb_graphics_t *graphics, sb_texture_t texture) 
 
 void sb_graphics_clear_cartridge_textures(sb_graphics_t *graphics) {
     if (!graphics) return;
+    if (!sb_graphics_clip_reset(graphics)) SDL_Log("SugarBee: clip reset failed: %s", SDL_GetError());
 
     for (size_t i = 0; i < graphics->slot_count; ++i) {
         texture_slot_t *slot = &graphics->slots[i];

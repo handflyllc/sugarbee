@@ -702,6 +702,12 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     set_tests_properties(lua_graphics_bounds PROPERTIES
         ENVIRONMENT "SDL_VIDEODRIVER=dummy" TIMEOUT 10)
 
+    add_executable(test_clip tests/test_clip.c)
+    target_link_libraries(test_clip PRIVATE sugarbee_graphics PkgConfig::SDL2)
+    sugarbee_warnings(test_clip)
+    add_test(NAME graphics_clip COMMAND test_clip)
+    set_tests_properties(graphics_clip PROPERTIES ENVIRONMENT "SDL_VIDEODRIVER=dummy" TIMEOUT 10)
+
     add_executable(test_font tests/test_font.c)
     target_link_libraries(test_font PRIVATE sugarbee_graphics PkgConfig::SDL2)
     sugarbee_warnings(test_font)
