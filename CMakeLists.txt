@@ -578,6 +578,23 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
         endforeach()
     endif()
 
+    add_executable(test_song_change tests/test_song_change.c)
+    target_link_libraries(test_song_change PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    sugarbee_warnings(test_song_change)
+    if(SUGARBEE_BUILD_PACKER)
+        add_test(NAME song_change_pack COMMAND sbee-pack
+            -i "${PROJECT_SOURCE_DIR}/examples/song-change"
+            -o "${PROJECT_BINARY_DIR}/song-change.vcart" -t "Song Change")
+        set_tests_properties(song_change_pack PROPERTIES FIXTURES_SETUP song_change TIMEOUT 5)
+        foreach(mode device unavailable)
+            add_test(NAME song_change_${mode} COMMAND test_song_change
+                "${PROJECT_BINARY_DIR}/song-change.vcart"
+                "${PROJECT_SOURCE_DIR}/tests/song-change/checks.lua" ${mode})
+            set_tests_properties(song_change_${mode} PROPERTIES FIXTURES_REQUIRED song_change
+                TIMEOUT 10 ENVIRONMENT "SDL_AUDIODRIVER=dummy;SDL_VIDEODRIVER=dummy")
+        endforeach()
+    endif()
+
     add_executable(test_lua_wav tests/test_lua_wav.c)
     target_link_libraries(test_lua_wav PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
     sugarbee_warnings(test_lua_wav)
@@ -833,6 +850,13 @@ if(BUILD_TESTING)
     endif()
 
     if(LUA54_INTERPRETER_COMPATIBLE)
+        add_test(NAME song_change_model COMMAND "${LUA54_INTERPRETER}"
+            "${PROJECT_SOURCE_DIR}/tests/song-change/test.lua" "${PROJECT_SOURCE_DIR}")
+        add_test(NAME cartridge_smoke_song-change COMMAND "${LUA54_INTERPRETER}"
+            "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua"
+            "${PROJECT_SOURCE_DIR}/examples/song-change" 3000 1
+            "${PROJECT_SOURCE_DIR}/tests/song-change/scenario.lua")
+        set_tests_properties(song_change_model cartridge_smoke_song-change PROPERTIES TIMEOUT 10)
         add_test(NAME smoke_service_model COMMAND "${LUA54_INTERPRETER}"
             "${PROJECT_SOURCE_DIR}/tests/smoke-runner/test.lua"
             "${PROJECT_SOURCE_DIR}/tests/smoke_services.lua")

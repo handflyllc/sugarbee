@@ -54,8 +54,11 @@ On 2026-11-17 the user also confirmed all Pi serial, visual/lifecycle and Exit
 to system checks passed. See [repair validation](tests/graphics-bounds.md).
 The subsequently authorized smoke-runner checkpoint adds in-memory saves,
 explicit-scenario music state and unsupported-API diagnostics; 19 targeted serial
-checks pass. See [scope and limitations](tests/smoke-runner.md). The tested
-song-change example remains a separate proposed checkpoint. Clip rectangles lead the new
+checks pass (committed as `247b95f`). See [scope and limitations](tests/smoke-runner.md).
+The subsequently authorized [song-change example](examples/song-change/README.md)
+is implemented with 24 targeted serial checks passing against modeled and native
+playback. The user confirmed desktop listening/UI acceptance on 2026-11-17.
+No runtime API changes. Clip rectangles lead the new
 graphics candidates; camera offsets, tint/alpha and line drawing should remain
 separate checkpoints. Sprite tinting retains its existing accepted-future status.
 Modules/data access and diagnostics need bounded contracts before implementation.

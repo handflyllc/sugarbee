@@ -134,6 +134,8 @@ song record immediately; wait for `state() == "idle"`, and record a new current
 song only after `play()` succeeds. This includes requesting the same song during
 its stop fade. Handle playback refusals explicitly. `state()` reports transport
 state, not song identity; it cannot repair a stale cartridge-side song variable.
+See the [tested song-change example](../../examples/song-change/README.md) for
+a complete cartridge-side policy, including same-song restarts and refusals.
 
 `set_volume(value)` changes only music, ramps over 480 frames, and works while
 playing/finishing. Repeating the same target does not restart its ramp. It does
