@@ -49,5 +49,7 @@ checks passed for the native clip and production Lua-binding tests. On
 2026-11-17, the user confirmed all requested desktop visual, Guru and lifecycle
 checks passed, with Pong rendering normally as the existing-cartridge check.
 These results cover the clip checkpoint built on `16f408a`.
-Pi manual acceptance remains pending. SDL dummy pixel tests are not a substitute
-for accelerated-renderer visual checks.
+Pi: on 2026-11-17, the user confirmed all checks passed at `4d04212`, including
+**142/142 serial CTests**, panel clipping/reset, pause/resume/exit/relaunch,
+intentional Guru visibility and recovery, Pong regression and Exit to system.
+Desktop and Pi acceptance are complete.
