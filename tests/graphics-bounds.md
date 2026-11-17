@@ -5,7 +5,12 @@ Base: `e005b5d`. Repairs review findings R1/R2 from
 Desktop acceptance is complete: the user confirmed all three visual/lifecycle
 checks passed on 2026-11-17, against the working changes based on `e005b5d`.
 Together with 131/131 serial tests and UBSan checks, this completes desktop
-validation. Changes are ready to commit for transfer; Pi acceptance is pending.
+validation. Runtime repairs were committed and pushed as `d2ee33c`.
+
+Pi acceptance is complete: on 2026-11-17 the user confirmed all requested checks
+passed at `d2ee33c`: 131/131 serial tests, sprite-sheet movement/scaling/flips/text,
+game sprites/score text, pause/resume/exit/relaunch and Exit to system. These are
+user-reported hardware results, not independently executed remote checks.
 
 ## Scope
 
@@ -49,7 +54,7 @@ they are not build dependencies. Normal build produced no compiler warnings.
 Full desktop serial suite: **131/131 passed**, exit 0. This includes the new
 binding regression; it is not Pi acceptance.
 
-## Manual acceptance, desktop then Pi
+## Manual acceptance checklist (completed on desktop and Pi)
 
 Use the same source revision on both targets. On Pi, rebuild and run the full
 serial suite before the visual checks. Existing packaged cartridges remain valid.
