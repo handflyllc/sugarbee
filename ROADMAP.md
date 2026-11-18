@@ -84,12 +84,15 @@ passed on 2026-11-17. The user also confirmed Pi acceptance at `9516590` on
 2026-11-17: 144/144 serial tests and all visual, lifecycle, Guru recovery,
 Pong/camera-demo regression and Exit to system checks passed.
 Primitive alpha and palette replacement remain separate scopes.
-Active checkpoint after `ba796d3`: opaque one-pixel lines with checked RGB,
+Completed checkpoint `0357700`: opaque one-pixel lines with checked RGB,
 inclusive endpoints, direction-independent integer rasterization, camera/clip
 support and work bounded by the visible major-axis span. See the
 [line demo](examples/line-demo/README.md). Desktop: 145/145 serial tests and
 native/Lua UBSan passed. The user confirmed all desktop manual checks passed
-on 2026-11-17; Pi validation remains pending. Thickness, antialiasing, line alpha and
+on 2026-11-17. The user also confirmed Pi acceptance at `0357700` on 2026-11-17:
+145/145 serial tests and all manual checks passed. Pi colors appeared washed
+out but were accepted; the cause is unconfirmed (see the demo validation note).
+Thickness, antialiasing, line alpha and
 filled triangles remain separate scopes.
 Modules/data access and diagnostics need bounded contracts before implementation.
 No budget, voice-count, mixing-gain or sample-rate increase is proposed.

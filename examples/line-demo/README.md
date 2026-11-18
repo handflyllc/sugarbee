@@ -40,4 +40,12 @@ On 2026-11-17, the user confirmed all desktop manual checks passed: endpoint
 reversal, single pixels, clipped scrolling and extreme-coordinate lines, tint
 isolation, pause/resume/exit/relaunch, Pong/tint-demo regressions and Exit to
 system. These results cover the line checkpoint built on `ba796d3`.
-Pi validation remains pending.
+Pi: on 2026-11-17, the user confirmed all checks passed at `0357700`, including
+**145/145 serial tests**, endpoint reversal, single pixels, clipped scrolling,
+extreme-coordinate lines, tint isolation, lifecycle, Pong/tint-demo regressions
+and Exit to system. Desktop and Pi acceptance are complete.
+
+Visual observation: the user reported considerably more washed-out colors on
+the Pi display, but judged the output acceptable. The display and the fineness
+of the one-pixel lines were suggested as possible explanations; the cause has
+not been established. No color correction or renderer change was made.
