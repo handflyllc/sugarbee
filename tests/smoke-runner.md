@@ -87,6 +87,8 @@ Unknown `sugarbee`, music and synth members, and WAV methods, fail explicitly
 with `cartridge_smoke: unsupported API ...`. WAV support is deferred. Optional
 feature probing through absent fields therefore also raises a diagnostic here.
 
+Sprite tint/reset stubs validate arity and channels (0..255); no color or alpha
+blending is simulated.
 Camera and camera-reset stubs validate arity and native integer range only;
 they do not simulate coordinate translation.
 Existing graphics and input checks are retained. `clip` and `clip_reset` validate

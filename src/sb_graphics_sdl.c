@@ -23,6 +23,7 @@ struct sb_graphics {
     int height;
     int camera_x;
     int camera_y;
+    uint8_t tint_r, tint_g, tint_b, tint_a;
     texture_slot_t *slots;
     size_t slot_count;
     size_t slot_capacity;
@@ -108,6 +109,19 @@ int sb_graphics_width(const sb_graphics_t *graphics) {
 
 int sb_graphics_height(const sb_graphics_t *graphics) {
     return graphics ? graphics->height : 0;
+}
+
+void sb_graphics_sprite_tint(sb_graphics_t *graphics, uint8_t r, uint8_t g,
+                             uint8_t b, uint8_t a) {
+    if (!graphics) return;
+    graphics->tint_r = r;
+    graphics->tint_g = g;
+    graphics->tint_b = b;
+    graphics->tint_a = a;
+}
+
+void sb_graphics_sprite_tint_reset(sb_graphics_t *graphics) {
+    sb_graphics_sprite_tint(graphics, 255, 255, 255, 255);
 }
 
 void sb_graphics_camera(sb_graphics_t *graphics, int x, int y) {
@@ -242,6 +256,7 @@ bool sb_graphics_begin_game_frame(sb_graphics_t *graphics) {
     }
 
     sb_graphics_camera_reset(graphics);
+    sb_graphics_sprite_tint_reset(graphics);
     if (!sb_graphics_clip_reset(graphics) ||
         SDL_SetRenderDrawColor(graphics->renderer, 0, 0, 0, 255) != 0) {
         return false;
@@ -258,6 +273,7 @@ bool sb_graphics_show_game_frame(sb_graphics_t *graphics) {
     }
 
     sb_graphics_camera_reset(graphics);
+    sb_graphics_sprite_tint_reset(graphics);
     if (!sb_graphics_clip_reset(graphics) ||
         SDL_SetRenderDrawColor(graphics->renderer, 0, 0, 0, 255) != 0 ||
         SDL_RenderClear(graphics->renderer) != 0) {
@@ -372,6 +388,12 @@ bool sb_graphics_sprite_region(sb_graphics_t *graphics, sb_texture_t texture,
     SDL_RendererFlip flip = SDL_FLIP_NONE;
     if (flip_x) flip = (SDL_RendererFlip)(flip | SDL_FLIP_HORIZONTAL);
     if (flip_y) flip = (SDL_RendererFlip)(flip | SDL_FLIP_VERTICAL);
+    /* Apply on every draw: textures may be shared by differently tinted sprites.
+     * Pixel data is unchanged. A later draw overwrites both modulations even
+     * if a previous setter or render call failed. */
+    if (SDL_SetTextureColorMod(slot->texture, graphics->tint_r,
+                              graphics->tint_g, graphics->tint_b) != 0 ||
+        SDL_SetTextureAlphaMod(slot->texture, graphics->tint_a) != 0) return false;
     return SDL_RenderCopyEx(graphics->renderer, slot->texture, &source,
                             &destination, 0.0, NULL, flip) == 0;
 }
@@ -400,6 +422,7 @@ bool sb_graphics_texture_destroy(sb_graphics_t *graphics, sb_texture_t texture) 
 void sb_graphics_clear_cartridge_textures(sb_graphics_t *graphics) {
     if (!graphics) return;
     sb_graphics_camera_reset(graphics);
+    sb_graphics_sprite_tint_reset(graphics);
     if (!sb_graphics_clip_reset(graphics)) SDL_Log("SugarBee: clip reset failed: %s", SDL_GetError());
 
     for (size_t i = 0; i < graphics->slot_count; ++i) {

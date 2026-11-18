@@ -30,6 +30,13 @@ void sb_graphics_destroy(sb_graphics_t *graphics);
 int sb_graphics_width(const sb_graphics_t *graphics);
 int sb_graphics_height(const sb_graphics_t *graphics);
 
+/* Multiplicative sprite-only RGB/alpha modulation, 0..255 per channel.
+ * Replaces state; reset selects white/full opacity. Pixel data is unchanged.
+ * Frame start, host presentation and cartridge cleanup restore defaults. */
+void sb_graphics_sprite_tint(sb_graphics_t *graphics, uint8_t r, uint8_t g,
+                             uint8_t b, uint8_t a);
+void sb_graphics_sprite_tint_reset(sb_graphics_t *graphics);
+
 /* Drawing uses screen = world - camera for rectangles, text and sprites.
  * Replaces the position; reset is (0,0). Clip and clear remain screen-space.
  * Frame start, host presentation and cartridge cleanup reset the camera. */

@@ -76,7 +76,12 @@ the user confirmed all desktop visual/lifecycle/Guru and regression checks
 passed on 2026-11-17. The user confirmed Pi acceptance at `3dc7515` on
 2026-11-17: 143/143 serial tests and all requested visual, Guru recovery,
 lifecycle, Pong/clip-demo regression and Exit to system checks passed.
-Tint/alpha and line drawing remain separate checkpoints. Sprite tinting retains its existing accepted-future status.
+Active checkpoint after `0d36c02`: sprite-only RGB tint and optional opacity,
+strict channel validation, explicit reset and frame/host/session isolation.
+See the [tint demo](examples/tint-demo/README.md). Desktop: 144/144 serial tests
+and native/Lua UBSan checks passed. The user confirmed all desktop manual checks
+passed on 2026-11-17; Pi validation remains pending. Primitive alpha, palette replacement
+and line drawing remain separate scopes.
 Modules/data access and diagnostics need bounded contracts before implementation.
 No budget, voice-count, mixing-gain or sample-rate increase is proposed.
 

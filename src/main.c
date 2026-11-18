@@ -265,6 +265,28 @@ static int graphics_int_arg(lua_State *L, int arg) {
     return (int)value;
 }
 
+/* Stack: arguments only; return no values. Validate all channels before mutation. */
+static int l_sugarbee_sprite_tint(lua_State *L) {
+    int count = lua_gettop(L);
+    if (count != 3 && count != 4)
+        return luaL_error(L, "sprite_tint: expected r, g, b [, a]");
+    int channels[4] = {255, 255, 255, 255};
+    for (int i = 0; i < count; ++i) {
+        channels[i] = graphics_int_arg(L, i + 1);
+        if (channels[i] < 0 || channels[i] > 255)
+            return luaL_argerror(L, i + 1, "channel must be in 0..255");
+    }
+    sb_graphics_sprite_tint(g_engine.graphics, (uint8_t)channels[0],
+        (uint8_t)channels[1], (uint8_t)channels[2], (uint8_t)channels[3]);
+    return 0;
+}
+
+static int l_sugarbee_sprite_tint_reset(lua_State *L) {
+    if (lua_gettop(L)) return luaL_error(L, "sprite_tint_reset: expected no arguments");
+    sb_graphics_sprite_tint_reset(g_engine.graphics);
+    return 0;
+}
+
 /* Stack: arguments only; return no values. Validate before changing state. */
 static int l_sugarbee_camera(lua_State *L) {
     if (lua_gettop(L) != 2) return luaL_error(L, "camera: expected x, y");
@@ -534,6 +556,8 @@ static int l_sugarbee_load_save(lua_State *L) {
 void register_sugarbee_api(lua_State* L) {
     lua_newtable(L);
     lua_pushcfunction(L, l_sugarbee_cls);   lua_setfield(L, -2, "cls");
+    lua_pushcfunction(L, l_sugarbee_sprite_tint); lua_setfield(L, -2, "sprite_tint");
+    lua_pushcfunction(L, l_sugarbee_sprite_tint_reset); lua_setfield(L, -2, "sprite_tint_reset");
     lua_pushcfunction(L, l_sugarbee_camera); lua_setfield(L, -2, "camera");
     lua_pushcfunction(L, l_sugarbee_camera_reset); lua_setfield(L, -2, "camera_reset");
     lua_pushcfunction(L, l_sugarbee_clip); lua_setfield(L, -2, "clip");
@@ -637,6 +661,7 @@ static bool draw_guru_message(const char *text) {
 
 void render_guru_meditation(void) {
     sb_graphics_camera_reset(g_engine.graphics);
+    sb_graphics_sprite_tint_reset(g_engine.graphics);
     if (!sb_graphics_clip_reset(g_engine.graphics)) {
         SDL_Log("SugarBee: could not reset Guru clip: %s", SDL_GetError());
         g_engine.is_running=false;
@@ -1183,9 +1208,10 @@ void main_loop(void) {
             last_counter = SDL_GetPerformanceCounter();
         }
 
-        /* Update/init may have set a camera or clip immediately before a
+        /* Update/init may have changed drawing state immediately before a
          * failure. Host screens must never inherit cartridge drawing state. */
         sb_graphics_camera_reset(g_engine.graphics);
+        sb_graphics_sprite_tint_reset(g_engine.graphics);
         if (!sb_graphics_clip_reset(g_engine.graphics)) {
             SDL_Log("SugarBee: could not reset clip: %s", SDL_GetError());
             g_engine.is_running=false;

@@ -4,6 +4,8 @@ local data,why=sugarbee.load_save()
 assert(data==nil and why=='io_error')
 local song, ticks
 function init()
+    sugarbee.sprite_tint(0,128,255,0); sugarbee.sprite_tint(255,255,255)
+    sugarbee.sprite_tint_reset()
     sugarbee.camera(-2147483648,2147483647); sugarbee.camera_reset()
     sugarbee.clip(-2,0,0,3); sugarbee.clip_reset()
     data,why=sugarbee.load_save(); assert(data==nil and why=='not_found')

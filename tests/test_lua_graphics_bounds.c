@@ -12,6 +12,7 @@ int main(void) {
     open_cartridge_libraries(L);
     const luaL_Reg bindings[]={{"rect",l_sugarbee_rect},{"text",l_sugarbee_print},
         {"sprite",l_sugarbee_sprite},{"region",l_sugarbee_sprite_region},
+        {"tint",l_sugarbee_sprite_tint},{"tint_reset",l_sugarbee_sprite_tint_reset},
         {"camera",l_sugarbee_camera},{"camera_reset",l_sugarbee_camera_reset},
         {"clip",l_sugarbee_clip},{"clip_reset",l_sugarbee_clip_reset},
         {"btn",l_sugarbee_btn},{"btnp",l_sugarbee_btnp},{NULL,NULL}};
@@ -71,11 +72,36 @@ int main(void) {
     CHECK(luaL_dostring(L,"rect(0,0,1,1,255,255,255,true)")==LUA_OK);
     CHECK(SDL_RenderReadPixels(renderer,&area,SDL_PIXELFORMAT_RGBA32,pixel,4)==0);
     CHECK(pixel[0]==255);
+    sb_graphics_clear(g_engine.graphics,0,0,0);
+    CHECK(luaL_dostring(L,
+        "assert(select('#',tint(30.0,60.0,90.0))==0); "
+        "local invalid={-1,256,0.5,math.huge,imax+1,false}; "
+        "for i=1,4 do for _,v in ipairs(invalid) do "
+        "local a={100,120,140,160}; a[i]=v; assert(not pcall(tint,table.unpack(a))) end end; "
+        "assert(not pcall(tint,0,0)); assert(not pcall(tint,0,0,0,0,0)); "
+        "assert(not pcall(tint,0,0,0,nil)); assert(not pcall(tint_reset,nil)); "
+        "sprite(handle,0,0)")==LUA_OK);
+    CHECK(SDL_RenderReadPixels(renderer,&area,SDL_PIXELFORMAT_RGBA32,pixel,4)==0);
+    CHECK(pixel[0]==30 && pixel[1]==60 && pixel[2]==90);
+    CHECK(luaL_dostring(L,"assert(select('#',tint(255,255,255,0))==0); sprite(handle,0,0)")==LUA_OK);
+    CHECK(SDL_RenderReadPixels(renderer,&area,SDL_PIXELFORMAT_RGBA32,pixel,4)==0);
+    CHECK(pixel[0]==30 && pixel[1]==60 && pixel[2]==90);
+    CHECK(luaL_dostring(L,"tint(255,255,255); sprite(handle,0,0)")==LUA_OK);
+    CHECK(SDL_RenderReadPixels(renderer,&area,SDL_PIXELFORMAT_RGBA32,pixel,4)==0);
+    CHECK(pixel[0]==255 && pixel[1]==255 && pixel[2]==255);
+    CHECK(luaL_dostring(L,"rect(0,0,1,1,0,0,0,true); tint(0,0,0,0); assert(select('#',tint_reset())==0); sprite(handle,0,0)")==LUA_OK);
+    CHECK(SDL_RenderReadPixels(renderer,&area,SDL_PIXELFORMAT_RGBA32,pixel,4)==0);
+    CHECK(pixel[0]==255 && pixel[1]==255 && pixel[2]==255);
+    sb_graphics_sprite_tint(g_engine.graphics,0,0,0,0);
     sb_graphics_camera(g_engine.graphics,INT_MAX,INT_MIN);
     CHECK(sb_graphics_clip(g_engine.graphics,0,0,0,0));
     trigger_guru_meditation(1,"Test","Expected clip isolation test",NULL);
     render_guru_meditation(); CHECK(!SDL_RenderIsClipEnabled(renderer));
     sb_graphics_rect(g_engine.graphics,0,0,1,1,255,255,255,true);
+    CHECK(SDL_RenderReadPixels(renderer,&area,SDL_PIXELFORMAT_RGBA32,pixel,4)==0);
+    CHECK(pixel[0]==255 && pixel[1]==255 && pixel[2]==255);
+    sb_graphics_clear(g_engine.graphics,0,0,0);
+    CHECK(sb_graphics_sprite(g_engine.graphics,t,0,0));
     CHECK(SDL_RenderReadPixels(renderer,&area,SDL_PIXELFORMAT_RGBA32,pixel,4)==0);
     CHECK(pixel[0]==255 && pixel[1]==255 && pixel[2]==255);
     CHECK(lua_gettop(L)==0);

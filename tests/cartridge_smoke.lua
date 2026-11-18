@@ -142,6 +142,19 @@ sugarbee.synth = {
 }
 setmetatable(sugarbee.synth, services.unsupported('sugarbee.synth'))
 
+function sugarbee.sprite_tint(...)
+    local n=select('#',...)
+    assert(n==3 or n==4, 'sprite_tint: expected r, g, b [, a]')
+    local args={...}
+    for i=1,n do
+        local v=check_int('sprite_tint',i,args[i])
+        assert(v>=0 and v<=255, 'sprite_tint: channel must be in 0..255')
+    end
+end
+function sugarbee.sprite_tint_reset(...)
+    assert(select('#',...)==0, 'sprite_tint_reset: expected no arguments')
+end
+
 function sugarbee.camera(...)
     assert(select('#',...)==2, 'camera: expected x, y')
     local args={...}

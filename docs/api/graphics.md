@@ -21,11 +21,13 @@ are integer red, green, and blue components; use values from 0 to 255. The
 current Lua bindings convert values to 8-bit channels. Rectangles and text are
 opaque. RGBA sprite textures blend partial alpha with
 the pixels already drawn: alpha 0 is transparent, 255 is opaque, and intermediate
-values are translucent. This is per-pixel texture alpha, not a draw-time tint or
-opacity parameter.
+values are translucent. This per-pixel alpha combines with optional sprite tint opacity as described
+below. Text and rectangles are unaffected by sprite tint.
 
 | Lua call | Behavior |
 | --- | --- |
+| `sugarbee.sprite_tint(r, g, b [, a])` | Set sprite RGB tint and optional opacity. |
+| `sugarbee.sprite_tint_reset()` | Restore white tint and full opacity. |
 | `sugarbee.camera(x, y)` | Replace the camera position used by drawing. |
 | `sugarbee.camera_reset()` | Restore screen coordinates (camera at zero). |
 | `sugarbee.clip(x, y, w, h)` | Replace the drawing clip; dimensions must be nonnegative. |
@@ -302,3 +304,45 @@ Keep fractional movement in game state and round at the drawing boundary.
 Following, smoothing, world bounds and collision coordinates belong to game
 logic. No zoom, rotation or camera stack is introduced. Earlier engine versions
 lack these functions. See the [camera demo](../../examples/camera-demo/README.md).
+
+## Sprite tint and opacity
+
+`sugarbee.sprite_tint(r, g, b [, a])` takes exactly three or four integer-valued
+channels in **0..255**. Omitted alpha is 255, even if the previous tint was
+translucent. Explicit `nil` is not an omitted channel. Integer-valued floats
+are accepted; negative, fractional or out-of-range channels raise a Lua error
+before changing state. Unlike the older primitive color conversion, these
+channels are checked rather than wrapped. `sprite_tint_reset()` takes no
+arguments. Both functions return no values.
+
+One active sprite tint affects subsequent `sprite` and `sprite_region` calls,
+including PNG and RGBA textures, cropped/scaled/flipped regions, camera offsets
+and clipping. Calls replace all four channels; they do not accumulate.
+The texture's pixel data is unchanged, so one sheet can be reused in many colors.
+
+RGB channels multiply the source channels by tint/255. White takes the selected
+color, gray becomes a darker shade, and black stays black. This is not arbitrary
+palette replacement, nor can it brighten a source channel above its original
+value. Draw opacity likewise multiplies source alpha by a/255 before ordinary
+alpha blending: zero is invisible and 255 preserves the original transparency.
+Backend rounding can differ by small amounts for intermediate channel values.
+
+`print`, `rect` and `cls` keep their existing color behavior. Clearing does not
+reset tint; camera and clip setters/resets also leave tint unchanged. Explicit
+tint reset selects `(255,255,255,255)`. Every game frame resets tint before
+`draw()`, and host presentation, error screens and cartridge cleanup isolate it.
+Set tint inside `draw()`; `init()`/`update()` settings do not persist into drawing.
+Existing cartridges default to their original colors and transparency.
+
+```lua
+sugarbee.sprite_tint(255, 100, 80)
+sugarbee.sprite(glyph_sheet, 40, 80)
+sugarbee.sprite_tint(80, 160, 255, 128)
+sugarbee.sprite(glyph_sheet, 120, 80)
+sugarbee.sprite_tint_reset()
+sugarbee.sprite(glyph_sheet, 200, 80)
+```
+
+Texture modulation/render failures use the existing sprite drawing error path.
+Earlier engines lack these tint functions. See the
+[tint demo and acceptance checklist](../../examples/tint-demo/README.md).
