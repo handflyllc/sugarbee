@@ -68,12 +68,14 @@ Pi acceptance at `4d04212`: 142/142 serial tests and all requested visual,
 Guru recovery, lifecycle, Pong and Exit to system checks passed on 2026-11-17.
 See the [demo](examples/clip-demo/README.md)
 and [API contract](docs/api/graphics.md#clip-rectangles).
-Active checkpoint after `2f550ec`: integer camera positions, explicit reset,
+Completed checkpoint `3dc7515`: integer camera positions, explicit reset,
 world-to-screen drawing and frame/host/session isolation are implemented.
 Clips remain screen-space. See the [camera demo](examples/camera-demo/README.md).
 Desktop: 143/143 serial tests, final targeted checks and UBSan passed;
 the user confirmed all desktop visual/lifecycle/Guru and regression checks
-passed on 2026-11-17. Pi validation remains pending.
+passed on 2026-11-17. The user confirmed Pi acceptance at `3dc7515` on
+2026-11-17: 143/143 serial tests and all requested visual, Guru recovery,
+lifecycle, Pong/clip-demo regression and Exit to system checks passed.
 Tint/alpha and line drawing remain separate checkpoints. Sprite tinting retains its existing accepted-future status.
 Modules/data access and diagnostics need bounded contracts before implementation.
 No budget, voice-count, mixing-gain or sample-rate increase is proposed.

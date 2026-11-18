@@ -38,4 +38,9 @@ passed again. Native camera and production Lua/graphics UBSan checks passed.
 On 2026-11-17, the user confirmed all desktop manual checks passed: scrolling
 and fixed HUD, pause/resume/exit/relaunch, Guru recovery, Pong and clip-demo
 regressions, and Exit to system. These results cover the camera checkpoint
-built on `2f550ec`. Pi validation remains pending.
+built on `2f550ec`.
+
+Pi: on 2026-11-17, the user confirmed **143/143 serial tests passed** at
+`3dc7515`, along with all requested scrolling/fixed-HUD, pause/resume/exit/relaunch,
+Guru visibility/recovery, Pong/clip-demo regression and Exit to system checks.
+Desktop and Pi acceptance are complete.
