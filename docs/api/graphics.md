@@ -33,6 +33,7 @@ below. Text and rectangles are unaffected by sprite tint.
 | `sugarbee.clip(x, y, w, h)` | Replace the drawing clip; dimensions must be nonnegative. |
 | `sugarbee.clip_reset()` | Disable the drawing clip. |
 | `sugarbee.cls(r, g, b)` | Clear the frame to a color. Missing channels default to 0. |
+| `sugarbee.line(x1, y1, x2, y2 [, r, g, b])` | Draw an opaque one-pixel line, including both endpoints. |
 | `sugarbee.rect(x, y, w, h, r, g, b, filled)` | Draw a rectangle. Color channels default to 255. `filled` is false when omitted or `false`. |
 | `sugarbee.print(text, x, y, r, g, b, scale)` | Draw text with the built-in 8x8 font. Color defaults to white. `scale` is an optional integer scale factor, defaulting to 1; values of 0 or less draw nothing. |
 | `sugarbee.texture_rgba(width, height, bytes)` | Upload packed RGBA8 bytes; returns a texture handle. |
@@ -101,8 +102,8 @@ There is one active clip, in screen logical pixels. Setting another **replaces**
 it; there is no nested stack. The visible area is the intersection with the
 viewport, with half-open edges: `x <= pixel_x < x+w`, `y <= pixel_y < y+h`.
 Negative/offscreen positions are allowed; a disjoint rectangle hides drawing.
-Sprites (including regions/scaling/flips), filled/outline rectangles and text
-obey the clip. Clipping itself does not translate positions or resize the window. A camera
+Sprites (including regions/scaling/flips), lines, filled/outline rectangles and
+text obey the clip. Clipping itself does not translate positions or resize the window. A camera
 translates drawing independently; the clip always remains in screen coordinates.
 
 `cls()` always clears the whole frame and **preserves** the selected clip.
@@ -280,7 +281,7 @@ are allowed. `sugarbee.camera_reset()` takes no arguments. Both return no values
 Invalid arguments raise a Lua error without changing the previous camera.
 
 Drawing uses **screen position = world position - camera position** for `rect`,
-`print`, `sprite` and `sprite_region`. Dimensions, source crops, flips, text
+`line`, `print`, `sprite` and `sprite_region`. Dimensions, source crops, flips, text
 spacing and scaling are unchanged. Camera calls replace the position rather
 than accumulating it. Reset selects `(0, 0)`.
 
@@ -327,7 +328,7 @@ value. Draw opacity likewise multiplies source alpha by a/255 before ordinary
 alpha blending: zero is invisible and 255 preserves the original transparency.
 Backend rounding can differ by small amounts for intermediate channel values.
 
-`print`, `rect` and `cls` keep their existing color behavior. Clearing does not
+`print`, `rect`, `line` and `cls` keep their own color behavior. Clearing does not
 reset tint; camera and clip setters/resets also leave tint unchanged. Explicit
 tint reset selects `(255,255,255,255)`. Every game frame resets tint before
 `draw()`, and host presentation, error screens and cartridge cleanup isolate it.
@@ -346,3 +347,49 @@ sugarbee.sprite(glyph_sheet, 200, 80)
 Texture modulation/render failures use the existing sprite drawing error path.
 Earlier engines lack these tint functions. See the
 [tint demo and acceptance checklist](../../examples/tint-demo/README.md).
+
+## Line primitive
+
+`sugarbee.line(x1, y1, x2, y2 [, r, g, b])` takes four through seven arguments.
+Endpoints must be integer-valued and fit the supported signed 32-bit range.
+Each omitted trailing color channel defaults to 255; supplied channels must be
+integer-valued and in 0..255. Explicit `nil` is invalid. Integer-valued floats
+are accepted. Invalid arguments raise Lua errors before drawing; renderer
+failures raise an error. Success returns no values. Existing primitive color
+conversion is unchanged; this new API uses checked colors like sprite tint.
+
+Both endpoints are included. Identical endpoints draw a single pixel. Lines
+are opaque, one **logical** pixel wide, without antialiasing. Camera translation
+and the screen-space clip apply. Sprite tint has no effect. Later drawing
+covers earlier drawing as usual. The call adds no persistent drawing state.
+
+The entire supported coordinate range is allowed. Safe wide arithmetic and
+skipping directly to the visible span keep work bounded by the viewport's
+width or height, not the endpoint distance. Empty clips and trivially offscreen
+lines return without drawing. A line can cross the screen with both endpoints
+outside it. This bounds individual calls, not the number of calls in a frame.
+
+### Defined pixel pattern
+
+The axis with the larger absolute endpoint difference is the major axis (x
+wins ties). Endpoints are ordered in the increasing major-axis direction.
+At every integer position along that axis, the minor coordinate is rounded to
+the nearest pixel, with exact halfway ties toward the other endpoint's minor
+coordinate. This fixes the same raster pattern on supported desktop/Pi backends
+and makes endpoint reversal pixel-identical. For example, `(0,0)` to `(4,2)`
+draws `(0,0), (1,1), (2,1), (3,2), (4,2)` in either argument order.
+
+Clipping selects pixels from that original pattern. It does not round new
+endpoints and restart the line, so moving a clip cannot shift the remaining
+pixels. The implementation evaluates the integer raster phase directly and
+submits bounded batches of pixels to the renderer.
+
+```lua
+sugarbee.line(20, 30, 300, 120)              -- white diagonal
+sugarbee.line(20, 140, 300, 140, 255, 80, 60) -- colored horizontal
+sugarbee.line(40, 160, 40, 160)              -- one pixel
+```
+
+Thickness, line alpha, antialiasing, dashed lines, connected-path helpers and
+filled triangles are outside this checkpoint. Earlier engines lack `line`.
+See the [line demo](../../examples/line-demo/README.md).

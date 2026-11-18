@@ -34,3 +34,8 @@ check_failure("sugarbee.sprite_tint(0,0,0,-1)" "channel must be in 0..255")
 check_failure("sugarbee.sprite_tint(0,0)" "expected r, g, b")
 check_failure("sugarbee.sprite_tint(0,0,0,nil)" "integer expected")
 check_failure("sugarbee.sprite_tint_reset(nil)" "expected no arguments")
+
+check_failure("sugarbee.line(0,0,0)" "expected x1, y1, x2, y2")
+check_failure("sugarbee.line(2147483648,0,0,0)" "integer outside supported range")
+check_failure("sugarbee.line(0,0,0,0,256)" "channel must be in 0..255")
+check_failure("sugarbee.line(0,0,0,0,nil)" "integer expected")

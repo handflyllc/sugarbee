@@ -325,6 +325,25 @@ static int l_sugarbee_cls(lua_State* L) {
     return 0;
 }
 
+/* Stack: arguments only; return no values. Validate before drawing any pixels. */
+static int l_sugarbee_line(lua_State *L) {
+    int count = lua_gettop(L);
+    if (count < 4 || count > 7)
+        return luaL_error(L, "line: expected x1, y1, x2, y2 [, r, g, b]");
+    int x1 = graphics_int_arg(L, 1), y1 = graphics_int_arg(L, 2);
+    int x2 = graphics_int_arg(L, 3), y2 = graphics_int_arg(L, 4);
+    int color[3] = {255, 255, 255};
+    for (int i = 4; i < count; ++i) {
+        color[i-4] = graphics_int_arg(L, i+1);
+        if (color[i-4] < 0 || color[i-4] > 255)
+            return luaL_argerror(L, i+1, "channel must be in 0..255");
+    }
+    if (!sb_graphics_line(g_engine.graphics, x1, y1, x2, y2,
+                         (uint8_t)color[0], (uint8_t)color[1], (uint8_t)color[2]))
+        return luaL_error(L, "line: renderer failure");
+    return 0;
+}
+
 static int l_sugarbee_rect(lua_State* L) {
     int x = graphics_int_arg(L, 1);
     int y = graphics_int_arg(L, 2);
@@ -562,6 +581,7 @@ void register_sugarbee_api(lua_State* L) {
     lua_pushcfunction(L, l_sugarbee_camera_reset); lua_setfield(L, -2, "camera_reset");
     lua_pushcfunction(L, l_sugarbee_clip); lua_setfield(L, -2, "clip");
     lua_pushcfunction(L, l_sugarbee_clip_reset); lua_setfield(L, -2, "clip_reset");
+    lua_pushcfunction(L, l_sugarbee_line); lua_setfield(L, -2, "line");
     lua_pushcfunction(L, l_sugarbee_rect);  lua_setfield(L, -2, "rect");
     lua_pushcfunction(L, l_sugarbee_print); lua_setfield(L, -2, "print");
     lua_pushcfunction(L, l_sugarbee_texture_rgba); lua_setfield(L, -2, "texture_rgba");

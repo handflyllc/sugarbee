@@ -185,6 +185,21 @@ function sugarbee.cls(r, g, b)
     opt_int("cls", 1, r, 0); opt_int("cls", 2, g, 0); opt_int("cls", 3, b, 0)
 end
 
+function sugarbee.line(...)
+    local n=select('#',...)
+    assert(n>=4 and n<=7, 'line: expected x1, y1, x2, y2 [, r, g, b]')
+    local args={...}
+    for i=1,n do
+        local v=check_int('line',i,args[i])
+        if i<=4 then
+            assert(v>=-2147483648 and v<=2147483647, 'line: integer outside supported range')
+        else
+            assert(v>=0 and v<=255, 'line: channel must be in 0..255')
+        end
+    end
+    counts.draw_calls=counts.draw_calls+1
+end
+
 function sugarbee.rect(x, y, w, h, r, g, b, filled)
     check_int("rect", 1, x); check_int("rect", 2, y)
     check_int("rect", 3, w); check_int("rect", 4, h)

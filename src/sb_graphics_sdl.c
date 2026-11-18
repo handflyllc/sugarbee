@@ -199,6 +199,69 @@ void sb_graphics_rect(sb_graphics_t *graphics, int x, int y, int width,
     }
 }
 
+bool sb_graphics_line(sb_graphics_t *graphics, int x1, int y1, int x2, int y2,
+                       uint8_t r, uint8_t g, uint8_t b) {
+    if (!graphics) return false;
+    int64_t left = 0, top = 0, right = graphics->width, bottom = graphics->height;
+    if (SDL_RenderIsClipEnabled(graphics->renderer)) {
+        SDL_Rect clip;
+        SDL_RenderGetClipRect(graphics->renderer, &clip);
+        if (clip.x > left) left = clip.x;
+        if (clip.y > top) top = clip.y;
+        if ((int64_t)clip.x + clip.w < right) right = (int64_t)clip.x + clip.w;
+        if ((int64_t)clip.y + clip.h < bottom) bottom = (int64_t)clip.y + clip.h;
+    }
+    if (left >= right || top >= bottom) return true;
+
+    int64_t ax = (int64_t)x1 - graphics->camera_x;
+    int64_t ay = (int64_t)y1 - graphics->camera_y;
+    int64_t bx = (int64_t)x2 - graphics->camera_x;
+    int64_t by = (int64_t)y2 - graphics->camera_y;
+    if ((ax < left && bx < left) || (ax >= right && bx >= right) ||
+        (ay < top && by < top) || (ay >= bottom && by >= bottom)) return true;
+
+    int64_t dx = bx - ax, dy = by - ay;
+    if (dx < 0) dx = -dx;
+    if (dy < 0) dy = -dy;
+    bool x_major = dx >= dy;
+    int64_t start = x_major ? ax : ay, end = x_major ? bx : by;
+    int64_t minor_start = x_major ? ay : ax, minor_end = x_major ? by : bx;
+    /* Canonical direction makes endpoint reversal produce identical pixels. */
+    if (start > end) {
+        int64_t swap = start; start = end; end = swap;
+        swap = minor_start; minor_start = minor_end; minor_end = swap;
+    }
+    int64_t first = x_major ? left : top;
+    int64_t last = (x_major ? right : bottom) - 1;
+    if (first < start) first = start;
+    if (last > end) last = end;
+    uint64_t major = (uint64_t)(end - start);
+    int direction = minor_end >= minor_start ? 1 : -1;
+    uint64_t minor = (uint64_t)(direction > 0 ? minor_end-minor_start : minor_start-minor_end);
+    if (SDL_SetRenderDrawColor(graphics->renderer, r, g, b, 255) != 0) return false;
+
+    SDL_Point points[128];
+    int count = 0;
+    for (int64_t position = first; position <= last; ++position) {
+        uint64_t step = (uint64_t)(position - start);
+        /* Evaluate the original line's raster phase, never rounded clipped
+         * endpoints. On supported 32-bit-int targets step, minor, major are at
+         * most UINT32_MAX, so step*minor + major/2 fits uint64_t. Translation
+         * cancels from the deltas. Work is bounded by the visible major axis. */
+        uint64_t offset = major ? (step * minor + major / 2) / major : 0;
+        int64_t secondary = minor_start + direction * (int64_t)offset;
+        int64_t x = x_major ? position : secondary;
+        int64_t y = x_major ? secondary : position;
+        if (x < left || x >= right || y < top || y >= bottom) continue;
+        points[count++] = (SDL_Point){(int)x, (int)y};
+        if (count == (int)(sizeof points / sizeof points[0])) {
+            if (SDL_RenderDrawPoints(graphics->renderer, points, count) != 0) return false;
+            count = 0;
+        }
+    }
+    return count == 0 || SDL_RenderDrawPoints(graphics->renderer, points, count) == 0;
+}
+
 static void draw_char(sb_graphics_t *graphics, unsigned char c, int64_t x, int64_t y,
                       int scale) {
     if (c < 32 || c > 126) c = '?';

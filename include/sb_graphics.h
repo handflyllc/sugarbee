@@ -37,7 +37,7 @@ void sb_graphics_sprite_tint(sb_graphics_t *graphics, uint8_t r, uint8_t g,
                              uint8_t b, uint8_t a);
 void sb_graphics_sprite_tint_reset(sb_graphics_t *graphics);
 
-/* Drawing uses screen = world - camera for rectangles, text and sprites.
+/* Drawing uses screen = world - camera for rectangles, lines, text and sprites.
  * Replaces the position; reset is (0,0). Clip and clear remain screen-space.
  * Frame start, host presentation and cartridge cleanup reset the camera. */
 void sb_graphics_camera(sb_graphics_t *graphics, int x, int y);
@@ -53,6 +53,14 @@ bool sb_graphics_clip_reset(sb_graphics_t *graphics);
 void sb_graphics_clear(sb_graphics_t *graphics, uint8_t r, uint8_t g, uint8_t b);
 void sb_graphics_rect(sb_graphics_t *graphics, int x, int y, int width,
                       int height, uint8_t r, uint8_t g, uint8_t b, bool filled);
+
+/* Opaque one-logical-pixel line, both endpoints included; equal endpoints draw
+ * one pixel. Camera and clip apply, sprite tint does not. Canonical major-axis
+ * integer rasterization is endpoint-reversal invariant and preserves phase
+ * through clipping. Work is bounded by viewport dimensions, not line length.
+ * Returns false for a null context or SDL drawing failure. */
+bool sb_graphics_line(sb_graphics_t *graphics, int x1, int y1, int x2, int y2,
+                       uint8_t r, uint8_t g, uint8_t b);
 
 /* Temporary 8x8 bitmap font; scale is logical pixels per bitmap pixel. */
 /* Text arithmetic is clipped safely to the viewport for all int coordinates
