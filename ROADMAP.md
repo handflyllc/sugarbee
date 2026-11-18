@@ -92,8 +92,8 @@ native/Lua UBSan passed. The user confirmed all desktop manual checks passed
 on 2026-11-17. The user also confirmed Pi acceptance at `0357700` on 2026-11-17:
 145/145 serial tests and all manual checks passed. Pi colors appeared washed
 out but were accepted; the cause is unconfirmed (see the demo validation note).
-Thickness, antialiasing, line alpha and
-filled triangles remain separate scopes.
+Thickness, antialiasing and line alpha remain separate scopes.
+Filled triangles are the active checkpoint below.
 Completed checkpoint `cb1fcca`: opaque circle outlines and filled disks,
 sharing an integer pixel rule, checked RGB, camera/clip support and work bounded
 by visible rows even for extreme radii. See the
@@ -104,6 +104,14 @@ at `cb1fcca` on 2026-11-17: 146/146 serial tests and all requested visual,
 lifecycle, Pong/line-demo regression and Exit to system checks passed.
 Arcs, wedges, ellipses, thickness and antialiasing
 remain separate future scopes.
+Active checkpoint after `6133bf6`: opaque filled triangles, pixel-center
+sampling with top-left edge ownership, all vertex orders equivalent, zero-area
+triangles draw nothing, checked RGB and bounded camera/clip-aware drawing.
+See the [triangle demo](examples/triangle-demo/README.md). Desktop: 147/147
+serial tests and native/production Lua graphics UBSan passed.
+The user requested committing this checkpoint on 2026-11-17, with Pi validation
+deferred until after a break. Explicit desktop manual-check results have not
+been recorded; Pi acceptance remains pending.
 Modules/data access and diagnostics need bounded contracts before implementation.
 No budget, voice-count, mixing-gain or sample-rate increase is proposed.
 

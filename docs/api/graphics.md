@@ -22,7 +22,7 @@ current Lua bindings convert values to 8-bit channels. Rectangles and text are
 opaque. RGBA sprite textures blend partial alpha with
 the pixels already drawn: alpha 0 is transparent, 255 is opaque, and intermediate
 values are translucent. This per-pixel alpha combines with optional sprite tint opacity as described
-below. Text, rectangles, lines and circles are unaffected by sprite tint.
+below. Text, rectangles, lines, circles and triangles are unaffected by sprite tint.
 
 | Lua call | Behavior |
 | --- | --- |
@@ -33,6 +33,7 @@ below. Text, rectangles, lines and circles are unaffected by sprite tint.
 | `sugarbee.clip(x, y, w, h)` | Replace the drawing clip; dimensions must be nonnegative. |
 | `sugarbee.clip_reset()` | Disable the drawing clip. |
 | `sugarbee.cls(r, g, b)` | Clear the frame to a color. Missing channels default to 0. |
+| `sugarbee.triangle_fill(x1, y1, x2, y2, x3, y3 [, r, g, b])` | Draw an opaque filled triangle with top-left edge ownership. |
 | `sugarbee.circle(cx, cy, radius [, r, g, b])` | Draw the one-pixel boundary of a disk. |
 | `sugarbee.circle_fill(cx, cy, radius [, r, g, b])` | Draw a solid disk. |
 | `sugarbee.line(x1, y1, x2, y2 [, r, g, b])` | Draw an opaque one-pixel line, including both endpoints. |
@@ -47,7 +48,7 @@ below. Text, rectangles, lines and circles are unaffected by sprite tint.
 `x`, `y`, `w`, `h`, and `scale` must be integer-valued and fit the native signed
 32-bit range on supported desktop/Pi builds (-2147483648 through 2147483647).
 Out-of-range values raise Lua argument errors before drawing; they do not wrap
-or clamp. Integer-valued floats such as `12.0` remain accepted. Legacy rectangle/text color conversion is unchanged; line, circle and sprite-tint
+or clamp. Integer-valued floats such as `12.0` remain accepted. Legacy rectangle/text color conversion is unchanged; line, circle, triangle and sprite-tint
 channels are range-checked as documented below. Text positions and scaled glyphs are clipped safely
 at the viewport, including extreme coordinates and scales; nonpositive text
 scale still draws nothing.
@@ -104,7 +105,7 @@ There is one active clip, in screen logical pixels. Setting another **replaces**
 it; there is no nested stack. The visible area is the intersection with the
 viewport, with half-open edges: `x <= pixel_x < x+w`, `y <= pixel_y < y+h`.
 Negative/offscreen positions are allowed; a disjoint rectangle hides drawing.
-Sprites (including regions/scaling/flips), lines, circles, filled/outline rectangles and
+Sprites (including regions/scaling/flips), lines, circles, triangles, filled/outline rectangles and
 text obey the clip. Clipping itself does not translate positions or resize the window. A camera
 translates drawing independently; the clip always remains in screen coordinates.
 
@@ -283,7 +284,7 @@ are allowed. `sugarbee.camera_reset()` takes no arguments. Both return no values
 Invalid arguments raise a Lua error without changing the previous camera.
 
 Drawing uses **screen position = world position - camera position** for `rect`,
-`line`, `circle`, `circle_fill`, `print`, `sprite` and `sprite_region`. Dimensions, source crops, flips, text
+`line`, `circle`, `circle_fill`, `triangle_fill`, `print`, `sprite` and `sprite_region`. Dimensions, source crops, flips, text
 spacing and scaling are unchanged. Camera calls replace the position rather
 than accumulating it. Reset selects `(0, 0)`.
 
@@ -330,7 +331,7 @@ value. Draw opacity likewise multiplies source alpha by a/255 before ordinary
 alpha blending: zero is invisible and 255 preserves the original transparency.
 Backend rounding can differ by small amounts for intermediate channel values.
 
-`print`, `rect`, `line`, `circle`, `circle_fill` and `cls` keep their own color behavior. Clearing does not
+`print`, `rect`, `line`, `circle`, `circle_fill`, `triangle_fill` and `cls` keep their own color behavior. Clearing does not
 reset tint; camera and clip setters/resets also leave tint unchanged. Explicit
 tint reset selects `(255,255,255,255)`. Every game frame resets tint before
 `draw()`, and host presentation, error screens and cartridge cleanup isolate it.
@@ -437,3 +438,48 @@ sugarbee.circle(20, 20, 0)   -- one white pixel
 No arcs, wedges, ellipses, adjustable thickness, antialiasing or primitive alpha
 are included. Earlier engines lack these calls.
 See the [circle demo](../../examples/circle-demo/README.md).
+
+
+## Filled triangles
+
+`sugarbee.triangle_fill(x1, y1, x2, y2, x3, y3 [, r, g, b])` takes six
+through nine arguments and returns no values. Vertex coordinates must be
+integer-valued within the signed32 native range. Each omitted trailing RGB
+channel defaults to 255; supplied channels must be integers in 0..255.
+Explicit nil is invalid. All arguments are validated before drawing; invalid
+arguments or renderer failures raise Lua errors.
+
+Integer vertices describe pixel boundaries. Coverage is evaluated at pixel
+centers `(x + 0.5, y + 0.5)`. Centers exactly on an edge are included for
+top/left boundaries and excluded for bottom/right boundaries (the top-left
+rule). All six vertex orders produce identical coverage. A zero-area triangle,
+including repeated vertices or three collinear points, draws nothing.
+
+Two adjoining triangles with exactly matching shared endpoints assign each
+shared-edge pixel to exactly one triangle, without gaps or double drawing.
+Splitting the rectangle from (10,10) to (30,20) along either diagonal covers
+exactly the same pixels as `sugarbee.rect(10,10,20,10,r,g,b,true)`.
+This guarantee concerns shared edges, not deliberately overlapping shapes or
+approximately matching vertices.
+
+Camera translation applies to all vertices. Screen-space clipping only hides
+pixels; it does not recalculate the shape from rounded clipped vertices.
+Triangles are opaque and ignore sprite tint. Later draws replace earlier
+pixels wherever shapes overlap.
+
+The native renderer visits only visible rows, using exact rational edge
+intersections and clipped horizontal spans. Quotient/remainder arithmetic
+avoids overflowing full-range cross products or doubled products, using
+portable signed/unsigned 64-bit C arithmetic. No floating-point coverage,
+radius/edge-length loop or allocation is needed.
+
+```lua
+sugarbee.triangle_fill(10, 10, 30, 10, 30, 20, 255, 180, 60)
+sugarbee.triangle_fill(10, 10, 30, 20, 10, 20, 60, 140, 240)
+```
+
+Existing `line` calls can draw visible outlines, but their inclusive endpoint
+rasterization does not promise an exact match to the fill boundary. No separate
+outline API, general polygons, gradients, textures, alpha or antialiasing is
+included. Earlier engines lack this function.
+See the [triangle demo](../../examples/triangle-demo/README.md).

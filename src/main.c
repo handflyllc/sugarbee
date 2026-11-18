@@ -370,6 +370,25 @@ static int lua_circle(lua_State *L, bool filled) {
 static int l_sugarbee_circle(lua_State *L) { return lua_circle(L, false); }
 static int l_sugarbee_circle_fill(lua_State *L) { return lua_circle(L, true); }
 
+/* Stack: arguments only; returns no values. Validate before drawing. */
+static int l_sugarbee_triangle_fill(lua_State *L) {
+    int count = lua_gettop(L);
+    if (count < 6 || count > 9)
+        return luaL_error(L, "triangle_fill: expected x1, y1, x2, y2, x3, y3 [, r, g, b]");
+    int v[6], color[3] = {255, 255, 255};
+    for (int i = 0; i < 6; ++i) v[i] = graphics_int_arg(L, i+1);
+    for (int i = 6; i < count; ++i) {
+        color[i-6] = graphics_int_arg(L, i+1);
+        if (color[i-6] < 0 || color[i-6] > 255)
+            return luaL_argerror(L, i+1, "channel must be in 0..255");
+    }
+    if (!sb_graphics_triangle_fill(g_engine.graphics, v[0], v[1], v[2], v[3],
+                                  v[4], v[5], (uint8_t)color[0],
+                                  (uint8_t)color[1], (uint8_t)color[2]))
+        return luaL_error(L, "triangle_fill: renderer failure");
+    return 0;
+}
+
 static int l_sugarbee_rect(lua_State* L) {
     int x = graphics_int_arg(L, 1);
     int y = graphics_int_arg(L, 2);
@@ -607,6 +626,7 @@ void register_sugarbee_api(lua_State* L) {
     lua_pushcfunction(L, l_sugarbee_camera_reset); lua_setfield(L, -2, "camera_reset");
     lua_pushcfunction(L, l_sugarbee_clip); lua_setfield(L, -2, "clip");
     lua_pushcfunction(L, l_sugarbee_clip_reset); lua_setfield(L, -2, "clip_reset");
+    lua_pushcfunction(L, l_sugarbee_triangle_fill); lua_setfield(L, -2, "triangle_fill");
     lua_pushcfunction(L, l_sugarbee_circle); lua_setfield(L, -2, "circle");
     lua_pushcfunction(L, l_sugarbee_circle_fill); lua_setfield(L, -2, "circle_fill");
     lua_pushcfunction(L, l_sugarbee_line); lua_setfield(L, -2, "line");

@@ -121,3 +121,7 @@ The `circle` and `circle_fill` stubs validate arity, signed native integer
 centers/radii, nonnegative radii and 0..255 RGB channels, and count draw calls.
 They do not simulate pixels, clipping or camera transformations; native graphics
 tests and manual demo acceptance cover rendering.
+
+The `triangle_fill` stub validates six signed32 coordinates and optional checked
+RGB channels, counts the draw call and returns no values. It does not model
+pixel-center coverage, shared-edge ownership, camera offsets or clipping.

@@ -351,6 +351,84 @@ bool sb_graphics_circle_fill(sb_graphics_t *graphics, int cx, int cy, int radius
     return draw_circle(graphics, cx, cy, radius, r, g, b, true);
 }
 
+/* First pixel center on or to the right of an edge at row + 0.5:
+ * ceil(edge_x - 0.5). Endpoints are sorted by y and this row crosses the edge.
+ * Split dx*t into quotient/remainder before applying the half-pixel terms:
+ * full signed32 endpoint differences fit uint32, their product fits uint64,
+ * whereas doubling that product (or a full-range cross product) may overflow. */
+static int64_t triangle_edge_start(int64_t ax, int64_t ay, int64_t bx,
+                                   int64_t by, int64_t row) {
+    int64_t dx = bx - ax;
+    uint64_t width = (uint64_t)(dx < 0 ? -dx : dx);
+    uint64_t height = (uint64_t)(by - ay);
+    uint64_t product = width * (uint64_t)(row - ay);
+    int64_t whole = (int64_t)(product / height);
+    int64_t remainder = (int64_t)(product % height);
+    int64_t fraction = 2 * remainder + (int64_t)width;
+    if (dx < 0) { whole = -whole; fraction = -fraction; }
+    int64_t numerator = fraction - (int64_t)height;
+    int64_t denominator = 2 * (int64_t)height;
+    /* C truncates toward zero; add one only for a positive remainder. */
+    int64_t ceiling = numerator / denominator + (numerator % denominator > 0);
+    return ax + whole + ceiling;
+}
+
+bool sb_graphics_triangle_fill(sb_graphics_t *graphics,
+                               int x1, int y1, int x2, int y2, int x3, int y3,
+                               uint8_t r, uint8_t g, uint8_t b) {
+    if (!graphics) return false;
+    int64_t x[3] = {(int64_t)x1 - graphics->camera_x,
+                    (int64_t)x2 - graphics->camera_x,
+                    (int64_t)x3 - graphics->camera_x};
+    int64_t y[3] = {(int64_t)y1 - graphics->camera_y,
+                    (int64_t)y2 - graphics->camera_y,
+                    (int64_t)y3 - graphics->camera_y};
+    int64_t left = 0, top = 0, right = graphics->width, bottom = graphics->height;
+    if (SDL_RenderIsClipEnabled(graphics->renderer)) {
+        SDL_Rect clip;
+        SDL_RenderGetClipRect(graphics->renderer, &clip);
+        if (clip.x > left) left = clip.x;
+        if (clip.y > top) top = clip.y;
+        if ((int64_t)clip.x + clip.w < right) right = (int64_t)clip.x + clip.w;
+        if ((int64_t)clip.y + clip.h < bottom) bottom = (int64_t)clip.y + clip.h;
+    }
+    int64_t min_y = y[0], max_y = y[0], min_x = x[0], max_x = x[0];
+    for (int i = 1; i < 3; ++i) {
+        if (y[i] < min_y) min_y = y[i];
+        if (y[i] > max_y) max_y = y[i];
+        if (x[i] < min_x) min_x = x[i];
+        if (x[i] > max_x) max_x = x[i];
+    }
+    if (top < min_y) top = min_y;
+    if (bottom > max_y) bottom = max_y;
+    if (left >= right || top >= bottom || max_x <= left || min_x >= right)
+        return true;
+    if (SDL_SetRenderDrawColor(graphics->renderer, r, g, b, 255) != 0) return false;
+    for (int64_t row = top; row < bottom; ++row) {
+        int64_t ends[2];
+        int count = 0;
+        for (int i = 0; i < 3; ++i) {
+            int a = i, z = (i + 1) % 3;
+            if (y[a] > y[z]) { int swap = a; a = z; z = swap; }
+            /* Horizontal edges never cross a pixel-center row. Exactly two
+             * edges cross any other occupied row, even with repeated vertices. */
+            if (row < y[a] || row >= y[z]) continue;
+            ends[count++] = triangle_edge_start(x[a], y[a], x[z], y[z], row);
+        }
+        if (count != 2) continue;
+        int64_t start = ends[0] < ends[1] ? ends[0] : ends[1];
+        int64_t end = ends[0] > ends[1] ? ends[0] : ends[1];
+        /* Left inclusive, right exclusive: a shared edge has exactly one
+         * owner. Collinear triangles have equal ends and draw nothing. */
+        if (start < left) start = left;
+        if (end > right) end = right;
+        if (start >= end) continue;
+        SDL_Rect span = {(int)start, (int)row, (int)(end - start), 1};
+        if (SDL_RenderFillRect(graphics->renderer, &span) != 0) return false;
+    }
+    return true;
+}
+
 static void draw_char(sb_graphics_t *graphics, unsigned char c, int64_t x, int64_t y,
                       int scale) {
     if (c < 32 || c > 126) c = '?';

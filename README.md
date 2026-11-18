@@ -38,6 +38,7 @@ See [dependencies](docs/development/dependencies.md) and
 - [Friction reconciliation and focused review](docs/development/friction-review-2026-11-16.md)
 - [Current `.vcart` format](docs/specifications/cartridge-format.md)
 - [2D graphics API](docs/api/graphics.md)
+- [Filled triangle demo](examples/triangle-demo/README.md)
 - [Circle primitives demo](examples/circle-demo/README.md)
 - [Line primitive demo](examples/line-demo/README.md)
 - [Sprite tint demo](examples/tint-demo/README.md)
