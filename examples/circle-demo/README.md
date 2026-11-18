@@ -48,5 +48,8 @@ Lua/graphics UBSan checks passed. Warning-free build. The demo passed a
 manual checks passed: circle symmetry, fill/outline agreement, small radii,
 huge-disk behavior, clipped scrolling, tint isolation, pause/resume/exit/relaunch,
 Pong/line-demo regressions and Exit to system. These results cover the circle
-checkpoint built on `c2524c0`. Desktop acceptance is complete; Pi validation
-is pending.
+checkpoint built on `c2524c0`.
+On 2026-11-17, the user confirmed Pi acceptance at `cb1fcca`: **146/146 serial
+tests passed**, along with all circle visual, clipping, extreme-radius,
+lifecycle, Pong/line-demo regression and Exit to system checks.
+Desktop and Pi acceptance are complete.
