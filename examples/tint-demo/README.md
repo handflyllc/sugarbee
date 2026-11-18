@@ -40,4 +40,9 @@ cartridge launch completed without Guru; this is not visual acceptance.
 On 2026-11-17, the user confirmed all desktop manual checks passed: colors and
 transparency, fading, clipped scrolling, pause/resume/exit/relaunch, Guru recovery,
 Pong/camera-demo regressions and Exit to system. These results cover the tint
-checkpoint built on `0d36c02`. Pi validation remains pending.
+checkpoint built on `0d36c02`.
+
+Pi: on 2026-11-17, the user confirmed **144/144 serial tests passed** at
+`9516590`, along with all requested color/transparency, fade, clipped scrolling,
+pause/resume/exit/relaunch, Guru recovery, Pong/camera-demo regression and Exit
+to system checks. Desktop and Pi acceptance are complete.
