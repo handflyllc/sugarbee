@@ -185,6 +185,24 @@ function sugarbee.cls(r, g, b)
     opt_int("cls", 1, r, 0); opt_int("cls", 2, g, 0); opt_int("cls", 3, b, 0)
 end
 
+local function circle_call(name,...)
+    local n=select('#',...)
+    assert(n>=3 and n<=6, name..': expected cx, cy, radius [, r, g, b]')
+    local args={...}
+    for i=1,n do
+        local v=check_int(name,i,args[i])
+        if i<=3 then
+            assert(v>=-2147483648 and v<=2147483647, name..': integer outside supported range')
+            if i==3 then assert(v>=0, name..': radius must be nonnegative') end
+        else
+            assert(v>=0 and v<=255, name..': channel must be in 0..255')
+        end
+    end
+    counts.draw_calls=counts.draw_calls+1
+end
+function sugarbee.circle(...) circle_call('circle',...) end
+function sugarbee.circle_fill(...) circle_call('circle_fill',...) end
+
 function sugarbee.line(...)
     local n=select('#',...)
     assert(n>=4 and n<=7, 'line: expected x1, y1, x2, y2 [, r, g, b]')

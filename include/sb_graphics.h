@@ -37,7 +37,7 @@ void sb_graphics_sprite_tint(sb_graphics_t *graphics, uint8_t r, uint8_t g,
                              uint8_t b, uint8_t a);
 void sb_graphics_sprite_tint_reset(sb_graphics_t *graphics);
 
-/* Drawing uses screen = world - camera for rectangles, lines, text and sprites.
+/* Drawing uses screen = world - camera for rectangles, lines, circles, text and sprites.
  * Replaces the position; reset is (0,0). Clip and clear remain screen-space.
  * Frame start, host presentation and cartridge cleanup reset the camera. */
 void sb_graphics_camera(sb_graphics_t *graphics, int x, int y);
@@ -61,6 +61,15 @@ void sb_graphics_rect(sb_graphics_t *graphics, int x, int y, int width,
  * Returns false for a null context or SDL drawing failure. */
 bool sb_graphics_line(sb_graphics_t *graphics, int x1, int y1, int x2, int y2,
                        uint8_t r, uint8_t g, uint8_t b);
+
+/* Integer disk: dx*dx + dy*dy <= radius*radius. Outline is its four-neighbor
+ * boundary. Radius zero draws one pixel; negative radius/null context fails.
+ * Opaque RGB, camera/clip aware, independent of tint. Work bounded by visible
+ * rows, including extreme coordinates/radii. False on renderer failure. */
+bool sb_graphics_circle(sb_graphics_t *graphics, int cx, int cy, int radius,
+                        uint8_t r, uint8_t g, uint8_t b);
+bool sb_graphics_circle_fill(sb_graphics_t *graphics, int cx, int cy, int radius,
+                             uint8_t r, uint8_t g, uint8_t b);
 
 /* Temporary 8x8 bitmap font; scale is logical pixels per bitmap pixel. */
 /* Text arithmetic is clipped safely to the viewport for all int coordinates

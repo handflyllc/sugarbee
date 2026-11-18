@@ -94,6 +94,14 @@ on 2026-11-17. The user also confirmed Pi acceptance at `0357700` on 2026-11-17:
 out but were accepted; the cause is unconfirmed (see the demo validation note).
 Thickness, antialiasing, line alpha and
 filled triangles remain separate scopes.
+Active checkpoint after `c2524c0`: opaque circle outlines and filled disks,
+sharing an integer pixel rule, checked RGB, camera/clip support and work bounded
+by visible rows even for extreme radii. See the
+[circle demo](examples/circle-demo/README.md). Desktop: 146/146 serial tests,
+native circle and production Lua/graphics UBSan checks passed. The user confirmed
+all desktop manual checks passed on 2026-11-17. Pi validation is pending.
+Arcs, wedges, ellipses, thickness and antialiasing
+remain separate future scopes.
 Modules/data access and diagnostics need bounded contracts before implementation.
 No budget, voice-count, mixing-gain or sample-rate increase is proposed.
 

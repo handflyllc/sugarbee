@@ -116,3 +116,8 @@ busy/unload/loop refusals; natural end and repeated stop; same-asset replay afte
 finishing; capacity recovery; and unavailable audio. Integration checks exercise
 actual runner callback wiring and require both a failing process and the expected
 diagnostic for unsupported APIs, absent metadata and unsafe paths.
+
+The `circle` and `circle_fill` stubs validate arity, signed native integer
+centers/radii, nonnegative radii and 0..255 RGB channels, and count draw calls.
+They do not simulate pixels, clipping or camera transformations; native graphics
+tests and manual demo acceptance cover rendering.

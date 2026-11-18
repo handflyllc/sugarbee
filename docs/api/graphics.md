@@ -22,7 +22,7 @@ current Lua bindings convert values to 8-bit channels. Rectangles and text are
 opaque. RGBA sprite textures blend partial alpha with
 the pixels already drawn: alpha 0 is transparent, 255 is opaque, and intermediate
 values are translucent. This per-pixel alpha combines with optional sprite tint opacity as described
-below. Text and rectangles are unaffected by sprite tint.
+below. Text, rectangles, lines and circles are unaffected by sprite tint.
 
 | Lua call | Behavior |
 | --- | --- |
@@ -33,6 +33,8 @@ below. Text and rectangles are unaffected by sprite tint.
 | `sugarbee.clip(x, y, w, h)` | Replace the drawing clip; dimensions must be nonnegative. |
 | `sugarbee.clip_reset()` | Disable the drawing clip. |
 | `sugarbee.cls(r, g, b)` | Clear the frame to a color. Missing channels default to 0. |
+| `sugarbee.circle(cx, cy, radius [, r, g, b])` | Draw the one-pixel boundary of a disk. |
+| `sugarbee.circle_fill(cx, cy, radius [, r, g, b])` | Draw a solid disk. |
 | `sugarbee.line(x1, y1, x2, y2 [, r, g, b])` | Draw an opaque one-pixel line, including both endpoints. |
 | `sugarbee.rect(x, y, w, h, r, g, b, filled)` | Draw a rectangle. Color channels default to 255. `filled` is false when omitted or `false`. |
 | `sugarbee.print(text, x, y, r, g, b, scale)` | Draw text with the built-in 8x8 font. Color defaults to white. `scale` is an optional integer scale factor, defaulting to 1; values of 0 or less draw nothing. |
@@ -45,8 +47,8 @@ below. Text and rectangles are unaffected by sprite tint.
 `x`, `y`, `w`, `h`, and `scale` must be integer-valued and fit the native signed
 32-bit range on supported desktop/Pi builds (-2147483648 through 2147483647).
 Out-of-range values raise Lua argument errors before drawing; they do not wrap
-or clamp. Integer-valued floats such as `12.0` remain accepted. Color-channel
-conversion is unchanged. Text positions and scaled glyphs are clipped safely
+or clamp. Integer-valued floats such as `12.0` remain accepted. Legacy rectangle/text color conversion is unchanged; line, circle and sprite-tint
+channels are range-checked as documented below. Text positions and scaled glyphs are clipped safely
 at the viewport, including extreme coordinates and scales; nonpositive text
 scale still draws nothing.
 Keep fractional positions in simulation state and convert at the drawing boundary,
@@ -102,7 +104,7 @@ There is one active clip, in screen logical pixels. Setting another **replaces**
 it; there is no nested stack. The visible area is the intersection with the
 viewport, with half-open edges: `x <= pixel_x < x+w`, `y <= pixel_y < y+h`.
 Negative/offscreen positions are allowed; a disjoint rectangle hides drawing.
-Sprites (including regions/scaling/flips), lines, filled/outline rectangles and
+Sprites (including regions/scaling/flips), lines, circles, filled/outline rectangles and
 text obey the clip. Clipping itself does not translate positions or resize the window. A camera
 translates drawing independently; the clip always remains in screen coordinates.
 
@@ -281,7 +283,7 @@ are allowed. `sugarbee.camera_reset()` takes no arguments. Both return no values
 Invalid arguments raise a Lua error without changing the previous camera.
 
 Drawing uses **screen position = world position - camera position** for `rect`,
-`line`, `print`, `sprite` and `sprite_region`. Dimensions, source crops, flips, text
+`line`, `circle`, `circle_fill`, `print`, `sprite` and `sprite_region`. Dimensions, source crops, flips, text
 spacing and scaling are unchanged. Camera calls replace the position rather
 than accumulating it. Reset selects `(0, 0)`.
 
@@ -328,7 +330,7 @@ value. Draw opacity likewise multiplies source alpha by a/255 before ordinary
 alpha blending: zero is invisible and 255 preserves the original transparency.
 Backend rounding can differ by small amounts for intermediate channel values.
 
-`print`, `rect`, `line` and `cls` keep their own color behavior. Clearing does not
+`print`, `rect`, `line`, `circle`, `circle_fill` and `cls` keep their own color behavior. Clearing does not
 reset tint; camera and clip setters/resets also leave tint unchanged. Explicit
 tint reset selects `(255,255,255,255)`. Every game frame resets tint before
 `draw()`, and host presentation, error screens and cartridge cleanup isolate it.
@@ -393,3 +395,45 @@ sugarbee.line(40, 160, 40, 160)              -- one pixel
 Thickness, line alpha, antialiasing, dashed lines, connected-path helpers and
 filled triangles are outside this checkpoint. Earlier engines lack `line`.
 See the [line demo](../../examples/line-demo/README.md).
+
+
+## Circle primitives
+
+`sugarbee.circle(cx, cy, radius [, r, g, b])` draws an outline;
+`sugarbee.circle_fill(cx, cy, radius [, r, g, b])` draws a solid disk.
+Both take three through six arguments and return no values.
+
+The center and radius must be integer-valued and within the native signed
+32-bit range on supported targets. The radius must be nonnegative; zero draws
+one pixel. Each omitted trailing RGB channel defaults to 255. Supplied channels
+must be integers in 0..255; explicit `nil` is invalid. All arguments are checked
+before drawing; invalid arguments and renderer failures raise Lua errors.
+
+Both calls use the same integer pixel rule: a pixel belongs to the disk when
+`dx*dx + dy*dy <= radius*radius`, measured from its center. The outline contains
+disk pixels with at least one of their four neighbors (left, right, above, below)
+outside the disk. This is a symmetric one-pixel boundary layer, entirely within
+the fill. Drawing an outline over the corresponding fill replaces only that
+boundary. Tiny circles are deliberately pixelated: radius 0 is a point, and
+radius 1 is a five-pixel cross for the fill, with four outer pixels for the outline.
+
+Camera translation applies to the center. Screen-space clipping hides pixels
+without changing the circle or adding an outline along the clip edge. Offscreen
+circles and empty clips succeed without drawing. Circles are opaque and ignore
+sprite tint; later drawing replaces earlier pixels.
+
+The renderer uses wide arithmetic and exact integer square roots, with no
+floating-point rounding dependency. It visits only visible rows and submits
+clipped horizontal spans. Work is bounded by viewport/clip height, even for
+radius 2147483647. A huge disk can cover the viewport while its outline is
+entirely offscreen; such an outline correctly draws nothing.
+
+```lua
+sugarbee.circle_fill(160, 120, 40, 60, 120, 200)
+sugarbee.circle(160, 120, 40) -- white boundary over the same disk
+sugarbee.circle(20, 20, 0)   -- one white pixel
+```
+
+No arcs, wedges, ellipses, adjustable thickness, antialiasing or primitive alpha
+are included. Earlier engines lack these calls.
+See the [circle demo](../../examples/circle-demo/README.md).

@@ -702,6 +702,12 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     set_tests_properties(lua_graphics_bounds PROPERTIES
         ENVIRONMENT "SDL_VIDEODRIVER=dummy" TIMEOUT 10)
 
+    add_executable(test_circle tests/test_circle.c)
+    target_link_libraries(test_circle PRIVATE sugarbee_graphics PkgConfig::SDL2)
+    sugarbee_warnings(test_circle)
+    add_test(NAME graphics_circle COMMAND test_circle)
+    set_tests_properties(graphics_circle PROPERTIES ENVIRONMENT "SDL_VIDEODRIVER=dummy" TIMEOUT 10)
+
     add_executable(test_line tests/test_line.c)
     target_link_libraries(test_line PRIVATE sugarbee_graphics PkgConfig::SDL2)
     sugarbee_warnings(test_line)

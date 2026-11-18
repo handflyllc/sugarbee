@@ -262,6 +262,95 @@ bool sb_graphics_line(sb_graphics_t *graphics, int x1, int y1, int x2, int y2,
     return count == 0 || SDL_RenderDrawPoints(graphics->renderer, points, count) == 0;
 }
 
+/* Exact floor(sqrt(value)), with a fixed maximum of 32 iterations. */
+static uint64_t circle_isqrt(uint64_t value) {
+    uint64_t root = 0, bit = UINT64_C(1) << 62;
+    while (bit > value) bit >>= 2;
+    while (bit) {
+        if (value >= root + bit) {
+            value -= root + bit;
+            root = (root >> 1) + bit;
+        } else {
+            root >>= 1;
+        }
+        bit >>= 2;
+    }
+    return root;
+}
+
+/* Reject before squaring: camera translation can exceed the radius range. */
+static int64_t circle_extent(int radius, int64_t dy) {
+    if (dy < -(int64_t)radius || dy > radius) return -1;
+    return (int64_t)circle_isqrt((uint64_t)radius * (uint64_t)radius -
+                                (uint64_t)(dy * dy));
+}
+
+static bool circle_span(sb_graphics_t *graphics, int64_t x1, int64_t x2,
+                        int y, int64_t left, int64_t right) {
+    if (x1 < left) x1 = left;
+    if (x2 >= right) x2 = right - 1;
+    if (x1 > x2) return true;
+    SDL_Rect span = {(int)x1, y, (int)(x2 - x1 + 1), 1};
+    return SDL_RenderFillRect(graphics->renderer, &span) == 0;
+}
+
+static bool draw_circle(sb_graphics_t *graphics, int cx, int cy, int radius,
+                        uint8_t r, uint8_t g, uint8_t b, bool filled) {
+    if (!graphics || radius < 0) return false;
+    int64_t left = 0, top = 0, right = graphics->width, bottom = graphics->height;
+    if (SDL_RenderIsClipEnabled(graphics->renderer)) {
+        SDL_Rect clip;
+        SDL_RenderGetClipRect(graphics->renderer, &clip);
+        if (clip.x > left) left = clip.x;
+        if (clip.y > top) top = clip.y;
+        if ((int64_t)clip.x + clip.w < right) right = (int64_t)clip.x + clip.w;
+        if ((int64_t)clip.y + clip.h < bottom) bottom = (int64_t)clip.y + clip.h;
+    }
+    int64_t x = (int64_t)cx - graphics->camera_x;
+    int64_t y = (int64_t)cy - graphics->camera_y;
+    if (left >= right || top >= bottom || x + radius < left || x - radius >= right)
+        return true;
+    if (top < y - radius) top = y - radius;
+    if (bottom > y + radius + 1) bottom = y + radius + 1;
+    if (top >= bottom) return true;
+    if (SDL_SetRenderDrawColor(graphics->renderer, r, g, b, 255) != 0) return false;
+    /* Only visible rows are visited, even at INT_MAX radius. Shape is computed
+     * before clipping, so clipping cannot introduce a false boundary. */
+    for (int64_t row = top; row < bottom; ++row) {
+        int64_t dy = row - y, extent = circle_extent(radius, dy);
+        if (filled) {
+            if (!circle_span(graphics, x-extent, x+extent, (int)row, left, right))
+                return false;
+        } else {
+            /* Interior pixels have all four axial neighbors inside the disk. */
+            int64_t interior = extent - 1;
+            int64_t above = circle_extent(radius, dy-1);
+            int64_t below = circle_extent(radius, dy+1);
+            if (above < interior) interior = above;
+            if (below < interior) interior = below;
+            if (interior < 0) {
+                if (!circle_span(graphics, x-extent, x+extent, (int)row, left, right))
+                    return false;
+            } else {
+                if (!circle_span(graphics, x-extent, x-interior-1, (int)row, left, right) ||
+                    !circle_span(graphics, x+interior+1, x+extent, (int)row, left, right))
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool sb_graphics_circle(sb_graphics_t *graphics, int cx, int cy, int radius,
+                       uint8_t r, uint8_t g, uint8_t b) {
+    return draw_circle(graphics, cx, cy, radius, r, g, b, false);
+}
+
+bool sb_graphics_circle_fill(sb_graphics_t *graphics, int cx, int cy, int radius,
+                            uint8_t r, uint8_t g, uint8_t b) {
+    return draw_circle(graphics, cx, cy, radius, r, g, b, true);
+}
+
 static void draw_char(sb_graphics_t *graphics, unsigned char c, int64_t x, int64_t y,
                       int scale) {
     if (c < 32 || c > 126) c = '?';

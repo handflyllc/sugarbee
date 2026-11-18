@@ -344,6 +344,32 @@ static int l_sugarbee_line(lua_State *L) {
     return 0;
 }
 
+/* Stack: arguments only; return no values. All validation precedes drawing. */
+static int lua_circle(lua_State *L, bool filled) {
+    const char *name = filled ? "circle_fill" : "circle";
+    int count = lua_gettop(L);
+    if (count < 3 || count > 6)
+        return luaL_error(L, "%s: expected cx, cy, radius [, r, g, b]", name);
+    int cx = graphics_int_arg(L, 1), cy = graphics_int_arg(L, 2);
+    int radius = graphics_int_arg(L, 3);
+    if (radius < 0) return luaL_argerror(L, 3, "radius must be nonnegative");
+    int color[3] = {255, 255, 255};
+    for (int i = 3; i < count; ++i) {
+        color[i-3] = graphics_int_arg(L, i+1);
+        if (color[i-3] < 0 || color[i-3] > 255)
+            return luaL_argerror(L, i+1, "channel must be in 0..255");
+    }
+    bool ok = filled
+        ? sb_graphics_circle_fill(g_engine.graphics, cx, cy, radius,
+                                 (uint8_t)color[0], (uint8_t)color[1], (uint8_t)color[2])
+        : sb_graphics_circle(g_engine.graphics, cx, cy, radius,
+                            (uint8_t)color[0], (uint8_t)color[1], (uint8_t)color[2]);
+    if (!ok) return luaL_error(L, "%s: renderer failure", name);
+    return 0;
+}
+static int l_sugarbee_circle(lua_State *L) { return lua_circle(L, false); }
+static int l_sugarbee_circle_fill(lua_State *L) { return lua_circle(L, true); }
+
 static int l_sugarbee_rect(lua_State* L) {
     int x = graphics_int_arg(L, 1);
     int y = graphics_int_arg(L, 2);
@@ -581,6 +607,8 @@ void register_sugarbee_api(lua_State* L) {
     lua_pushcfunction(L, l_sugarbee_camera_reset); lua_setfield(L, -2, "camera_reset");
     lua_pushcfunction(L, l_sugarbee_clip); lua_setfield(L, -2, "clip");
     lua_pushcfunction(L, l_sugarbee_clip_reset); lua_setfield(L, -2, "clip_reset");
+    lua_pushcfunction(L, l_sugarbee_circle); lua_setfield(L, -2, "circle");
+    lua_pushcfunction(L, l_sugarbee_circle_fill); lua_setfield(L, -2, "circle_fill");
     lua_pushcfunction(L, l_sugarbee_line); lua_setfield(L, -2, "line");
     lua_pushcfunction(L, l_sugarbee_rect);  lua_setfield(L, -2, "rect");
     lua_pushcfunction(L, l_sugarbee_print); lua_setfield(L, -2, "print");

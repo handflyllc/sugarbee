@@ -10,7 +10,7 @@ int main(void) {
     CHECK(g_engine.graphics && g_engine.input);
     lua_State *L=luaL_newstate(); CHECK(L);
     open_cartridge_libraries(L);
-    const luaL_Reg bindings[]={{"line",l_sugarbee_line},{"rect",l_sugarbee_rect},{"text",l_sugarbee_print},
+    const luaL_Reg bindings[]={{"circle",l_sugarbee_circle},{"circle_fill",l_sugarbee_circle_fill},{"line",l_sugarbee_line},{"rect",l_sugarbee_rect},{"text",l_sugarbee_print},
         {"sprite",l_sugarbee_sprite},{"region",l_sugarbee_sprite_region},
         {"tint",l_sugarbee_sprite_tint},{"tint_reset",l_sugarbee_sprite_tint_reset},
         {"camera",l_sugarbee_camera},{"camera_reset",l_sugarbee_camera_reset},
@@ -115,6 +115,30 @@ int main(void) {
     CHECK(luaL_dostring(L,"line(0,0,0,0,80,90)")==LUA_OK);
     CHECK(SDL_RenderReadPixels(renderer,&area,SDL_PIXELFORMAT_RGBA32,pixel,4)==0);
     CHECK(pixel[0]==80 && pixel[1]==90 && pixel[2]==255);
+    sb_graphics_clear(g_engine.graphics,0,0,0);
+    CHECK(luaL_dostring(L,
+        "for _,f in ipairs({circle,circle_fill}) do "
+        "assert(not pcall(f,0,0)); assert(not pcall(f,0,0,0,0,0,0,0)); "
+        "assert(not pcall(f,0,0,-1)); assert(not pcall(f,0,0,0,nil)); "
+        "for i=1,6 do local values=i<=3 and {imax+1,imin-1,0.5,math.huge,false} "
+        "or {-1,256,0.5,math.huge,false}; for _,v in ipairs(values) do "
+        "local a={0,0,0,100,120,140}; a[i]=v; "
+        "assert(not pcall(f,table.unpack(a))) end end end")==LUA_OK);
+    CHECK(SDL_RenderReadPixels(renderer,&area,SDL_PIXELFORMAT_RGBA32,pixel,4)==0);
+    CHECK(pixel[0]==0 && pixel[1]==0 && pixel[2]==0);
+    const char *circle_calls[]={
+        "assert(select('#',circle(0.0,0,0))==0)",
+        "assert(select('#',circle_fill(0.0,0,0))==0)",
+        "circle(0,0,0,80)", "circle_fill(0,0,0,80)",
+        "circle(0,0,0,80,90)", "circle_fill(0,0,0,80,90)",
+        "circle(0,0,0,80,90,100)", "circle_fill(0,0,0,80,90,100)"
+    };
+    for (int i=0;i<8;++i) {
+        CHECK(luaL_dostring(L,circle_calls[i])==LUA_OK);
+        CHECK(SDL_RenderReadPixels(renderer,&area,SDL_PIXELFORMAT_RGBA32,pixel,4)==0);
+        CHECK(pixel[0]==(i<2?255:80) && pixel[1]==(i<4?255:90) &&
+              pixel[2]==(i<6?255:100));
+    }
     sb_graphics_sprite_tint(g_engine.graphics,0,0,0,0);
     sb_graphics_camera(g_engine.graphics,INT_MAX,INT_MIN);
     CHECK(sb_graphics_clip(g_engine.graphics,0,0,0,0));

@@ -4,6 +4,8 @@ local data,why=sugarbee.load_save()
 assert(data==nil and why=='io_error')
 local song, ticks
 function init()
+    sugarbee.circle(0,0,0)
+    sugarbee.circle_fill(0,0,2147483647,20,40,60)
     sugarbee.line(-2147483648,0,2147483647,0)
     sugarbee.line(0,0,0,0,20,40,60)
     sugarbee.sprite_tint(0,128,255,0); sugarbee.sprite_tint(255,255,255)
