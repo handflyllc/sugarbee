@@ -43,4 +43,7 @@ triangle plus production Lua/graphics UBSan checks passed. The packaged demo
 passed a 180-frame simulated smoke run and a two-second dummy-driver host launch.
 On 2026-11-17, the user requested committing this checkpoint and deferring Pi
 validation until after a break. No explicit desktop manual-check results have
-been recorded. Pi validation remains pending.
+been recorded.
+On 2026-11-18, the user confirmed all Pi checks passed at `ba7cb7a`:
+**147/147 serial tests**, triangle-demo visual and lifecycle checks, regression
+checks including Pong and Pac-Man, and Exit to system. Pi acceptance is complete.

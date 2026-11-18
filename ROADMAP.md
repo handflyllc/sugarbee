@@ -104,14 +104,17 @@ at `cb1fcca` on 2026-11-17: 146/146 serial tests and all requested visual,
 lifecycle, Pong/line-demo regression and Exit to system checks passed.
 Arcs, wedges, ellipses, thickness and antialiasing
 remain separate future scopes.
-Active checkpoint after `6133bf6`: opaque filled triangles, pixel-center
+Completed checkpoint `ba7cb7a`: opaque filled triangles, pixel-center
 sampling with top-left edge ownership, all vertex orders equivalent, zero-area
 triangles draw nothing, checked RGB and bounded camera/clip-aware drawing.
 See the [triangle demo](examples/triangle-demo/README.md). Desktop: 147/147
 serial tests and native/production Lua graphics UBSan passed.
 The user requested committing this checkpoint on 2026-11-17, with Pi validation
 deferred until after a break. Explicit desktop manual-check results have not
-been recorded; Pi acceptance remains pending.
+been recorded. On 2026-11-18, the user confirmed all Pi checks passed at
+`ba7cb7a`: 147/147 serial tests, triangle-demo visual/lifecycle checks,
+regressions including Pong and Pac-Man, and Exit to system. Pi acceptance
+is complete.
 Modules/data access and diagnostics need bounded contracts before implementation.
 No budget, voice-count, mixing-gain or sample-rate increase is proposed.
 
