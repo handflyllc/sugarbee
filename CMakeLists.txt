@@ -365,8 +365,14 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sugarbee_lua_modules PUBLIC sugarbee_assets PkgConfig::LUA54)
     sugarbee_warnings(sugarbee_lua_modules)
 
+    add_library(sugarbee_lua_data STATIC src/sb_lua_data.c)
+    target_include_directories(sugarbee_lua_data PUBLIC "${PROJECT_SOURCE_DIR}/include")
+    target_link_libraries(sugarbee_lua_data PUBLIC sugarbee_assets PkgConfig::LUA54)
+    sugarbee_warnings(sugarbee_lua_data)
+
     add_executable(sugarbee src/main.c)
     target_link_libraries(sugarbee PRIVATE
+        sugarbee_lua_data
         sugarbee_lua_modules
         sugarbee_save
         sugarbee_lua_synth
@@ -717,6 +723,22 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
         set_tests_properties(lua_close_${close_case} PROPERTIES TIMEOUT 5)
     endforeach()
 
+    if(SUGARBEE_BUILD_PACKER)
+        add_executable(test_lua_data tests/test_lua_data.c)
+        target_link_libraries(test_lua_data PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+        target_link_options(test_lua_data PRIVATE "-Wl,--wrap=malloc" "-Wl,--wrap=free")
+        sugarbee_warnings(test_lua_data)
+        add_test(NAME data_pack COMMAND "${CMAKE_COMMAND}"
+            "-DPACKER=$<TARGET_FILE:sbee-pack>" "-DROOT=${PROJECT_BINARY_DIR}/data-fixtures"
+            "-DSOURCE_ROOT=${PROJECT_SOURCE_DIR}" -P "${PROJECT_SOURCE_DIR}/tests/data_pack.cmake")
+        set_tests_properties(data_pack PROPERTIES FIXTURES_SETUP data TIMEOUT 10)
+        foreach(mode basic errors budget partial crc oom io invalid host)
+            add_test(NAME lua_data_${mode} COMMAND test_lua_data "${PROJECT_BINARY_DIR}/data-fixtures.vcart" ${mode})
+            set_tests_properties(lua_data_${mode} PROPERTIES FIXTURES_REQUIRED data TIMEOUT 15
+                ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy")
+        endforeach()
+    endif()
+
     add_executable(test_text_metrics tests/test_text_metrics.c)
     target_link_libraries(test_text_metrics PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
     sugarbee_warnings(test_text_metrics)
@@ -931,6 +953,16 @@ if(BUILD_TESTING)
     endif()
 
     if(LUA54_INTERPRETER_COMPATIBLE)
+        add_test(NAME cartridge_smoke_data-demo COMMAND "${LUA54_INTERPRETER}"
+            "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua"
+            "${PROJECT_SOURCE_DIR}/examples/data-demo" 600 1)
+        set_tests_properties(cartridge_smoke_data-demo PROPERTIES TIMEOUT 10)
+        if(SUGARBEE_BUILD_PACKER AND SUGARBEE_BUILD_HOST)
+            add_test(NAME smoke_data_model COMMAND "${LUA54_INTERPRETER}"
+                "${PROJECT_SOURCE_DIR}/tests/test_smoke_data.lua"
+                "${PROJECT_SOURCE_DIR}/tests/smoke_data.lua" "${PROJECT_BINARY_DIR}/data-fixtures")
+            set_tests_properties(smoke_data_model PROPERTIES FIXTURES_REQUIRED data TIMEOUT 10)
+        endif()
         add_test(NAME cartridge_smoke_text-metrics-demo COMMAND "${LUA54_INTERPRETER}"
             "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua"
             "${PROJECT_SOURCE_DIR}/examples/text-metrics-demo" 600 1

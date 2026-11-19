@@ -128,8 +128,24 @@ The user confirmed desktop validation passed on 2026-11-18.
 On 2026-11-18, the user confirmed Pi acceptance at `93ea8a3`: 158/158 serial
 tests and all modules-demo, Guru recovery, lifecycle, Pong/Pac-Man regression
 and Exit to system checks passed. Desktop and Pi acceptance are complete.
-Generic data access and diagnostics remain separately scoped discussions.
+General-purpose data access is covered by the checkpoint below; diagnostics
+remain a separate discussion.
 No budget, voice-count, mixing-gain or sample-rate increase is proposed.
+
+## Current checkpoint: general-purpose cartridge data reads
+
+Implemented against `9b2f70c`; desktop accepted on 2026-11-18, Pi acceptance pending.
+`sugarbee.read_file(path)` returns raw entry bytes or a recoverable error code.
+No cache: retain Lua strings to reuse data. Limits are 1 MiB/file and 16 MiB
+cumulatively read/session, including bytes read before CRC or Lua allocation
+failure; no refunds. Reuses cartridge path/archive/CRC checks and resets with a
+fresh Lua state. Existing module/source and audio budgets are unchanged.
+No parser, filesystem access, writes or scenario-specific API.
+See the [contract](docs/api/data.md) and [demo/manual checks](examples/data-demo/README.md).
+Automated desktop validation: 177/177 serial tests passed; nine native data-reader
+modes passed ASan/UBSan with leak detection disabled (environment limitation).
+The packaged demo ran headlessly for two seconds without reported Guru errors
+(harness-terminated).
 
 ## Completed checkpoint: text measurement
 

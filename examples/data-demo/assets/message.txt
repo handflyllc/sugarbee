@@ -1,0 +1,3 @@
+Loaded from the cartridge!
+This string stays in Lua memory.
+No disk reads are needed to draw it.

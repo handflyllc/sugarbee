@@ -132,6 +132,7 @@ local service_api, service_control = services.new(scenario, function(path)
 end)
 sugarbee = setmetatable(service_api, services.unsupported('sugarbee'))
 sugarbee.audio = setmetatable({}, services.unsupported('sugarbee.audio'))
+sugarbee.read_file = dofile(runner_dir .. 'smoke_data.lua')(game_dir)
 
 -- JSON validation belongs to the native loader. Require explicit trusted
 -- scenario metadata for declared canvases rather than inventing dimensions.

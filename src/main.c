@@ -24,6 +24,7 @@
 #include "sb_assets.h"
 #include "sb_console_config.h"
 #include "sb_lua_modules.h"
+#include "sb_lua_data.h"
 #include "sb_png.h"
 
 #include "vcart.h"
@@ -922,6 +923,9 @@ static bool start_cartridge(const char *filepath) {
     open_cartridge_libraries(g_engine.L);
     sb_lua_modules_register(g_engine.L, filepath);
     register_sugarbee_api(g_engine.L);
+    lua_getglobal(g_engine.L, "sugarbee");
+    sb_lua_data_register(g_engine.L, filepath);
+    lua_pop(g_engine.L, 1);
 
     if (!load_virtual_cartridge(filepath)) {
         end_cartridge();

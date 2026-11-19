@@ -26,8 +26,9 @@ after upload. Persistent texture handles are owned by the graphics context.
 The image loader supports PNG; it is not the only cartridge asset loader.
 [WAV audio](wav.md) and [native music JSON](music.md) have dedicated loaders.
 [Cartridge-local `require`](modules.md) loads additional Lua source files with
-separate per-module and session limits. A general Lua text/binary-file reader
-remains a separate design candidate.
+separate per-module and session limits. [General-purpose data reads](data.md)
+return text or binary entry bytes through `sugarbee.read_file(path)`, with no
+engine cache and separate 1 MiB/file and 16 MiB/session limits.
 
 ## Resource validation and limitations
 
@@ -39,7 +40,7 @@ SugarBee 0.1 applies these provisional hard limits in the cartridge reader:
 | Individual uncompressed entry | 16 MiB |
 | Total declared uncompressed entries | 128 MiB |
 | ZIP entries | 1024 |
-| Asset member path | 240 bytes |
+| Asset member path | 239 name bytes (240 including terminator) |
 | PNG width and height | 2048 pixels each |
 
 Member names must be relative, forward-slash-separated paths without empty

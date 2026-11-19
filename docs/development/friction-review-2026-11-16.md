@@ -230,3 +230,11 @@ current-font character-cell bounds without drawing. Automatic wrapping remains
 a separate candidate. The user confirmed all desktop checks passed on
 2026-11-18, followed by Pi acceptance at `d699492`: 165/165 tests and all
 requested visual, lifecycle and regression checks passed.
+
+## General-purpose data follow-up (based on 9b2f70c)
+
+Entry 25 now has an implementation: [cartridge data reads](../api/data.md),
+with byte-preserving Lua strings, recoverable read errors, no engine cache and
+bounded per-file/session reads. It does not add parsers or external scenario
+installation. The user confirmed all desktop checks passed on 2026-11-18;
+Pi acceptance remains pending.

@@ -50,6 +50,8 @@ See [dependencies](docs/development/dependencies.md) and
 - [Camera demo](examples/camera-demo/README.md)
 - [Clip-rectangle demo](examples/clip-demo/README.md)
 - [Cartridge asset loading](docs/api/assets.md)
+- [Cartridge data reader](docs/api/data.md)
+- [Data reader demo](examples/data-demo/README.md)
 - [Controller/keyboard input API](docs/api/input.md)
 - [Simulation timing and callbacks](docs/api/timing.md)
 - [Save/load API](docs/api/saves.md)

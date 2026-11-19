@@ -7,7 +7,7 @@
 #include <string.h>
 #include <minizip/unzip.h>
 
-static bool safe_path(const char *path) {
+bool sb_asset_path_valid(const char *path) {
     if (!path || !*path || path[0] == '/') return false;
     size_t n = 0;
     const char *segment = path;
@@ -56,7 +56,7 @@ sb_asset_result_t sb_asset_read_limited_counted(const char *cartridge,const char
     if (max_entry>SB_ASSET_MAX_ENTRY) max_entry=SB_ASSET_MAX_ENTRY;
     if (data) *data = NULL;
     if (length) *length = 0;
-    if (!data || !length || !cartridge || !safe_path(path))
+    if (!data || !length || !cartridge || !sb_asset_path_valid(path))
         return SB_ASSET_INVALID_PATH;
 
     FILE *fp = fopen(cartridge, "rb");
@@ -97,7 +97,7 @@ sb_asset_result_t sb_asset_read_limited_counted(const char *cartridge,const char
         size_t name_len = strlen(name);
         bool directory = name_len && name[name_len - 1] == '/';
         if (directory) name[name_len - 1] = '\0';
-        bool valid_name = safe_path(name);
+        bool valid_name = sb_asset_path_valid(name);
         if (directory) name[name_len - 1] = '/';
         if (!valid_name) {
             result = SB_ASSET_CORRUPT;

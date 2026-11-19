@@ -2,6 +2,7 @@
 #ifndef SB_ASSETS_H
 #define SB_ASSETS_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -19,6 +20,10 @@ typedef enum {
     SB_ASSET_CORRUPT,
     SB_ASSET_IO_ERROR
 } sb_asset_result_t;
+
+/* Validate a NUL-terminated member name using the reader's path rules.
+ * At most 239 name bytes plus terminator; no filesystem access. */
+bool sb_asset_path_valid(const char *path);
 
 /*
  * Paths are relative ZIP member names with '/' separators, not OS paths.

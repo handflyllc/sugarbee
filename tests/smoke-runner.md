@@ -154,3 +154,17 @@ The runner models `sugarbee.measure_text(text [, scale])` with the native API's
 byte/cell layout, NUL handling, scale/argument validation, 256 KiB input cap and
 signed 32-bit result bounds. It does not draw or count a draw call. Native tests
 remain authoritative for renderer state isolation and actual glyph placement.
+
+## Cartridge data reads
+
+`sugarbee.read_file(path)` is modeled by `smoke_data.lua`, using the trusted
+unpacked cartridge directory. It checks exact argument/path rules, preserves
+binary bytes/empty files and models 1 MiB/file and 16 MiB/session reads without
+caching or refunds. Missing files return `nil, "not_found"`; oversized reads
+return `nil, "too_large"`. Other local I/O failures return `nil, "io_error"`.
+Bytes actually read are charged even if the model later detects a short read or
+close failure. A new model invocation starts a new counter.
+
+It does not model ZIP/header/CRC validation or native allocation failures.
+Unpacked files and symlinks are trusted test inputs; this is not filesystem
+isolation. Native tests remain authoritative for archive handling and safety.
