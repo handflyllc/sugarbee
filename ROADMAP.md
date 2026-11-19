@@ -132,9 +132,11 @@ General-purpose data access is covered by the checkpoint below; diagnostics
 remain a separate discussion.
 No budget, voice-count, mixing-gain or sample-rate increase is proposed.
 
-## Current checkpoint: general-purpose cartridge data reads
+## Completed checkpoint: general-purpose cartridge data reads
 
-Implemented against `9b2f70c`; desktop accepted on 2026-11-18, Pi acceptance pending.
+Implemented in `9d75cd8` against `9b2f70c`. Desktop accepted on 2026-11-18;
+the user confirmed Pi acceptance on 2026-11-19: 177/177 tests and all four
+requested visual, lifecycle and regression checks passed.
 `sugarbee.read_file(path)` returns raw entry bytes or a recoverable error code.
 No cache: retain Lua strings to reuse data. Limits are 1 MiB/file and 16 MiB
 cumulatively read/session, including bytes read before CRC or Lua allocation

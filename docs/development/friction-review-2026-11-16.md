@@ -236,5 +236,6 @@ requested visual, lifecycle and regression checks passed.
 Entry 25 now has an implementation: [cartridge data reads](../api/data.md),
 with byte-preserving Lua strings, recoverable read errors, no engine cache and
 bounded per-file/session reads. It does not add parsers or external scenario
-installation. The user confirmed all desktop checks passed on 2026-11-18;
-Pi acceptance remains pending.
+installation. The user confirmed all desktop checks passed on 2026-11-18,
+then Pi acceptance at `9d75cd8` on 2026-11-19: 177/177 tests and all four
+requested visual, lifecycle and regression checks passed.

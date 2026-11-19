@@ -36,4 +36,8 @@ no LeakSanitizer acceptance is claimed. The packaged demo ran headlessly for two
 seconds without reporting a Guru error; the harness terminated it.
 On 2026-11-18, the user confirmed all desktop checks passed: text/binary status,
 repeat-read counter, missing-file recovery, Pause/resume, exit/relaunch reset,
-Pong/modules-demo regressions and Exit to system. Pi acceptance remains pending.
+Pong/modules-demo regressions and Exit to system. On 2026-11-19, the user
+confirmed Pi acceptance at `9d75cd8`: **177/177 tests** and all four requested
+checks passed, covering text/binary status, repeat reads, missing-file handling,
+Pause/resume, exit/relaunch, Pong/modules-demo and Exit to system.
+Desktop and Pi acceptance are complete.

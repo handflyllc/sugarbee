@@ -1,6 +1,8 @@
 # Cartridge data reader
 
-Implemented against `9b2f70c`; desktop accepted on 2026-11-18, Pi acceptance pending.
+Implemented in `9d75cd8` against `9b2f70c`. Desktop accepted on 2026-11-18;
+the user confirmed Pi acceptance on 2026-11-19: 177/177 tests and all four
+requested visual, lifecycle and regression checks passed.
 
 ```lua
 local bytes, err = sugarbee.read_file("assets/dialogue.txt")
