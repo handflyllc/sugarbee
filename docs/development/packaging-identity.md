@@ -1,6 +1,6 @@
 # Persistent packaging identity
 
-Implemented checkpoint; desktop accepted 2026-11-19. Pi validation pending.
+Completed checkpoint at `73ee6a3`; desktop and Pi accepted 2026-11-19.
 
 A game's UUID is its save identity. Changing title, assets or package filename
 must not change that identity. The runtime still reads the existing 64-byte
@@ -63,8 +63,9 @@ On 2026-11-19, the desktop build and full serial suite passed: **178/178**.
 The identity regression also passed AddressSanitizer and UndefinedBehaviorSanitizer
 with `ASAN_OPTIONS=detect_leaks=0`; leak detection was not claimed. The user confirmed all desktop manual checks passed on 2026-11-19:
 saved counter survived repacking without --uuid, Pause/resume and normal exit
-worked, and repeated initialization refused replacement. Pi validation remains
-pending.
+worked, and repeated initialization refused replacement. On 2026-11-19, the user confirmed Pi validation against `73ee6a3`: **178/178**
+tests passed, the saved counter survived repacking without --uuid, Pause/resume
+and normal exit worked, and repeated initialization refused replacement.
 
 Manual desktop and Pi check (use the same commands on each machine):
 
