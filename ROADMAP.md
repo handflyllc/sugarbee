@@ -131,9 +131,9 @@ and Exit to system checks passed. Desktop and Pi acceptance are complete.
 Generic data access and diagnostics remain separately scoped discussions.
 No budget, voice-count, mixing-gain or sample-rate increase is proposed.
 
-## Current checkpoint: logical canvas declaration and scaling
+## Completed checkpoint: logical canvas declaration and scaling
 
-Implemented against `36ba975`; desktop accepted, Pi acceptance pending.
+Implemented in `f84ffbd` against `36ba975`; desktop and Pi acceptance complete.
 Optional bounded root `console.json` selects one of five fixed game canvases;
 missing declarations retain 1280×720. Added `sugarbee.width()` / `height()`.
 Host presentation uses automatic integer enlargement, black borders and
@@ -145,7 +145,9 @@ and canvas lifecycle checks passed UBSan. The packaged demo stayed running in
 a two-second dummy-driver check with no reported Guru error (harness-terminated).
 On 2026-11-18, the user confirmed all desktop manual checks passed: canvas
 appearance, Pause/resume, Guru recovery, relaunch, Pong/Pac-Man regressions
-and Exit to system. Pi acceptance remains pending.
+and Exit to system. On 2026-11-18, the user confirmed Pi acceptance at
+`f84ffbd`: 162/162 serial tests, Pong regression and all remaining canvas-demo,
+Pause/Guru, lifecycle, Pac-Man and Exit to system checks passed.
 
 ### Deferred options-menu ideas
 

@@ -1,7 +1,8 @@
 # Cartridge canvas and presentation
 
-Implemented in the logical-canvas checkpoint based on `36ba975`.
-The user confirmed all desktop checks passed on 2026-11-18. Pi acceptance is pending.
+Implemented in `f84ffbd`, based on `36ba975`. The user confirmed desktop
+acceptance and Pi acceptance on 2026-11-18: 162/162 Pi tests and all requested
+visual, lifecycle and regression checks passed.
 
 ## Declaration
 

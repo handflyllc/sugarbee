@@ -38,11 +38,14 @@ The smoke model requires `tests/canvas_scenario.lua` to supply dimensions;
 its one-frame check avoids the runner's randomized B input intentionally
 triggering the demo's Guru. It is not a visual or native configuration test.
 
-## Automated validation
+## Validation
 
 Desktop: **162/162 serial CTests passed**. Configuration and real-renderer
 lifecycle checks also passed UBSan. The packaged demo stayed running during a
 two-second dummy-driver launch without reporting a Guru error; the harness
 terminated it. On 2026-11-18, the user confirmed all desktop checks passed:
 canvas appearance, Pause/resume, intentional Guru recovery, return/relaunch,
-Pong/Pac-Man regressions and Exit to system. Pi acceptance remains pending.
+Pong/Pac-Man regressions and Exit to system.
+On 2026-11-18, the user confirmed Pi acceptance at `f84ffbd`: **162/162 tests**,
+Pong regression and all remaining requested visual, Pause/Guru, lifecycle,
+Pac-Man and Exit to system checks passed. Desktop and Pi acceptance are complete.

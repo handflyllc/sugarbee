@@ -217,5 +217,7 @@ games as future visual acceptance examples when their sources are available.
 
 Entries 4 and the dimension-query portion of 17 now have an implementation:
 [canvas declaration/scaling and Lua queries](../api/canvas.md). The user confirmed
-all desktop checks passed on 2026-11-18; Pi acceptance remains pending. Text metrics remain a separate discussion;
+all desktop checks passed on 2026-11-18, then Pi acceptance at `f84ffbd`:
+162/162 tests and all requested manual checks passed. Text metrics remain a
+separate discussion;
 this does not change sprite source-crop behavior (entry 22) or window sizing.
