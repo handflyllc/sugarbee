@@ -41,4 +41,7 @@ checks also passing UBSan. The packaged demo ran headlessly for two seconds
 without reporting a Guru error; the harness terminated it. On 2026-11-18, the
 user confirmed all desktop checks passed: measured boxes, sample cycling,
 Pause/resume, Exit Game/relaunch, canvas-demo/Pong and Exit to system.
-Pi acceptance remains pending.
+On 2026-11-18, the user confirmed Pi acceptance at `d699492`: **165/165 tests**
+and all requested measured-box/sample, Pause/resume, exit/relaunch,
+canvas-demo/Pong and Exit to system checks passed. Desktop and Pi acceptance
+are complete.

@@ -228,4 +228,5 @@ The measurement portions of entries 10 and 17 now have an implementation:
 [`sugarbee.measure_text()`](../api/graphics.md#text-measurement), returning
 current-font character-cell bounds without drawing. Automatic wrapping remains
 a separate candidate. The user confirmed all desktop checks passed on
-2026-11-18; Pi acceptance remains pending.
+2026-11-18, followed by Pi acceptance at `d699492`: 165/165 tests and all
+requested visual, lifecycle and regression checks passed.
