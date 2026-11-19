@@ -49,5 +49,8 @@ On 2026-11-18, the user confirmed desktop validation passed: movement/shared
 cache display, caught missing-module errors, pause/resume and state reset on
 relaunch, intentional Guru and recovery, Pong/Pac-Man regressions, and Exit to
 system. These results cover the modules checkpoint built on `235046f`.
-Desktop acceptance is complete; Pi validation remains pending.
+On 2026-11-18, the user confirmed all Pi checks passed at `93ea8a3`:
+**158/158 serial tests**, movement/shared cache, caught missing-module errors,
+pause/resume and relaunch reset, intentional Guru/recovery, Pong/Pac-Man
+regressions and Exit to system. Desktop and Pi acceptance are complete.
 No new audio listening comparison is required.
