@@ -240,7 +240,7 @@ if(SUGARBEE_BUILD_HOST)
 
     # SDL is confined to the backend; games and their language adapters use
     # only include/sb_graphics.h for drawing services.
-    add_library(sugarbee_graphics STATIC src/sb_graphics_sdl.c src/font8x8.c)
+    add_library(sugarbee_graphics STATIC src/sb_graphics_sdl.c src/sb_text_metrics.c src/font8x8.c)
     target_include_directories(sugarbee_graphics PUBLIC "${PROJECT_SOURCE_DIR}/include")
     target_link_libraries(sugarbee_graphics PRIVATE PkgConfig::SDL2)
     sugarbee_warnings(sugarbee_graphics)
@@ -717,6 +717,12 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
         set_tests_properties(lua_close_${close_case} PROPERTIES TIMEOUT 5)
     endforeach()
 
+    add_executable(test_text_metrics tests/test_text_metrics.c)
+    target_link_libraries(test_text_metrics PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    sugarbee_warnings(test_text_metrics)
+    add_test(NAME text_metrics COMMAND test_text_metrics)
+    set_tests_properties(text_metrics PROPERTIES TIMEOUT 10 ENVIRONMENT "SDL_VIDEODRIVER=dummy")
+
     add_executable(test_console_config tests/test_console_config.c)
     target_link_libraries(test_console_config PRIVATE sugarbee_assets)
     sugarbee_warnings(test_console_config)
@@ -925,6 +931,14 @@ if(BUILD_TESTING)
     endif()
 
     if(LUA54_INTERPRETER_COMPATIBLE)
+        add_test(NAME cartridge_smoke_text-metrics-demo COMMAND "${LUA54_INTERPRETER}"
+            "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua"
+            "${PROJECT_SOURCE_DIR}/examples/text-metrics-demo" 600 1
+            "${PROJECT_SOURCE_DIR}/tests/text-metrics/scenario.lua")
+        add_test(NAME smoke_text_metrics COMMAND "${LUA54_INTERPRETER}"
+            "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua"
+            "${PROJECT_SOURCE_DIR}/tests/text-metrics" 1 1)
+        set_tests_properties(cartridge_smoke_text-metrics-demo smoke_text_metrics PROPERTIES TIMEOUT 10)
         add_test(NAME cartridge_smoke_canvas-demo COMMAND "${LUA54_INTERPRETER}"
             "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua"
             "${PROJECT_SOURCE_DIR}/examples/canvas-demo" 1 1

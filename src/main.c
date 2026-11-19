@@ -406,6 +406,22 @@ static int l_sugarbee_rect(lua_State* L) {
     return 0;
 }
 
+/* Stack: text [,scale] -> exactly two integer results; no graphics state used. */
+static int l_sugarbee_measure_text(lua_State *L) {
+    int count = lua_gettop(L);
+    if (count < 1 || count > 2)
+        return luaL_error(L, "measure_text expects text [, scale]");
+    size_t length;
+    const char *text = luaL_checklstring(L, 1, &length);
+    int scale = lua_isnoneornil(L, 2) ? 1 : graphics_int_arg(L, 2);
+    int width, height;
+    if (!sb_graphics_measure_text(text, length, scale, &width, &height))
+        return luaL_error(L, "measure_text: text exceeds 256 KiB or dimensions exceed signed 32-bit range");
+    lua_pushinteger(L, width);
+    lua_pushinteger(L, height);
+    return 2;
+}
+
 static int l_sugarbee_print(lua_State* L) {
     const char* text = luaL_checkstring(L, 1);
     int x = graphics_int_arg(L, 2);
@@ -647,6 +663,7 @@ void register_sugarbee_api(lua_State* L) {
     lua_pushcfunction(L, l_sugarbee_circle_fill); lua_setfield(L, -2, "circle_fill");
     lua_pushcfunction(L, l_sugarbee_line); lua_setfield(L, -2, "line");
     lua_pushcfunction(L, l_sugarbee_rect);  lua_setfield(L, -2, "rect");
+    lua_pushcfunction(L, l_sugarbee_measure_text); lua_setfield(L, -2, "measure_text");
     lua_pushcfunction(L, l_sugarbee_print); lua_setfield(L, -2, "print");
     lua_pushcfunction(L, l_sugarbee_texture_rgba); lua_setfield(L, -2, "texture_rgba");
     lua_pushcfunction(L, l_sugarbee_texture_load); lua_setfield(L, -2, "texture_load");

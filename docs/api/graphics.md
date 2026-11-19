@@ -46,6 +46,7 @@ below. Text, rectangles, lines, circles and triangles are unaffected by sprite t
 | `sugarbee.circle_fill(cx, cy, radius [, r, g, b])` | Draw a solid disk. |
 | `sugarbee.line(x1, y1, x2, y2 [, r, g, b])` | Draw an opaque one-pixel line, including both endpoints. |
 | `sugarbee.rect(x, y, w, h, r, g, b, filled)` | Draw a rectangle. Color channels default to 255. `filled` is false when omitted or `false`. |
+| `sugarbee.measure_text(text [, scale])` | Return character-cell width and height without drawing. |
 | `sugarbee.print(text, x, y, r, g, b, scale)` | Draw text with the built-in 8x8 font. Color defaults to white. `scale` is an optional integer scale factor, defaulting to 1; values of 0 or less draw nothing. |
 | `sugarbee.texture_rgba(width, height, bytes)` | Upload packed RGBA8 bytes; returns a texture handle. |
 | `sugarbee.texture_load(path)` | Decode a PNG from the active `.vcart` and return a texture handle. |
@@ -66,6 +67,60 @@ the simulation position every update; doing so loses subpixel motion.
 
 Lua treats every value except `false` and `nil` as true, including `0`;
 therefore pass an actual boolean for `filled`.
+
+### Text measurement
+
+```lua
+local width, height = sugarbee.measure_text(text, scale)
+```
+
+Returns exactly two integers in logical pixels, independent of canvas size,
+camera, clip, sprite tint and drawing target. It neither draws nor changes
+rendering state; it can be called during top-level code and lifecycle callbacks.
+These are **character-cell bounds**, not the tight bounds of illuminated pixels.
+
+- Scale defaults to 1 when omitted or `nil`; integer-valued scales must fit the
+  signed 32-bit range, using the same conversion as `print()`.
+- Each non-newline byte occupies an 8×8 cell; newline advances 10 pixels
+  vertically and resets the horizontal position. Both dimensions scale.
+- Width is the longest line, including leading/trailing spaces. Height is
+  `8 + 10 * (line_count - 1)` before scaling, including blank and trailing lines.
+  The final line has an 8-pixel cell height, without an extra trailing gap.
+- Empty text returns `0, 0`. Nonpositive scale also returns `0, 0`, matching
+  `print()` drawing nothing. A newline alone returns `0, 18` at scale 1.
+- Text uses the existing byte-oriented font rules: printable ASCII is supported;
+  other bytes occupy one fallback-glyph cell each. Tabs and carriage returns are
+  fallback cells, not tab stops or line breaks. UTF-8 is not decoded.
+- An embedded NUL ends the measured text, matching the existing native renderer.
+  Numeric text arguments are converted to strings as with `print()`; other
+  non-string types are errors. The function accepts only one or two arguments.
+- A measurement accepts at most **256 KiB of input**, counting the full Lua
+  string, including bytes after NUL. Longer input is an error even at scale zero.
+  Positive-scale dimensions exceeding `2147483647` are errors rather than wrapped
+  or clamped results. These limits affect measurement only; `print()` is unchanged.
+
+| Text (Lua notation) | Scale | Width | Height |
+| --- | --- | --- | --- |
+| `"Paused"` | 1 | 48 | 8 |
+| `"Two\nlines"` | 1 | 40 | 18 |
+| `" A  "` | 2 | 64 | 16 |
+| `"End\n"` | 1 | 24 | 18 |
+| `"\n"` | 1 | 0 | 18 |
+| `""` | 1 | 0 | 0 |
+
+For centered text, measure it with the same scale used for drawing:
+
+```lua
+local text, scale = "Paused", 2
+local w, h = sugarbee.measure_text(text, scale)
+sugarbee.print(text,
+    math.floor((sugarbee.width() - w) / 2),
+    math.floor((sugarbee.height() - h) / 2),
+    255, 255, 255, scale)
+```
+
+See the [text measurement demo](../../examples/text-metrics-demo/README.md).
+Automatic wrapping, alignment modes, new fonts and text input are separate work.
 
 ### Example (current API)
 
@@ -252,6 +307,9 @@ current declarations. Its operations are:
   the appropriate target, dimensions and default drawing state. Game begin clears.
 - `sb_graphics_show_game_frame()` — scale the retained game image onto the output,
   then restore host coordinates for overlays.
+- `sb_graphics_measure_text()` — bounded cell metrics with no graphics context,
+  allocation or renderer dependency in the implementation; returns false for
+  invalid pointers, excessive input or unrepresentable dimensions.
 - `sb_graphics_clear()`, `sb_graphics_rect()`, `sb_graphics_text()` — draw in
   logical coordinates, without depending on Lua.
 - `sb_graphics_texture_rgba()` — upload tightly packed RGBA8 pixels; copies the

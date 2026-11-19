@@ -87,6 +87,19 @@ bool sb_graphics_triangle_fill(sb_graphics_t *graphics,
                                int x1, int y1, int x2, int y2, int x3, int y3,
                                uint8_t r, uint8_t g, uint8_t b);
 
+/* Current byte-oriented bitmap font layout; drawing and measurement share these. */
+#define SB_FONT_CELL_WIDTH 8
+#define SB_FONT_CELL_HEIGHT 8
+#define SB_FONT_LINE_ADVANCE 10
+#define SB_TEXT_MEASURE_MAX_BYTES (256u * 1024u)
+/* Measure character-cell bounds without a graphics context or drawing state.
+ * Newline advances a line; NUL ends text. Empty/nonpositive scale gives (0,0).
+ * Length includes any bytes after NUL and must not exceed the cap. False for
+ * invalid pointers, oversize input, or dimensions exceeding INT_MAX; outputs
+ * are zeroed when both output pointers are valid. No allocation or rendering. */
+bool sb_graphics_measure_text(const char *text, size_t length, int scale,
+                              int *width, int *height);
+
 /* Temporary 8x8 bitmap font; scale is logical pixels per bitmap pixel. */
 /* Text arithmetic is clipped safely to the viewport for all int coordinates
  * and scales. Nonpositive scale draws nothing. */

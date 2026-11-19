@@ -221,3 +221,11 @@ all desktop checks passed on 2026-11-18, then Pi acceptance at `f84ffbd`:
 162/162 tests and all requested manual checks passed. Text metrics remain a
 separate discussion;
 this does not change sprite source-crop behavior (entry 22) or window sizing.
+
+## Text-measurement follow-up (based on 30c4f62)
+
+The measurement portions of entries 10 and 17 now have an implementation:
+[`sugarbee.measure_text()`](../api/graphics.md#text-measurement), returning
+current-font character-cell bounds without drawing. Automatic wrapping remains
+a separate candidate. The user confirmed all desktop checks passed on
+2026-11-18; Pi acceptance remains pending.

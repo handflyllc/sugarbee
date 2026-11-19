@@ -436,8 +436,8 @@ static void draw_char(sb_graphics_t *graphics, unsigned char c, int64_t x, int64
     if (c < 32 || c > 126) c = '?';
     const unsigned char *glyph = font8x8_basic[c];
 
-    for (int row = 0; row < 8; row++) {
-        for (int col = 0; col < 8; col++) {
+    for (int row = 0; row < SB_FONT_CELL_HEIGHT; row++) {
+        for (int col = 0; col < SB_FONT_CELL_WIDTH; col++) {
             if (glyph[row] & (1u << (7 - col))) {
                 /* Clip in wide arithmetic before passing coordinates to SDL.
                  * Even a single scaled glyph can extend beyond INT_MAX. */
@@ -469,13 +469,13 @@ void sb_graphics_text(sb_graphics_t *graphics, const char *text, int x, int y,
          * bounds cursor arithmetic independently of string length. */
         if (cursor_y >= graphics->height) break;
         if (*p == '\n') {
-            cursor_y += (int64_t)10 * scale;
+            cursor_y += (int64_t)SB_FONT_LINE_ADVANCE * scale;
             cursor_x = origin_x;
         } else if (cursor_x < graphics->width) {
-            if (cursor_x + (int64_t)8 * scale > 0 &&
-                cursor_y + (int64_t)8 * scale > 0)
+            if (cursor_x + (int64_t)SB_FONT_CELL_WIDTH * scale > 0 &&
+                cursor_y + (int64_t)SB_FONT_CELL_HEIGHT * scale > 0)
                 draw_char(graphics, *p, cursor_x, cursor_y, scale);
-            cursor_x += (int64_t)8 * scale;
+            cursor_x += (int64_t)SB_FONT_CELL_WIDTH * scale;
         }
     }
 }

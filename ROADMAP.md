@@ -131,6 +131,23 @@ and Exit to system checks passed. Desktop and Pi acceptance are complete.
 Generic data access and diagnostics remain separately scoped discussions.
 No budget, voice-count, mixing-gain or sample-rate increase is proposed.
 
+## Current checkpoint: text measurement
+
+Implemented against `30c4f62`; desktop accepted, Pi acceptance pending.
+`sugarbee.measure_text(text [, scale])` returns character-cell bounds matching
+the current byte-oriented font, including whitespace and explicit blank lines.
+Measurement does not draw or depend on camera/clip/canvas state. Input is bounded
+to 256 KiB; dimensions must fit signed 32-bit coordinates. Existing print behavior
+is unchanged. See [contract](docs/api/graphics.md#text-measurement) and
+[demo/manual checks](examples/text-metrics-demo/README.md).
+Automated desktop validation: 165/165 serial CTests passed; native text metrics
+and font checks passed UBSan. The packaged demo ran headlessly for two seconds
+without reported Guru errors (harness-terminated). On 2026-11-18, the user
+confirmed all desktop checks passed: measured boxes and sample cycling,
+Pause/resume, exit/relaunch, canvas-demo/Pong regressions and Exit to system.
+Automatic wrapping, alignment options, new fonts and text entry remain separate
+work; no expansion of this checkpoint is implied.
+
 ## Completed checkpoint: logical canvas declaration and scaling
 
 Implemented in `f84ffbd` against `36ba975`; desktop and Pi acceptance complete.

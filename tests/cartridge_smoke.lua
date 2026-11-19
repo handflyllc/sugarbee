@@ -262,6 +262,27 @@ function sugarbee.rect(x, y, w, h, r, g, b, filled)
     counts.draw_calls = counts.draw_calls + 1
 end
 
+function sugarbee.measure_text(...)
+    local count=select('#',...)
+    assert(count>=1 and count<=2, 'measure_text expects text [, scale]')
+    local text,scale=...
+    if type(text)=='number' then text=tostring(text) end
+    check_string('measure_text',1,text)
+    scale=opt_int('measure_text',2,scale,1)
+    assert(scale>=-2147483648 and scale<=2147483647, 'measure_text: scale outside supported range')
+    assert(#text<=262144, 'measure_text: text exceeds 256 KiB')
+    local nul=text:find(string.char(0),1,true)
+    if nul then text=text:sub(1,nul-1) end
+    if #text==0 or scale<=0 then return 0,0 end
+    local width,line_width,height=0,0,8*scale
+    for i=1,#text do
+        if text:byte(i)==10 then height=height+10*scale; line_width=0
+        else line_width=line_width+8*scale; width=math.max(width,line_width) end
+        assert(width<=2147483647 and height<=2147483647, 'measure_text: dimensions exceed supported range')
+    end
+    return width,height
+end
+
 function sugarbee.print(text, x, y, r, g, b, scale)
     check_string("print", 1, text)
     check_int("print", 2, x); check_int("print", 3, y)

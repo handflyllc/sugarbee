@@ -147,3 +147,10 @@ Native tests remain authoritative. Synthetic canvas metadata is also permitted.
 ```sh
 lua5.4 tests/cartridge_smoke.lua examples/canvas-demo 1 1 tests/canvas_scenario.lua
 ```
+
+## Text measurement
+
+The runner models `sugarbee.measure_text(text [, scale])` with the native API's
+byte/cell layout, NUL handling, scale/argument validation, 256 KiB input cap and
+signed 32-bit result bounds. It does not draw or count a draw call. Native tests
+remain authoritative for renderer state isolation and actual glyph placement.
