@@ -138,7 +138,7 @@ accepted future work retains that status without a schedule.
 | --- | --- |
 | 1 | Camera/draw offset completed; Pi accepted at `3dc7515`. See [graphics](../api/graphics.md). |
 | 2 | Tile/batch candidate; reported 190 draws do not establish a bottleneck. Bound native work before batching. |
-| 3 | Rect/text per-call opacity implemented; desktop accepted 2026-11-19 (180 tests and manual checks). Pi acceptance pending. See [demo](../../examples/opacity-demo/README.md). |
+| 3 | Rect/text per-call opacity completed; desktop and Pi accepted 2026-11-19 (180 tests and manual checks), Pi at `8930b33`. See [demo](../../examples/opacity-demo/README.md). |
 | 4 | Canvas declaration, integer scaling and Lua dimension queries completed; Pi accepted at `f84ffbd`. |
 | 5 | Bounded cartridge-local Lua modules completed; Pi accepted at `93ea8a3`. See [modules](../api/modules.md). |
 | 6 | Packaging workflow candidate; use a cartridge-only input directory today. |

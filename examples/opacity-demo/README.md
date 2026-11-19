@@ -25,7 +25,11 @@ Implementation baseline: dd650c5. Desktop automated validation passed
 on 2026-11-19: 180/180 serial tests and native pixel UBSan checks passed.
 The user confirmed all desktop manual checks passed on 2026-11-19: opacity
 levels, uniform corners, text/clipping, opaque host menus, relaunch reset, Pong
-regression and Exit to system. Pi validation remains pending. The native pixel test covers blending,
+regression and Exit to system. The user confirmed all Pi checks passed at `8930b33` on
+2026-11-19: 180/180 tests, all opacity demo checks, Pause/resume, relaunch,
+Pong and Exit to system.
+
+The native pixel test covers blending,
 zero opacity, border coverage (including 1-pixel widths/heights), scaled multiline
 text, wide arithmetic, clip/camera and subsequent opaque host drawing. Production
 Lua checks cover alpha validation and return counts. The smoke runner models
