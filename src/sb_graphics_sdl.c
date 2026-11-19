@@ -21,6 +21,8 @@ struct sb_graphics {
     SDL_Texture *game_frame;
     int width;
     int height;
+    int host_width, host_height;
+    int canvas_width, canvas_height;
     int camera_x;
     int camera_y;
     uint8_t tint_r, tint_g, tint_b, tint_a;
@@ -50,8 +52,8 @@ sb_graphics_t *sb_graphics_create(const char *title, int width, int height) {
     if (!graphics->renderer) goto error;
 
     if (SDL_RenderSetLogicalSize(graphics->renderer, width, height) < 0) goto error;
-    graphics->width = width;
-    graphics->height = height;
+    graphics->width = graphics->host_width = graphics->canvas_width = width;
+    graphics->height = graphics->host_height = graphics->canvas_height = height;
 
     if (!SDL_RenderTargetSupported(graphics->renderer)) {
         SDL_Log("SugarBee: renderer does not support render targets");
@@ -72,16 +74,16 @@ sb_graphics_t *sb_graphics_create(const char *title, int width, int height) {
 
     if (SDL_SetTextureBlendMode(graphics->game_frame, SDL_BLENDMODE_NONE) != 0 ||
         SDL_SetTextureScaleMode(graphics->game_frame, SDL_ScaleModeNearest) != 0) {
-            SDL_Log("SugarBee: could not configure game frame: %s", SDL_GetError());
-          goto error;
-        }
+        SDL_Log("SugarBee: could not configure game frame: %s", SDL_GetError());
+        goto error;
+    }
 
-        /* Start with a defined image, even if paused before the first draw. */
-        if (!sb_graphics_begin_game_frame(graphics) ||
-            SDL_SetRenderTarget(graphics->renderer, NULL) != 0) {
-                SDL_Log("SugarBee: could not initialize game frame: %s", SDL_GetError());
-                goto error;
-            }
+    /* Start with a defined image, even if paused before the first draw. */
+    if (!sb_graphics_begin_game_frame(graphics) ||
+        !sb_graphics_begin_host_frame(graphics)) {
+        SDL_Log("SugarBee: could not initialize game frame: %s", SDL_GetError());
+        goto error;
+    }
 
     return graphics;
 
@@ -478,39 +480,95 @@ void sb_graphics_text(sb_graphics_t *graphics, const char *text, int x, int y,
     }
 }
 
-bool sb_graphics_begin_game_frame(sb_graphics_t *graphics) {
-    if (!graphics || !graphics->game_frame) return false;
+int sb_graphics_canvas_width(const sb_graphics_t *graphics) {
+    return graphics ? graphics->canvas_width : 0;
+}
+int sb_graphics_canvas_height(const sb_graphics_t *graphics) {
+    return graphics ? graphics->canvas_height : 0;
+}
 
-    if (SDL_SetRenderTarget(graphics->renderer, graphics->game_frame) != 0) {
+bool sb_graphics_begin_host_frame(sb_graphics_t *graphics) {
+    if (!graphics || SDL_SetRenderTarget(graphics->renderer, NULL) != 0 ||
+        SDL_RenderSetLogicalSize(graphics->renderer, graphics->host_width,
+                                 graphics->host_height) != 0) return false;
+    graphics->width = graphics->host_width;
+    graphics->height = graphics->host_height;
+    sb_graphics_camera_reset(graphics);
+    sb_graphics_sprite_tint_reset(graphics);
+    return sb_graphics_clip_reset(graphics);
+}
+
+bool sb_graphics_set_canvas(sb_graphics_t *graphics, int width, int height) {
+    if (!graphics || width <= 0 || height <= 0) return false;
+    SDL_Texture *frame = SDL_CreateTexture(graphics->renderer, SDL_PIXELFORMAT_RGBA8888,
+                                          SDL_TEXTUREACCESS_TARGET, width, height);
+    if (!frame) return false;
+    if (SDL_SetTextureBlendMode(frame, SDL_BLENDMODE_NONE) != 0 ||
+        SDL_SetTextureScaleMode(frame, SDL_ScaleModeNearest) != 0 ||
+        !sb_graphics_begin_host_frame(graphics)) {
+        SDL_DestroyTexture(frame);
         return false;
     }
+    SDL_Texture *old = graphics->game_frame;
+    int old_w = graphics->canvas_width, old_h = graphics->canvas_height;
+    graphics->game_frame = frame;
+    graphics->canvas_width = width; graphics->canvas_height = height;
+    bool ok = sb_graphics_begin_game_frame(graphics);
+    bool host_ok = sb_graphics_begin_host_frame(graphics);
+    if (!ok || !host_ok) {
+        graphics->game_frame = old;
+        graphics->canvas_width = old_w; graphics->canvas_height = old_h;
+        SDL_DestroyTexture(frame);
+        return false;
+    }
+    SDL_DestroyTexture(old);
+    return true;
+}
 
+bool sb_graphics_begin_game_frame(sb_graphics_t *graphics) {
+    if (!graphics || !graphics->game_frame ||
+        SDL_SetRenderTarget(graphics->renderer, graphics->game_frame) != 0 ||
+        SDL_RenderSetLogicalSize(graphics->renderer, 0, 0) != 0 ||
+        SDL_RenderSetViewport(graphics->renderer, NULL) != 0 ||
+        SDL_RenderSetScale(graphics->renderer, 1, 1) != 0) return false;
+    graphics->width = graphics->canvas_width;
+    graphics->height = graphics->canvas_height;
     sb_graphics_camera_reset(graphics);
     sb_graphics_sprite_tint_reset(graphics);
     if (!sb_graphics_clip_reset(graphics) ||
-        SDL_SetRenderDrawColor(graphics->renderer, 0, 0, 0, 255) != 0) {
-        return false;
-    }
-
+        SDL_SetRenderDrawColor(graphics->renderer, 0, 0, 0, 255) != 0) return false;
     return SDL_RenderClear(graphics->renderer) == 0;
 }
 
 bool sb_graphics_show_game_frame(sb_graphics_t *graphics) {
-    if (!graphics || !graphics->game_frame) return false;
-
-    if (SDL_SetRenderTarget(graphics->renderer, NULL) != 0) {
-        return false;
+    if (!graphics || !graphics->game_frame ||
+        SDL_SetRenderTarget(graphics->renderer, NULL) != 0 ||
+        SDL_RenderSetLogicalSize(graphics->renderer, 0, 0) != 0 ||
+        SDL_RenderSetViewport(graphics->renderer, NULL) != 0 ||
+        SDL_RenderSetScale(graphics->renderer, 1, 1) != 0 ||
+        !sb_graphics_clip_reset(graphics)) return false;
+    int output_w, output_h;
+    if (SDL_GetRendererOutputSize(graphics->renderer, &output_w, &output_h) != 0 ||
+        output_w <= 0 || output_h <= 0) return false;
+    int w = graphics->canvas_width, h = graphics->canvas_height;
+    int scale = output_w / w;
+    if (output_h / h < scale) scale = output_h / h;
+    SDL_Rect dest = {0, 0, w, h};
+    if (scale >= 1) { dest.w = w * scale; dest.h = h * scale; }
+    else if ((int64_t)output_w * h <= (int64_t)output_h * w) {
+        dest.w = output_w; dest.h = (int)((int64_t)h * output_w / w);
+    } else {
+        dest.h = output_h; dest.w = (int)((int64_t)w * output_h / h);
     }
-
-    sb_graphics_camera_reset(graphics);
-    sb_graphics_sprite_tint_reset(graphics);
-    if (!sb_graphics_clip_reset(graphics) ||
-        SDL_SetRenderDrawColor(graphics->renderer, 0, 0, 0, 255) != 0 ||
-        SDL_RenderClear(graphics->renderer) != 0) {
-            return false;
-        }
-
-        return SDL_RenderCopy(graphics->renderer, graphics->game_frame, NULL, NULL) == 0;
+    if (dest.w < 1) dest.w = 1;
+    if (dest.h < 1) dest.h = 1;
+    dest.x = (output_w - dest.w) / 2; dest.y = (output_h - dest.h) / 2;
+    bool ok = SDL_SetRenderDrawColor(graphics->renderer, 0, 0, 0, 255) == 0 &&
+              SDL_RenderClear(graphics->renderer) == 0 &&
+              SDL_RenderCopy(graphics->renderer, graphics->game_frame, NULL, &dest) == 0;
+    /* Overlays use host coordinates; retained game pixels stay untouched. */
+    bool host_ok = sb_graphics_begin_host_frame(graphics);
+    return ok && host_ok;
 }
 
 void sb_graphics_present(sb_graphics_t *graphics) {

@@ -14,6 +14,13 @@ header. Future language adapters may call the same C services.
 The host initializes SDL's video subsystem, creates a graphics context, and
 presents the frame. Game code does not own or access an SDL renderer.
 
+## Logical canvas
+
+Cartridges may declare a fixed canvas in root `console.json`; existing cartridges
+retain 1280×720. See [declaration, supported sizes and scaling](canvas.md).
+Host UI uses a separate canvas. `sugarbee.width()` and `sugarbee.height()` always
+report the game's dimensions, including outside `draw()`.
+
 ## Current Lua functions
 
 All coordinates and dimensions are in **logical pixels**. Color arguments
@@ -26,6 +33,7 @@ below. Text, rectangles, lines, circles and triangles are unaffected by sprite t
 
 | Lua call | Behavior |
 | --- | --- |
+| `sugarbee.width()` / `sugarbee.height()` | Return the fixed game canvas dimensions; no arguments. |
 | `sugarbee.sprite_tint(r, g, b [, a])` | Set sprite RGB tint and optional opacity. |
 | `sugarbee.sprite_tint_reset()` | Restore white tint and full opacity. |
 | `sugarbee.camera(x, y)` | Replace the camera position used by drawing. |
@@ -224,16 +232,9 @@ uses 8 animation frames per second atop SugarBee's fixed 60 Hz simulation.
 
 ## Logical resolution and scaling
 
-The current runtime uses a **fixed 1280 x 720 logical size**, with SDL's logical
-rendering scale. Games cannot yet request an alternate viewport or integer/
-nearest-neighbor scaling policy. The agreed **future** design is:
-
-- Default to 1280 x 720 when the cartridge does not specify a viewport.
-- Permit other logical sizes (such as 320 x 200 or 640 x 480).
-- Preserve the aspect ratio and use black borders rather than stretching.
-- Offer suitable scaling modes for pixel art.
-
-These features are planned, not implemented by this changeset.
+See the [canvas contract](canvas.md) for root `console.json`, supported sizes,
+integer enlargement and proportional downscale fallback. Host UI is separate
+from the game canvas. Window size and physical display mode are unchanged.
 
 ## Internal C interface
 
@@ -242,7 +243,15 @@ current declarations. Its operations are:
 
 - `sb_graphics_create()` / `sb_graphics_destroy()` — manage a context owning an
   SDL2 window and renderer. SDL video must be initialized first.
-- `sb_graphics_width()` / `sb_graphics_height()` — query logical dimensions.
+- `sb_graphics_width()` / `sb_graphics_height()` — query the active drawing
+  canvas (game or host).
+- `sb_graphics_canvas_width()` / `sb_graphics_canvas_height()` — query the fixed
+  game canvas independently of the active drawing target.
+- `sb_graphics_set_canvas()` — replace and initialize the retained game texture.
+- `sb_graphics_begin_game_frame()` / `sb_graphics_begin_host_frame()` — select
+  the appropriate target, dimensions and default drawing state. Game begin clears.
+- `sb_graphics_show_game_frame()` — scale the retained game image onto the output,
+  then restore host coordinates for overlays.
 - `sb_graphics_clear()`, `sb_graphics_rect()`, `sb_graphics_text()` — draw in
   logical coordinates, without depending on Lua.
 - `sb_graphics_texture_rgba()` — upload tightly packed RGBA8 pixels; copies the

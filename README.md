@@ -40,6 +40,8 @@ See [dependencies](docs/development/dependencies.md) and
 - [Cartridge-local Lua modules](docs/api/modules.md)
 - [Multi-file modules demo](examples/modules-demo/README.md)
 - [2D graphics API](docs/api/graphics.md)
+- [Canvas declaration and scaling](docs/api/canvas.md)
+- [Canvas demo](examples/canvas-demo/README.md)
 - [Filled triangle demo](examples/triangle-demo/README.md)
 - [Circle primitives demo](examples/circle-demo/README.md)
 - [Line primitive demo](examples/line-demo/README.md)

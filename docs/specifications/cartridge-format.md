@@ -45,8 +45,15 @@ the game. `sbee-pack` generates a secure random UUIDv4 unless `--uuid` is
 provided. Developers must presently retain the value and pass `--uuid` on
 subsequent builds. The future game manifest should persist it automatically.
 
+## Optional canvas declaration
+
+Root `console.json` declares the game canvas before Lua starts. It is a bounded
+JSON asset, not a new binary header version or a general game manifest. See
+[the canvas contract](../api/canvas.md) for exact fields and supported pairs.
+Absent declarations preserve the default canvas and existing cartridges.
+
 ## Planned extensibility
 
 A manifest in the ZIP will eventually describe execution runtime (`lua`
-initially), entry point, API version, logical resolution, and optional
+initially), entry point, API version, and optional
 capabilities. Do not interpret this planned structure as an implemented feature.

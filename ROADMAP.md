@@ -131,43 +131,21 @@ and Exit to system checks passed. Desktop and Pi acceptance are complete.
 Generic data access and diagnostics remain separately scoped discussions.
 No budget, voice-count, mixing-gain or sample-rate increase is proposed.
 
-## Next checkpoint: logical canvas declaration and scaling
+## Current checkpoint: logical canvas declaration and scaling
 
-Agreed on 2026-11-18; planning only, not implemented. Baseline `3e3dc08`
-records completed desktop and Pi acceptance for cartridge-local modules.
-
-An optional cartridge-root `console.json`, read before `main.lua`, declares
-the game canvas:
-
-```json
-{"video": {"width": 300, "height": 200}}
-```
-
-Without this file, existing cartridges retain the 1280×720 canvas. When
-`video` is present, both dimensions are required and must match one supported
-pair. Malformed declarations and unsupported pairs produce clear errors rather
-than silently selecting a different canvas.
-
-| Supported canvas | Integer scale on 1280×720 output | Displayed image |
-| --- | --- | --- |
-| 300×200 | 3× | 900×600 |
-| 320×240 | 3× | 960×720 |
-| 640×360 | 2× | 1280×720 |
-| 960×720 | 1× | 960×720 |
-| 1280×720 (default) | 1× | 1280×720 |
-
-The canvas is fixed for the cartridge session and defines drawing coordinates,
-clip bounds and camera coordinate use. It does not request a physical display
-mode or desktop-window size. The host selects the largest integer enlargement
-that fits its actual output, with nearest-neighbor sampling, centered black
-borders and preserved aspect ratio. No stretching or cropping. If 1× cannot
-fit, use proportional downscaling; some source pixels will necessarily be lost.
-Scaling is initially an engine-wide policy, not a cartridge option.
-
-Include Lua dimension queries and clean restoration across cartridge exit,
-failure and relaunch. Launcher, pause and Guru screens retain a separate,
-readable host canvas. Query names, parser limits and remaining validation
-details belong to implementation design; no new runtime behavior is claimed.
+Implemented against `36ba975`; desktop accepted, Pi acceptance pending.
+Optional bounded root `console.json` selects one of five fixed game canvases;
+missing declarations retain 1280×720. Added `sugarbee.width()` / `height()`.
+Host presentation uses automatic integer enlargement, black borders and
+proportional downscaling when needed, with separate readable host UI and
+cartridge lifecycle restoration. No window-size or physical-mode request.
+See the [contract](docs/api/canvas.md) and [manual demo](examples/canvas-demo/README.md).
+Automated desktop validation: 162/162 serial CTests passed; native configuration
+and canvas lifecycle checks passed UBSan. The packaged demo stayed running in
+a two-second dummy-driver check with no reported Guru error (harness-terminated).
+On 2026-11-18, the user confirmed all desktop manual checks passed: canvas
+appearance, Pause/resume, Guru recovery, relaunch, Pong/Pac-Man regressions
+and Exit to system. Pi acceptance remains pending.
 
 ### Deferred options-menu ideas
 
@@ -515,7 +493,8 @@ Save validation does not establish hardware power-loss durability.
 Streaming, resonance, broader synth pitch, expanded music formats, MIDI,
 master/group controls and additional game labs are not RC prerequisites.
 Actual OS shutdown, bootable appliance images, update/recovery deployment,
-analog input and configurable logical resolutions remain separate work.
+analog input remain separate work. Fixed canvas declaration/scaling is covered
+by the current checkpoint above.
 Persistent logging is deferred unless a concrete need emerges.
 
 Further features require a small agreed scope, automated checks and appropriate

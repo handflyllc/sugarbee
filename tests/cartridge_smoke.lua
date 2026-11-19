@@ -132,6 +132,28 @@ local service_api, service_control = services.new(scenario, function(path)
 end)
 sugarbee = setmetatable(service_api, services.unsupported('sugarbee'))
 sugarbee.audio = setmetatable({}, services.unsupported('sugarbee.audio'))
+
+-- JSON validation belongs to the native loader. Require explicit trusted
+-- scenario metadata for declared canvases rather than inventing dimensions.
+local declared_canvas = io.open(game_dir .. '/console.json', 'rb')
+if declared_canvas then
+    declared_canvas:close()
+    assert(scenario.canvas, 'console.json needs scenario.canvas metadata; runner does not parse JSON')
+end
+local canvas = scenario.canvas or {width=1280, height=720}
+local supported_canvas = {[300]=200, [320]=240, [640]=360, [960]=720, [1280]=720}
+assert(type(canvas)=='table' and type(canvas.width)=='number' and
+       type(canvas.height)=='number' and supported_canvas[canvas.width]==canvas.height,
+       'scenario.canvas must specify a supported width/height pair')
+function sugarbee.width(...)
+    assert(select('#',...)==0, 'width expects no arguments')
+    return canvas.width
+end
+function sugarbee.height(...)
+    assert(select('#',...)==0, 'height expects no arguments')
+    return canvas.height
+end
+
 -- Synth stubs supply execution coverage only; test_lua_synth checks the real
 -- argument contract. No sound or timing is modeled by this smoke runner.
 sugarbee.synth = {

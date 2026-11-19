@@ -22,6 +22,7 @@
 
 /* Cartridge asset readers and PNG decoding are outside the Lua adapter. */
 #include "sb_assets.h"
+#include "sb_console_config.h"
 #include "sb_lua_modules.h"
 #include "sb_png.h"
 
@@ -618,8 +619,22 @@ static int l_sugarbee_load_save(lua_State *L) {
     return 2;
 }
 
+/* Stack: no arguments; one integer result, independent of host drawing state. */
+static int l_sugarbee_width(lua_State *L) {
+    if (lua_gettop(L) != 0) return luaL_error(L, "width expects no arguments");
+    lua_pushinteger(L, sb_graphics_canvas_width(g_engine.graphics));
+    return 1;
+}
+static int l_sugarbee_height(lua_State *L) {
+    if (lua_gettop(L) != 0) return luaL_error(L, "height expects no arguments");
+    lua_pushinteger(L, sb_graphics_canvas_height(g_engine.graphics));
+    return 1;
+}
+
 void register_sugarbee_api(lua_State* L) {
     lua_newtable(L);
+    lua_pushcfunction(L, l_sugarbee_width); lua_setfield(L, -2, "width");
+    lua_pushcfunction(L, l_sugarbee_height); lua_setfield(L, -2, "height");
     lua_pushcfunction(L, l_sugarbee_cls);   lua_setfield(L, -2, "cls");
     lua_pushcfunction(L, l_sugarbee_sprite_tint); lua_setfield(L, -2, "sprite_tint");
     lua_pushcfunction(L, l_sugarbee_sprite_tint_reset); lua_setfield(L, -2, "sprite_tint_reset");
@@ -852,6 +867,17 @@ static bool start_cartridge(const char *filepath) {
     /* A new session must not overwrite an existing Lua state. */
     if (!filepath || g_engine.L) return false;
 
+    int width, height; char config_error[256];
+    if (!sb_console_config_load(filepath, &width, &height, config_error, sizeof(config_error))) {
+        trigger_guru_meditation(0x00000004, "INVALID CONSOLE CONFIGURATION", config_error, NULL);
+        end_cartridge();
+        return false;
+    }
+    if (!sb_graphics_set_canvas(g_engine.graphics, width, height)) {
+        trigger_guru_meditation(0x00000004, "CANVAS INITIALIZATION FAILED", SDL_GetError(), NULL);
+        end_cartridge();
+        return false;
+    }
     sb_audio_session_begin(g_engine.audio);
     g_engine.L = luaL_newstate();
     if (!g_engine.L) {
@@ -860,6 +886,7 @@ static bool start_cartridge(const char *filepath) {
             "LUA INITIALIZATION FAILED",
             "Could not create a Lua state for the cartridge.",
             NULL);
+        end_cartridge();
         return false;
     }
 
@@ -1282,8 +1309,8 @@ void main_loop(void) {
          * failure. Host screens must never inherit cartridge drawing state. */
         sb_graphics_camera_reset(g_engine.graphics);
         sb_graphics_sprite_tint_reset(g_engine.graphics);
-        if (!sb_graphics_clip_reset(g_engine.graphics)) {
-            SDL_Log("SugarBee: could not reset clip: %s", SDL_GetError());
+        if (!sb_graphics_begin_host_frame(g_engine.graphics)) {
+            SDL_Log("SugarBee: could not select host canvas: %s", SDL_GetError());
             g_engine.is_running=false;
             break;
         }
@@ -1406,6 +1433,16 @@ static void end_cartridge(void) {
     sb_lua_music_destroy(g_engine.lua_music);
     g_engine.lua_music = NULL;
     sb_graphics_clear_cartridge_textures(g_engine.graphics);
+    if (g_engine.graphics) {
+        bool reset = sb_graphics_begin_host_frame(g_engine.graphics);
+        if (sb_graphics_canvas_width(g_engine.graphics) != SB_DEFAULT_WIDTH ||
+            sb_graphics_canvas_height(g_engine.graphics) != SB_DEFAULT_HEIGHT)
+            reset = sb_graphics_set_canvas(g_engine.graphics, SB_DEFAULT_WIDTH, SB_DEFAULT_HEIGHT) && reset;
+        if (!reset) {
+            SDL_Log("SugarBee: could not restore host canvas: %s", SDL_GetError());
+            g_engine.is_running = false;
+        }
+    }
 
     g_engine.cart_initialized = false;
     g_engine.cart_loaded = false;

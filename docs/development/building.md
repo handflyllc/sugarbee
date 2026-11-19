@@ -190,8 +190,9 @@ cartridges are manual checks, not CTest entries.
 - The bounded ZIP reader uses minizip 1.x against the complete `.vcart` with
   its 64-byte prefix; this has been tested on desktop Linux, but still needs
   verification on the Raspberry Pi and with additional minizip versions.
-- Runtime graphics are currently fixed at 1280×720. Manifest-defined logical
-  resolutions and scaling modes are planned, not implemented.
+- Game canvases default to 1280×720; optional root `console.json` selects a
+  supported fixed size. See [canvas declaration/scaling](../api/canvas.md).
+  Window-size selection and runtime canvas changes are not exposed.
 - The imported historical documents contain design ideas, not a verified
   description of the current software.
 

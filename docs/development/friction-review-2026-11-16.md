@@ -212,3 +212,10 @@ games as future visual acceptance examples when their sources are available.
   `SDL_VIDEODRIVER=dummy`. A future repair must turn this into a safe result.
 - Markdown links and whitespace were checked after editing. Source report content
   was retained verbatim apart from final-newline normalization.
+
+## Logical-canvas follow-up (based on 36ba975)
+
+Entries 4 and the dimension-query portion of 17 now have an implementation:
+[canvas declaration/scaling and Lua queries](../api/canvas.md). The user confirmed
+all desktop checks passed on 2026-11-18; Pi acceptance remains pending. Text metrics remain a separate discussion;
+this does not change sprite source-crop behavior (entry 22) or window sizing.

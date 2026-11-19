@@ -26,9 +26,17 @@ typedef uint32_t sb_texture_t;
 sb_graphics_t *sb_graphics_create(const char *title, int width, int height);
 void sb_graphics_destroy(sb_graphics_t *graphics);
 
-/* Logical (game) dimensions, which may differ from the display dimensions. */
+/* Dimensions of the currently selected drawing canvas (game or host). */
 int sb_graphics_width(const sb_graphics_t *graphics);
 int sb_graphics_height(const sb_graphics_t *graphics);
+
+/* Fixed cartridge canvas; replacement is allocated before releasing the old frame.
+ * Selects the host on success. Internal callers may use any positive dimensions. */
+bool sb_graphics_set_canvas(sb_graphics_t *graphics, int width, int height);
+int sb_graphics_canvas_width(const sb_graphics_t *graphics);
+int sb_graphics_canvas_height(const sb_graphics_t *graphics);
+/* Select the host canvas without clearing the window. */
+bool sb_graphics_begin_host_frame(sb_graphics_t *graphics);
 
 /* Multiplicative sprite-only RGB/alpha modulation, 0..255 per channel.
  * Replaces state; reset selects white/full opacity. Pixel data is unchanged.

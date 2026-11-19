@@ -133,3 +133,17 @@ falls back to the interpreter's package search. Inputs are trusted local files;
 symlink confinement, ZIP/CRC failures, allocation failures, native compilation
 cost and instruction budgets are not modeled. Use native module tests for those
 engine contracts. This does not make the runner a security sandbox.
+
+## Canvas metadata
+
+The runner implements zero-argument `sugarbee.width()` / `height()` queries.
+Cartridges without configuration default to 1280×720. For a cartridge containing
+`console.json`, provide `canvas={width=300,height=200}` in the trusted scenario
+(or another supported pair). Missing metadata is an explicit harness error.
+This follows the music metadata approach: the runner does not parse JSON, test
+CRC/size limits, verify metadata matches the file, render or scale pixels.
+Native tests remain authoritative. Synthetic canvas metadata is also permitted.
+
+```sh
+lua5.4 tests/cartridge_smoke.lua examples/canvas-demo 1 1 tests/canvas_scenario.lua
+```

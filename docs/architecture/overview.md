@@ -133,10 +133,13 @@ new commands and fades playback out; native teardown releases cartridge audio
 without waiting for loops or notes to finish. Failed device initialization permits
 silent gameplay. There is no automatic device reconnection or streaming.
 
+Cartridge-root `console.json` now selects a fixed game canvas before Lua starts.
+The backend retains it at native logical dimensions, then fits it to the renderer
+output with integer enlargement or proportional downscaling. Host UI retains
+its own logical canvas. See the [canvas contract](../api/canvas.md).
+
 ## Agreed design goals that are not yet features
 
-- Manifest-defined logical resolutions (default 1280 x 720), aspect-preserving
-  scaling, and pixel-art integer scaling.
 - A full input event router, analog controls, and lossless input-event queues.
   Basic button-press delivery across zero/multiple simulation updates works.
 - A minimal Linux appliance image and a development image from shared build

@@ -233,9 +233,9 @@ if(SUGARBEE_BUILD_HOST)
     find_package(PNG REQUIRED)
 
     # Cartridge reads and PNG decoding are independent of SDL and Lua.
-    add_library(sugarbee_assets STATIC src/sb_assets.c src/sb_png.c)
+    add_library(sugarbee_assets STATIC src/sb_assets.c src/sb_png.c src/sb_console_config.c)
     target_include_directories(sugarbee_assets PUBLIC "${PROJECT_SOURCE_DIR}/include")
-    target_link_libraries(sugarbee_assets PUBLIC sugarbee_vcart PkgConfig::MINIZIP PNG::PNG)
+    target_link_libraries(sugarbee_assets PUBLIC sugarbee_vcart PkgConfig::MINIZIP PNG::PNG PRIVATE sugarbee_yyjson)
     sugarbee_warnings(sugarbee_assets)
 
     # SDL is confined to the backend; games and their language adapters use
@@ -717,6 +717,23 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
         set_tests_properties(lua_close_${close_case} PROPERTIES TIMEOUT 5)
     endforeach()
 
+    add_executable(test_console_config tests/test_console_config.c)
+    target_link_libraries(test_console_config PRIVATE sugarbee_assets)
+    sugarbee_warnings(test_console_config)
+    add_test(NAME console_config COMMAND test_console_config)
+    if(SUGARBEE_BUILD_PACKER)
+        add_executable(test_canvas tests/test_canvas.c)
+        target_link_libraries(test_canvas PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+        sugarbee_warnings(test_canvas)
+        add_test(NAME canvas_pack COMMAND "${CMAKE_COMMAND}"
+            "-DPACKER=$<TARGET_FILE:sbee-pack>" "-DROOT=${PROJECT_BINARY_DIR}/canvas-fixtures"
+            -P "${PROJECT_SOURCE_DIR}/tests/canvas_pack.cmake")
+        set_tests_properties(canvas_pack PROPERTIES FIXTURES_SETUP canvas TIMEOUT 10)
+        add_test(NAME canvas_lifecycle COMMAND test_canvas "${PROJECT_BINARY_DIR}/canvas-fixtures")
+        set_tests_properties(canvas_lifecycle PROPERTIES FIXTURES_REQUIRED canvas TIMEOUT 15
+            ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy")
+    endif()
+
     add_executable(test_lua_graphics_bounds tests/test_lua_graphics_bounds.c)
     target_link_libraries(test_lua_graphics_bounds PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
     sugarbee_warnings(test_lua_graphics_bounds)
@@ -908,6 +925,11 @@ if(BUILD_TESTING)
     endif()
 
     if(LUA54_INTERPRETER_COMPATIBLE)
+        add_test(NAME cartridge_smoke_canvas-demo COMMAND "${LUA54_INTERPRETER}"
+            "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua"
+            "${PROJECT_SOURCE_DIR}/examples/canvas-demo" 1 1
+            "${PROJECT_SOURCE_DIR}/tests/canvas_scenario.lua")
+        set_tests_properties(cartridge_smoke_canvas-demo PROPERTIES TIMEOUT 5)
         if(SUGARBEE_BUILD_PACKER)
             add_test(NAME smoke_modules_model COMMAND "${LUA54_INTERPRETER}"
                 "${PROJECT_SOURCE_DIR}/tests/test_smoke_modules.lua"
