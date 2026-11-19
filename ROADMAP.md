@@ -4,6 +4,17 @@ Reviewed 2026-11-16 against `7085043` (runtime `4d7ca11`), the updated
 SugarBeats passdown and five-game friction report. This is a revisable plan,
 not a release schedule.
 
+## Active checkpoint: rectangle and text opacity
+
+Authorized after `dd650c5`: optional final per-call alpha on rect/print,
+0..255 with omitted/nil defaulting to 255, existing argument positions and
+opaque C entry points preserved. Only rectangles/text are in scope. Native
+pixel and production Lua checks and an [opacity demo](examples/opacity-demo/README.md)
+are implemented; 180/180 serial tests and native pixel UBSan checks passed.
+The user confirmed all desktop manual checks passed on 2026-11-19.
+Pi validation pending. Friction dispositions
+are reconciled with completed checkpoints; the original report is preserved.
+
 ## Completed checkpoint: persistent packaging identity
 
 After data-reader acceptance at `091c7de`, the user approved a bounded packager

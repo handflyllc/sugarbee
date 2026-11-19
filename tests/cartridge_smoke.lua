@@ -256,7 +256,9 @@ function sugarbee.line(...)
     counts.draw_calls=counts.draw_calls+1
 end
 
-function sugarbee.rect(x, y, w, h, r, g, b, filled)
+function sugarbee.rect(x, y, w, h, r, g, b, filled, alpha)
+    alpha=opt_int("rect",9,alpha,255)
+    assert(alpha>=0 and alpha<=255,"rect: alpha must be in 0..255")
     check_int("rect", 1, x); check_int("rect", 2, y)
     check_int("rect", 3, w); check_int("rect", 4, h)
     opt_int("rect", 5, r, 255); opt_int("rect", 6, g, 255); opt_int("rect", 7, b, 255)
@@ -284,7 +286,9 @@ function sugarbee.measure_text(...)
     return width,height
 end
 
-function sugarbee.print(text, x, y, r, g, b, scale)
+function sugarbee.print(text, x, y, r, g, b, scale, alpha)
+    alpha=opt_int("print",8,alpha,255)
+    assert(alpha>=0 and alpha<=255,"print: alpha must be in 0..255")
     check_string("print", 1, text)
     check_int("print", 2, x); check_int("print", 3, y)
     opt_int("print", 4, r, 255); opt_int("print", 5, g, 255); opt_int("print", 6, b, 255)

@@ -106,6 +106,14 @@ bool sb_graphics_measure_text(const char *text, size_t length, int scale,
 void sb_graphics_text(sb_graphics_t *graphics, const char *text, int x, int y,
                       uint8_t r, uint8_t g, uint8_t b, int scale);
 
+/* Per-call opacity, ordinary source-over blend. Zero draws nothing; 255 is
+ * opaque. Camera/clip apply; sprite tint does not. Legacy entry points remain. */
+void sb_graphics_rect_alpha(sb_graphics_t *graphics, int x, int y, int width,
+                           int height, uint8_t r, uint8_t g, uint8_t b,
+                           bool filled, uint8_t alpha);
+void sb_graphics_text_alpha(sb_graphics_t *graphics, const char *text, int x, int y,
+                           uint8_t r, uint8_t g, uint8_t b, int scale, uint8_t alpha);
+
 /*
  * Upload packed RGBA8 pixels, row-major, four bytes per pixel (R,G,B,A).
  * Length must equal width * height * 4.  Pixels are copied; caller keeps

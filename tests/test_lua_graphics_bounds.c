@@ -52,11 +52,41 @@ int main(void) {
         "{imax+1,0,1,1},{0,0,1,1,5},{0,0,1}}) do "
         "assert(not pcall(clip,table.unpack(args))) end; "
         "assert(not pcall(clip_reset,nil))") == LUA_OK);
+    CHECK(luaL_dostring(L,
+        "for _,a in ipairs({-1,256,0.5,math.huge,false,2147483648}) do "
+        "assert(not pcall(rect,0,0,1,1,255,255,255,true,a)); "
+        "assert(not pcall(text,'F',0,0,255,255,255,1,a)) end; "
+        "for _,a in ipairs({0,128,255}) do "
+        "assert(select('#',rect(0,0,1,1,255,255,255,true,a))==0); "
+        "assert(select('#',text('F',0,0,255,255,255,1,a))==0) end; "
+        "rect(0,0,1,1,255,255,255,true,nil); text('F',0,0,255,255,255,1,nil)"
+    )==LUA_OK);
     SDL_Renderer *renderer=SDL_GetRenderer(SDL_GetWindowFromID(1));
     SDL_Rect clip; SDL_RenderGetClipRect(renderer,&clip);
     CHECK(clip.x==2 && clip.y==3 && clip.w==4 && clip.h==5);
     CHECK(luaL_dostring(L,"assert(select('#',clip_reset())==0)")==LUA_OK);
     CHECK(!SDL_RenderIsClipEnabled(renderer));
+    /* Verify bindings actually forward opacity, including nil default and errors. */
+    sb_graphics_clear(g_engine.graphics,0,0,0);
+    CHECK(luaL_dostring(L,
+        "rect(0,0,8,8,255,255,255,true,128); "
+        "assert(not pcall(rect,0,0,8,8,0,0,0,true,256))")==LUA_OK);
+    {
+        Uint8 p[4]; SDL_Rect a={1,5,1,1};
+        CHECK(SDL_RenderReadPixels(renderer,&a,SDL_PIXELFORMAT_RGBA32,p,4)==0);
+        CHECK(p[0]>=127 && p[0]<=128);
+        CHECK(luaL_dostring(L,"text('F',0,0,0,0,0,1,0)")==LUA_OK);
+        CHECK(SDL_RenderReadPixels(renderer,&a,SDL_PIXELFORMAT_RGBA32,p,4)==0);
+        CHECK(p[0]>=127 && p[0]<=128);
+        sb_graphics_clear(g_engine.graphics,0,0,0);
+        CHECK(luaL_dostring(L,"text('F',0,0,255,255,255,1,128)")==LUA_OK);
+        CHECK(SDL_RenderReadPixels(renderer,&a,SDL_PIXELFORMAT_RGBA32,p,4)==0);
+        CHECK(p[0]>=127 && p[0]<=128);
+        CHECK(luaL_dostring(L,"text('F',0,0,255,255,255,1,nil)")==LUA_OK);
+        CHECK(SDL_RenderReadPixels(renderer,&a,SDL_PIXELFORMAT_RGBA32,p,4)==0);
+        CHECK(p[0]==255);
+    }
+
     sb_graphics_clear(g_engine.graphics,0,0,0);
     CHECK(luaL_dostring(L,
         "assert(select('#',camera(10.0,-20.0))==0); "

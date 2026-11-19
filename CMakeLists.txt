@@ -805,6 +805,11 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     add_test(NAME graphics_clip COMMAND test_clip)
     set_tests_properties(graphics_clip PROPERTIES ENVIRONMENT "SDL_VIDEODRIVER=dummy" TIMEOUT 10)
 
+    add_executable(test_opacity tests/test_opacity.c)
+    target_link_libraries(test_opacity PRIVATE sugarbee_graphics PkgConfig::SDL2)
+    sugarbee_warnings(test_opacity)
+    add_test(NAME graphics_opacity COMMAND test_opacity)
+    set_tests_properties(graphics_opacity PROPERTIES ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy")
     add_executable(test_font tests/test_font.c)
     target_link_libraries(test_font PRIVATE sugarbee_graphics PkgConfig::SDL2)
     sugarbee_warnings(test_font)
@@ -1030,7 +1035,7 @@ if(BUILD_TESTING)
                 "${PROJECT_SOURCE_DIR}/tests/save-lab/test.lua"
                 "${PROJECT_SOURCE_DIR}/examples/save-lab/main.lua")
         set_tests_properties(save_lab_behavior PROPERTIES TIMEOUT 5)
-        foreach(cartridge IN ITEMS graphics-demo moving-box sprite-demo
+        foreach(cartridge IN ITEMS opacity-demo graphics-demo moving-box sprite-demo
                 asset-demo sprite-sheet-demo pong-lab invaders-lab pacman-demo)
             add_test(NAME cartridge_smoke_${cartridge}
                 COMMAND "${LUA54_INTERPRETER}"

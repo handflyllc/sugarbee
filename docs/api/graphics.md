@@ -25,8 +25,7 @@ report the game's dimensions, including outside `draw()`.
 
 All coordinates and dimensions are in **logical pixels**. Color arguments
 are integer red, green, and blue components; use values from 0 to 255. The
-current Lua bindings convert values to 8-bit channels. Rectangles and text are
-opaque. RGBA sprite textures blend partial alpha with
+current Lua bindings convert values to 8-bit channels. Rectangles and text accept optional per-call alpha, defaulting to opaque. RGBA sprite textures blend partial alpha with
 the pixels already drawn: alpha 0 is transparent, 255 is opaque, and intermediate
 values are translucent. This per-pixel alpha combines with optional sprite tint opacity as described
 below. Text, rectangles, lines, circles and triangles are unaffected by sprite tint.
@@ -45,9 +44,9 @@ below. Text, rectangles, lines, circles and triangles are unaffected by sprite t
 | `sugarbee.circle(cx, cy, radius [, r, g, b])` | Draw the one-pixel boundary of a disk. |
 | `sugarbee.circle_fill(cx, cy, radius [, r, g, b])` | Draw a solid disk. |
 | `sugarbee.line(x1, y1, x2, y2 [, r, g, b])` | Draw an opaque one-pixel line, including both endpoints. |
-| `sugarbee.rect(x, y, w, h, r, g, b, filled)` | Draw a rectangle. Color channels default to 255. `filled` is false when omitted or `false`. |
+| `sugarbee.rect(x, y, w, h, r, g, b, filled [, alpha])` | Draw a rectangle. Color channels default to 255. `filled` is false when omitted or `false`. |
 | `sugarbee.measure_text(text [, scale])` | Return character-cell width and height without drawing. |
-| `sugarbee.print(text, x, y, r, g, b, scale)` | Draw text with the built-in 8x8 font. Color defaults to white. `scale` is an optional integer scale factor, defaulting to 1; values of 0 or less draw nothing. |
+| `sugarbee.print(text, x, y, r, g, b, scale [, alpha])` | Draw text with the built-in 8x8 font. Color defaults to white. `scale` is an optional integer scale factor, defaulting to 1; values of 0 or less draw nothing. |
 | `sugarbee.texture_rgba(width, height, bytes)` | Upload packed RGBA8 bytes; returns a texture handle. |
 | `sugarbee.texture_load(path)` | Decode a PNG from the active `.vcart` and return a texture handle. |
 | `sugarbee.sprite(handle, x, y)` | Draw a texture at native pixel size in logical coordinates. |
@@ -133,6 +132,31 @@ function draw()
     sugarbee.print("SUGARBEE", 60, 150, 255, 255, 255, 2)
 end
 ```
+
+### Rectangle and text opacity
+
+The final `alpha` argument is an integer in **0..255**; omitted or `nil` means
+255. Zero draws nothing; intermediate values use ordinary source-over blending
+with pixels already drawn. Invalid alpha raises a Lua error before drawing,
+even when the geometry would be invisible. Existing RGB conversion and other
+argument behavior remain unchanged. Calls return no values.
+
+Opacity is per call, independent of sprite tint. Camera and clip still apply;
+text measurement, glyphs, scaling and line spacing are unchanged. Translucent
+rectangle borders cover corners once, including positive one-pixel dimensions.
+Nonpositive dimensions draw nothing in the translucent path; opaque calls retain
+the existing SDL rectangle behavior. Drawing order matters for overlapping calls.
+Renderer blend mode is restored after the call; subsequent opaque drawing and
+host menus do not inherit opacity. No alpha was added to other primitives.
+
+```lua
+sugarbee.rect(20, 20, 280, 80, 0, 0, 0, true, 160)
+sugarbee.print("Welcome aboard.", 30, 30) -- opaque text
+```
+
+Native code can use `sb_graphics_rect_alpha()` and `sb_graphics_text_alpha()`;
+existing C signatures remain available with opaque rendering. See the
+[opacity demo and validation](../../examples/opacity-demo/README.md).
 
 ## Drawing order and viewport boundaries
 

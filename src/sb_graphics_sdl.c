@@ -201,6 +201,34 @@ void sb_graphics_rect(sb_graphics_t *graphics, int x, int y, int width,
     }
 }
 
+/* Disjoint border strips prevent corners blending twice, including 1px shapes. */
+void sb_graphics_rect_alpha(sb_graphics_t *graphics, int x, int y, int width,
+                           int height, uint8_t r, uint8_t g, uint8_t b,
+                           bool filled, uint8_t alpha) {
+    if (!graphics || alpha == 0) return;
+    if (alpha == 255) {
+        sb_graphics_rect(graphics, x, y, width, height, r, g, b, filled);
+        return;
+    }
+    if (width <= 0 || height <= 0) return;
+    SDL_BlendMode old;
+    if (SDL_GetRenderDrawBlendMode(graphics->renderer, &old) != 0) return;
+    if (SDL_SetRenderDrawBlendMode(graphics->renderer, SDL_BLENDMODE_BLEND) != 0) return;
+    SDL_SetRenderDrawColor(graphics->renderer, r, g, b, alpha);
+    int64_t left = (int64_t)x - graphics->camera_x;
+    int64_t top = (int64_t)y - graphics->camera_y;
+    if (filled) fill_screen_rect(graphics, left, top, width, height);
+    else {
+        fill_screen_rect(graphics, left, top, width, 1);
+        if (height > 1) fill_screen_rect(graphics, left, top + height - 1, width, 1);
+        if (height > 2) {
+            fill_screen_rect(graphics, left, top + 1, 1, height - 2);
+            if (width > 1) fill_screen_rect(graphics, left + width - 1, top + 1, 1, height - 2);
+        }
+    }
+    SDL_SetRenderDrawBlendMode(graphics->renderer, old);
+}
+
 bool sb_graphics_line(sb_graphics_t *graphics, int x1, int y1, int x2, int y2,
                        uint8_t r, uint8_t g, uint8_t b) {
     if (!graphics) return false;
@@ -457,12 +485,16 @@ static void draw_char(sb_graphics_t *graphics, unsigned char c, int64_t x, int64
     }
 }
 
-void sb_graphics_text(sb_graphics_t *graphics, const char *text, int x, int y,
-                      uint8_t r, uint8_t g, uint8_t b, int scale) {
-    if (!graphics || !text || scale <= 0) return;
+void sb_graphics_text_alpha(sb_graphics_t *graphics, const char *text, int x, int y,
+                      uint8_t r, uint8_t g, uint8_t b, int scale, uint8_t alpha) {
+    if (!graphics || !text || scale <= 0 || alpha == 0) return;
+    SDL_BlendMode old;
+    if (SDL_GetRenderDrawBlendMode(graphics->renderer, &old) != 0) return;
+    if (SDL_SetRenderDrawBlendMode(graphics->renderer,
+            alpha == 255 ? SDL_BLENDMODE_NONE : SDL_BLENDMODE_BLEND) != 0) return;
     const int64_t origin_x = (int64_t)x - graphics->camera_x;
     int64_t cursor_x = origin_x, cursor_y = (int64_t)y - graphics->camera_y;
-    SDL_SetRenderDrawColor(graphics->renderer, r, g, b, 255);
+    SDL_SetRenderDrawColor(graphics->renderer, r, g, b, alpha);
     for (const unsigned char *p = (const unsigned char *)text; *p; ++p) {
         /* Rows only move down. Columns stop advancing once offscreen, but
          * keep scanning for a newline that can bring the next row back. This
@@ -478,6 +510,11 @@ void sb_graphics_text(sb_graphics_t *graphics, const char *text, int x, int y,
             cursor_x += (int64_t)SB_FONT_CELL_WIDTH * scale;
         }
     }
+    SDL_SetRenderDrawBlendMode(graphics->renderer, old);
+}
+void sb_graphics_text(sb_graphics_t *graphics, const char *text, int x, int y,
+                      uint8_t r, uint8_t g, uint8_t b, int scale) {
+    sb_graphics_text_alpha(graphics, text, x, y, r, g, b, scale, 255);
 }
 
 int sb_graphics_canvas_width(const sb_graphics_t *graphics) {

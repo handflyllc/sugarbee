@@ -392,6 +392,13 @@ static int l_sugarbee_triangle_fill(lua_State *L) {
     return 0;
 }
 
+/* Optional per-call opacity; stack unchanged, invalid arguments raise. */
+static uint8_t graphics_alpha_arg(lua_State *L, int index) {
+    int alpha = lua_isnoneornil(L, index) ? 255 : graphics_int_arg(L, index);
+    if (alpha < 0 || alpha > 255) luaL_argerror(L, index, "alpha must be in 0..255");
+    return (uint8_t)alpha;
+}
+
 static int l_sugarbee_rect(lua_State* L) {
     int x = graphics_int_arg(L, 1);
     int y = graphics_int_arg(L, 2);
@@ -402,8 +409,9 @@ static int l_sugarbee_rect(lua_State* L) {
     int b = (int)luaL_optinteger(L, 7, 255);
     bool filled = lua_toboolean(L, 8);
 
-    sb_graphics_rect(g_engine.graphics, x, y, w, h,
-                     (uint8_t)r, (uint8_t)g, (uint8_t)b, filled);
+    uint8_t alpha = graphics_alpha_arg(L, 9);
+    sb_graphics_rect_alpha(g_engine.graphics, x, y, w, h,
+                     (uint8_t)r, (uint8_t)g, (uint8_t)b, filled, alpha);
     return 0;
 }
 
@@ -432,8 +440,9 @@ static int l_sugarbee_print(lua_State* L) {
     int b = (int)luaL_optinteger(L, 6, 255);
     int scale = lua_isnoneornil(L, 7) ? 1 : graphics_int_arg(L, 7);
 
-    sb_graphics_text(g_engine.graphics, text, x, y,
-                     (uint8_t)r, (uint8_t)g, (uint8_t)b, scale);
+    uint8_t alpha = graphics_alpha_arg(L, 8);
+    sb_graphics_text_alpha(g_engine.graphics, text, x, y,
+                     (uint8_t)r, (uint8_t)g, (uint8_t)b, scale, alpha);
     return 0;
 }
 

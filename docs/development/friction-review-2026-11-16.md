@@ -136,41 +136,41 @@ accepted future work retains that status without a schedule.
 
 | # | Current disposition / destination |
 | --- | --- |
-| 1 | Camera/draw offset candidate; define world/UI separation and state reset. |
+| 1 | Camera/draw offset completed; Pi accepted at `3dc7515`. See [graphics](../api/graphics.md). |
 | 2 | Tile/batch candidate; reported 190 draws do not establish a bottleneck. Bound native work before batching. |
-| 3 | Rect/text alpha candidate; related to accepted future sprite tint, but a separate API decision. |
-| 4 | Logical-resolution work already planned; do not bundle it with clip/tint. |
-| 5 | Cartridge-local Lua modules candidate; bounded loader/cache/error/lifetime contract required. |
+| 3 | Rect/text per-call opacity implemented; desktop accepted 2026-11-19 (180 tests and manual checks). Pi acceptance pending. See [demo](../../examples/opacity-demo/README.md). |
+| 4 | Canvas declaration, integer scaling and Lua dimension queries completed; Pi accepted at `f84ffbd`. |
+| 5 | Bounded cartridge-local Lua modules completed; Pi accepted at `93ea8a3`. See [modules](../api/modules.md). |
 | 6 | Packaging workflow candidate; use a cartridge-only input directory today. |
 | 7 | Persistent source UUID workflow implemented; desktop and Pi accepted 2026-11-19 (178 tests and manual checks), Pi at `73ee6a3`. See [packaging identity](packaging-identity.md). General manifest remains deferred. |
 | 8 | Save deletion candidate; empty save remains an application convention. |
-| 9 | Documentation corrected here; integers already required. R1/R2 are separate native robustness findings. |
-| 10 | Text measurement/wrapping candidate; preserve existing font behavior. |
+| 9 | Argument/text-arithmetic repairs R1/R2 completed; Pi accepted at `d2ee33c`. Existing integer contract preserved. |
+| 10 | Text measurement completed, Pi accepted at `d699492`. Automatic wrapping remains a candidate. |
 | 11 | Closed as not an issue; Start remains host-reserved. |
 | 12 | Range/track restrictions resolved in current SugarBeats; noise and envelope editing remain composer work. No engine extension presumed. |
-| 13 | Song-change ergonomics candidate; stop/wait/play contract remains intentional. |
+| 13 | Tested song-change example completed at `16f408a`; stop/wait/play contract remains intentional. |
 | 14 | Export/package workflow candidate, not a runtime format defect. |
 | 15 | Documented pitched/noise call distinction; keep contract, consider a game helper. |
 | 16 | Existing native/Lua refusal test passes; occurrence in these games still unverified. |
-| 17 | Dimension queries/text metrics candidate; C dimension queries already exist, Lua queries do not. |
+| 17 | Lua dimension queries and text measurement completed; see [canvas](../api/canvas.md) and [graphics](../api/graphics.md). |
 | 18 | Closed as corrected in original report: runner exists. See 19/R3. |
-| 19 | Confirmed runner gap, proposed tooling follow-up R3. |
-| 20 | Clip rectangle is leading new graphics candidate; define coordinate space, reset and host-overlay behavior. |
+| 19 | Smoke-runner gaps addressed at `247b95f`; modeled services remain distinct from native validation. |
+| 20 | Clip rectangle completed; Pi accepted at `4d04212`. |
 | 21 | Rotation candidate; decide pivot, angle convention and clipping separately. |
 | 22 | Integer source crop is current contract; remainder offset workaround valid. Link to resolution/camera discussion. |
 | 23 | Reported cartridge bookkeeping fault; no engine defect reproduced. Test same-song restart during fade in future example. |
 | 24 | Diagnostics candidate; updates/draw is not an exact FPS measurement. |
-| 25 | Generic text/data access candidate; claim that only PNG loads is obsolete (WAV/music exist). |
-| 26 | Sprite tint already accepted future work; ordinary multiplicative tint is not arbitrary palette replacement. |
+| 25 | Bounded general-purpose cartridge data reads completed; Pi accepted at `9d75cd8`. See [data](../api/data.md). |
+| 26 | Sprite tint completed; Pi accepted at `9516590`. Multiplicative tint is not arbitrary palette replacement. |
 | 27 | Resolved documentation ambiguity: partial sprite alpha blends. |
-| 28 | Same clip-rectangle candidate as 20; source cropping is not viewport clipping. |
+| 28 | Clip rectangle completed (same capability as entry 20). Source cropping remains distinct. |
 | 29 | Expected Lua budget termination; diagnostics/bounded batching discussion, not a renderer crash or automatic budget increase. |
-| 30 | Lua active-local limit, not a universal 2,200-line limit; lexical scopes help, modules candidate ties to 5. |
-| 31 | Native line primitive candidate; reusable 2D feature independent of a 3D engine. |
-| 32 | Filled-triangle candidate; establish rasterization/clipping/cost separately from lines or general polygons. |
+| 30 | Lua active-local limit remains; cartridge-local modules now support responsibility separation (entry 5). |
+| 31 | Native line primitive completed; Pi accepted at `0357700`. |
+| 32 | Filled triangles completed with bounded clipping and defined edge coverage; Pi accepted at `ba7cb7a`. |
 | 33 | Lua live-pitch API candidate; native bank/shared pitch setters already exist. Retrigger workaround reported acceptable. |
 
-## Performance interpretation and next checkpoint
+## Historical performance interpretation and checkpoint recommendation
 
 The five games' reported smooth Pi play is useful evidence for those workloads.
 Small blended-sprite and small opaque-rectangle counts are not universal renderer
@@ -184,6 +184,9 @@ use nor smaller Pi models was measured. Large blended surfaces, sustained therma
 load, WAV-heavy mixing and analog/multiplayer behavior were not covered by these
 experiments. Analog input is not currently implemented. None of these omissions
 invalidates the reported playability; they limit what can be concluded from it.
+
+The following recommendation records the original review; current dispositions
+above and API specifications supersede its candidate status.
 
 Recommend discussing R1/R2 as the next bounded repair checkpoint, then R3 and a
 tested song-change example. Clip rectangles remain the first new graphics
@@ -218,8 +221,7 @@ games as future visual acceptance examples when their sources are available.
 Entries 4 and the dimension-query portion of 17 now have an implementation:
 [canvas declaration/scaling and Lua queries](../api/canvas.md). The user confirmed
 all desktop checks passed on 2026-11-18, then Pi acceptance at `f84ffbd`:
-162/162 tests and all requested manual checks passed. Text metrics remain a
-separate discussion;
+162/162 tests and all requested manual checks passed. Text metrics were subsequently completed (see the following section);
 this does not change sprite source-crop behavior (entry 22) or window sizing.
 
 ## Text-measurement follow-up (based on 30c4f62)
