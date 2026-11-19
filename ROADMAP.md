@@ -4,6 +4,16 @@ Reviewed 2026-11-16 against `7085043` (runtime `4d7ca11`), the updated
 SugarBeats passdown and five-game friction report. This is a revisable plan,
 not a release schedule.
 
+## Active checkpoint: persistent packaging identity
+
+After data-reader acceptance at `091c7de`, the user approved a bounded packager
+workflow: explicit initialization of source `sugarbee.uuid`, automatic reuse,
+existing-UUID adoption, conflict rejection and compatible legacy CLI builds.
+Desktop accepted 2026-11-19: 178/178 serial tests and all manual checks passed.
+Pi validation pending. See
+[contract and acceptance checks](docs/development/packaging-identity.md).
+No runtime/save format changes or general manifest framework.
+
 ## Current status and next investigation
 
 Native music loading, sequencing, looping, shared voices, transport and

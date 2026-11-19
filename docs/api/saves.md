@@ -4,6 +4,8 @@ SugarBee stores one opaque string per cartridge UUID, up to **65,536 bytes**
 (64 KiB). Empty strings and embedded zero bytes are valid. The cartridge owns
 serialization and versioning; the engine neither interprets the data nor
 serializes tables. Retain the UUID when repacking to keep using the same save.
+The [persistent packaging identity workflow](../development/packaging-identity.md)
+records it in the game source and reuses it automatically.
 
 ## `sugarbee.load_save()`
 

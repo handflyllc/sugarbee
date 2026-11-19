@@ -41,9 +41,12 @@ there is no decompression-time or aggregate per-game memory budget.
 
 A UUID identifies a **game**, not an individual package build. Preserve the
 same identifier through updates so the runtime can associate save data with
-the game. `sbee-pack` generates a secure random UUIDv4 unless `--uuid` is
-provided. Developers must presently retain the value and pass `--uuid` on
-subsequent builds. The future game manifest should persist it automatically.
+the game. `sbee-pack --init-identity -i game-dir` records a UUIDv4 in the source
+file `sugarbee.uuid`; subsequent builds reuse it automatically. Existing games
+must adopt their existing UUID with `--init-identity --uuid UUID`. The source
+metadata is excluded from the ZIP; the header remains authoritative at runtime.
+Legacy builds without metadata still accept `--uuid` or generate a UUID with a
+warning. See [packaging identity](../development/packaging-identity.md).
 
 ## Optional canvas declaration
 

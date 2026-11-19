@@ -8,6 +8,7 @@
 #include "vcart.h"
 
 #include <errno.h>
+#include <fcntl.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -25,6 +26,8 @@ static void usage(const char* prog) {
         "SugarBee Cartridge Packager v%s\n"
         "Usage: %s -i <game-dir> -o <game.vcart> -t <title> [options]\n"
         "  --os M.m.p      Minimum runtime version (default %d.%d.%d)\n"
+        "  --init-identity Create game-dir/sugarbee.uuid once; requires only -i\n"
+        "                  Optional --uuid adopts an existing game identity\n"
         "  --uuid UUID     Reuse a game's existing UUIDv4 across releases\n"
         "  -v              Verbose output\n"
         "  -h, --help      Show help\n",
@@ -69,6 +72,79 @@ static bool generate_uuid(uint8_t uuid[16]) {
     return true;
 }
 
+/* Source metadata only; the cartridge header remains the runtime authority. */
+#define IDENTITY_FILE "sugarbee.uuid"
+
+static bool resolve_identity(const char* input, const char* supplied, bool init,
+                             uint8_t uuid[16], bool* persistent) {
+    uint8_t explicit_uuid[16];
+    if (supplied && !parse_uuid(supplied, explicit_uuid)) {
+        fprintf(stderr, "Invalid UUIDv4 (expected canonical 8-4-4-4-12 form).\n");
+        return false;
+    }
+    int dir = open(input, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    if (dir < 0) { perror("open game directory"); return false; }
+    int fd = openat(dir, IDENTITY_FILE, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC);
+    if (fd >= 0) {
+        struct stat st;
+        char text[38] = {0};
+        bool ok = fstat(fd, &st) == 0 && S_ISREG(st.st_mode) &&
+                  (st.st_size == 36 || st.st_size == 37);
+        if (ok) {
+            ssize_t n;
+            do { n = read(fd, text, sizeof(text)); } while (n < 0 && errno == EINTR);
+            ok = n == st.st_size && (n == 36 || text[36] == '\n');
+            text[36] = '\0';
+            ok = ok && parse_uuid(text, uuid);
+        }
+        if (close(fd) != 0) ok = false;
+        close(dir);
+        if (!ok) fprintf(stderr, "Invalid or unreadable %s: expected UUIDv4 with optional newline.\n", IDENTITY_FILE);
+        else if (init) {
+            fprintf(stderr, "%s already exists; initialization never overwrites identity.\n", IDENTITY_FILE);
+            ok = false;
+        } else if (supplied && memcmp(uuid, explicit_uuid, 16) != 0) {
+            fprintf(stderr, "--uuid conflicts with %s; refusing to change save identity.\n", IDENTITY_FILE);
+            ok = false;
+        }
+        *persistent = ok;
+        return ok;
+    }
+    if (errno != ENOENT) {
+        perror("read " IDENTITY_FILE);
+        close(dir);
+        return false;
+    }
+    if (supplied) memcpy(uuid, explicit_uuid, 16);
+    else if (!generate_uuid(uuid)) {
+        fprintf(stderr, "Unable to generate a random UUID.\n");
+        close(dir);
+        return false;
+    }
+    if (!init) { close(dir); return true; }
+    fd = openat(dir, IDENTITY_FILE, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0644);
+    if (fd < 0) { perror("create " IDENTITY_FILE); close(dir); return false; }
+    char text[38];
+    vcart_uuid_to_string(uuid, text);
+    text[36] = '\n';
+    size_t written = 0;
+    while (written < 37) {
+        ssize_t n = write(fd, text + written, 37 - written);
+        if (n < 0 && errno == EINTR) continue;
+        if (n <= 0) break;
+        written += (size_t)n;
+    }
+    bool ok = written == 37 && fsync(fd) == 0;
+    if (close(fd) != 0) ok = false;
+    if (!ok) {
+        fprintf(stderr, "Unable to write %s.\n", IDENTITY_FILE);
+        unlinkat(dir, IDENTITY_FILE, 0);
+    }
+    close(dir);
+    *persistent = ok;
+    return ok;
+}
+
 static bool parse_version(const char* s, uint8_t* major, uint8_t* minor, uint8_t* patch) {
     unsigned m, n, p;
     char extra;
@@ -86,7 +162,7 @@ static bool make_zip(const char* input_dir, const char* zip_path) {
             perror("chdir(game-dir)");
             _exit(127);
         }
-        execlp("zip", "zip", "-q", "-r", zip_path, ".", (char*)NULL);
+        execlp("zip", "zip", "-q", "-r", zip_path, ".", "-x", IDENTITY_FILE, (char*)NULL);
         perror("exec zip");
         _exit(127);
     }
@@ -126,6 +202,8 @@ int main(int argc, char* argv[]) {
     const char* title = NULL;
     const char* uuid_string = NULL;
     bool verbose = false;
+    bool init_identity = false;
+    bool persistent = false;
     vcart_header_t header = {0};
     memcpy(header.magic, VCART_MAGIC, 4);
     header.header_version = VCART_STRUCT_VERSION;
@@ -140,6 +218,8 @@ int main(int argc, char* argv[]) {
             output_file = argv[++i];
         else if ((!strcmp(argv[i], "-t") || !strcmp(argv[i], "--title")) && i + 1 < argc)
             title = argv[++i];
+        else if (!strcmp(argv[i], "--init-identity"))
+            init_identity = true;
         else if (!strcmp(argv[i], "--uuid") && i + 1 < argc)
             uuid_string = argv[++i];
         else if (!strcmp(argv[i], "--os") && i + 1 < argc) {
@@ -157,8 +237,10 @@ int main(int argc, char* argv[]) {
             usage(argv[0]); return 1;
         }
     }
-    if (!input_dir || !output_file || !title || strlen(title) > 31 || !*title) {
-        fprintf(stderr, "Provide -i, -o, and a nonempty title of at most 31 bytes.\n");
+    if (!input_dir || (init_identity ? (output_file || title) :
+        (!output_file || !title || strlen(title) > 31 || !*title))) {
+        fprintf(stderr, "Packaging requires -i, -o, and a title of 1..31 bytes.\n"
+                        "Initialization requires -i and --init-identity, without -o or -t.\n");
         usage(argv[0]);
         return 1;
     }
@@ -167,15 +249,18 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Game directory is missing or invalid: %s\n", input_dir);
         return 1;
     }
-    if (uuid_string) {
-        if (!parse_uuid(uuid_string, header.cart_uuid)) {
-            fprintf(stderr, "Invalid UUIDv4 (expected canonical 8-4-4-4-12 form).\n");
-            return 1;
-        }
-    } else if (!generate_uuid(header.cart_uuid)) {
-        fprintf(stderr, "Unable to generate a random UUID.\n");
-        return 1;
+    if (!resolve_identity(input_dir, uuid_string, init_identity,
+                          header.cart_uuid, &persistent)) return 1;
+    if (init_identity) {
+        char text[37];
+        vcart_uuid_to_string(header.cart_uuid, text);
+        printf("Created %s/%s: %s\nCommit this file with your game source.\n",
+               input_dir, IDENTITY_FILE, text);
+        return 0;
     }
+    if (!persistent && !uuid_string)
+        fprintf(stderr, "WARNING: uninitialized game; generating a build-only UUID.\n"
+                "Initialize new games before packaging; adopt the printed UUID for existing saves.\n");
     memcpy(header.title, title, strlen(title));
 
     char tmpdir[] = "/tmp/sbee-pack-XXXXXX";
@@ -204,6 +289,6 @@ int main(int argc, char* argv[]) {
     vcart_uuid_to_string(header.cart_uuid, uuid_text);
     printf("Wrote %s (%u ZIP bytes)\nGame UUID: %s\n", output_file,
            header.payload_size, uuid_text);
-    if (!uuid_string) printf("Keep this UUID and pass --uuid on subsequent builds to preserve saves.\n");
+    if (!persistent && !uuid_string) printf("Keep this UUID and pass --uuid on subsequent builds to preserve saves.\n");
     return 0;
 }

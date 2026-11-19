@@ -918,6 +918,12 @@ if(BUILD_TESTING)
     add_test(NAME cartridge_header COMMAND test_vcart)
 
     if(SUGARBEE_BUILD_PACKER)
+        add_test(NAME packager_identity
+            COMMAND "${CMAKE_COMMAND}"
+                "-DPACKER=$<TARGET_FILE:sbee-pack>"
+                "-DTEST_ROOT=${PROJECT_BINARY_DIR}/packager-identity"
+                "-P" "${PROJECT_SOURCE_DIR}/tests/packager_identity.cmake")
+        set_tests_properties(packager_identity PROPERTIES TIMEOUT 15)
         add_test(NAME packager_smoke
             COMMAND "${CMAKE_COMMAND}"
                 "-DPACKER=$<TARGET_FILE:sbee-pack>"
