@@ -83,7 +83,9 @@ end
 
 Cartridges receive the base, table, string, math, and UTF-8 libraries, plus
 SugarBee's API. The coroutine, debug, io, os, and package libraries are not
-opened. `require`, `dofile`, and `loadfile` are unavailable. This intentionally
+opened. `dofile` and `loadfile` are unavailable. A
+[cartridge-local `require`](modules.md) loads source modules from the active
+archive with a private session cache and bounded reads. This intentionally
 excludes direct filesystem access, OS commands, native-module loading, and
 cartridge control of debug hooks. Attempts to use missing globals produce
 ordinary Lua errors through the existing lifecycle error handling.

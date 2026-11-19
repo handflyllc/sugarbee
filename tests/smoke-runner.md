@@ -125,3 +125,11 @@ tests and manual demo acceptance cover rendering.
 The `triangle_fill` stub validates six signed32 coordinates and optional checked
 RGB channels, counts the draw call and returns no values. It does not model
 pixel-center coverage, shared-edge ownership, camera offsets or clipping.
+
+The runner overrides the interpreter's `require` with a cartridge-directory model
+in `smoke_modules.lua`: dotted names, text-only compilation, private cache,
+false/nil result handling, cycles/retries and module loading limits. It never
+falls back to the interpreter's package search. Inputs are trusted local files;
+symlink confinement, ZIP/CRC failures, allocation failures, native compilation
+cost and instruction budgets are not modeled. Use native module tests for those
+engine contracts. This does not make the runner a security sandbox.

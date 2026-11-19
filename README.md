@@ -37,6 +37,8 @@ See [dependencies](docs/development/dependencies.md) and
 - [Dependencies](docs/development/dependencies.md)
 - [Friction reconciliation and focused review](docs/development/friction-review-2026-11-16.md)
 - [Current `.vcart` format](docs/specifications/cartridge-format.md)
+- [Cartridge-local Lua modules](docs/api/modules.md)
+- [Multi-file modules demo](examples/modules-demo/README.md)
 - [2D graphics API](docs/api/graphics.md)
 - [Filled triangle demo](examples/triangle-demo/README.md)
 - [Circle primitives demo](examples/circle-demo/README.md)

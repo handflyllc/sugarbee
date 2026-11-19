@@ -46,6 +46,13 @@ sb_asset_result_t sb_asset_read(const char *cartridge, const char *path,
 }
 sb_asset_result_t sb_asset_read_limited(const char *cartridge,const char *path,
     size_t max_entry,uint8_t **data,size_t *length) {
+    size_t charged;
+    return sb_asset_read_limited_counted(cartridge,path,max_entry,data,length,&charged);
+}
+sb_asset_result_t sb_asset_read_limited_counted(const char *cartridge,const char *path,
+    size_t max_entry,uint8_t **data,size_t *length,size_t *charged) {
+    if (!charged) return SB_ASSET_INVALID_PATH;
+    *charged = 0;
     if (max_entry>SB_ASSET_MAX_ENTRY) max_entry=SB_ASSET_MAX_ENTRY;
     if (data) *data = NULL;
     if (length) *length = 0;
@@ -123,6 +130,7 @@ sb_asset_result_t sb_asset_read_limited(const char *cartridge,const char *path,
                                      (unsigned)(expected - received));
         if (got <= 0) goto done;
         received += (size_t)got;
+        *charged = received;
     }
     uint8_t extra;
     if (unzReadCurrentFile(zip, &extra, 1) != 0) goto done;

@@ -33,6 +33,10 @@ sb_asset_result_t sb_asset_read(const char *cartridge, const char *path,
  * permits only empty entries. Existing sb_asset_read retains its default cap. */
 sb_asset_result_t sb_asset_read_limited(const char *cartridge, const char *path,
     size_t max_entry, uint8_t **data, size_t *length);
+/* As above, additionally charges bytes delivered by decompression, even when
+ * the read/CRC later fails. Used for cumulative source-loading budgets. */
+sb_asset_result_t sb_asset_read_limited_counted(const char *cartridge, const char *path,
+    size_t max_entry, uint8_t **data, size_t *length, size_t *charged);
 const char *sb_asset_error_string(sb_asset_result_t result);
 
 #endif

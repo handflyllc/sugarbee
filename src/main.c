@@ -22,6 +22,7 @@
 
 /* Cartridge asset readers and PNG decoding are outside the Lua adapter. */
 #include "sb_assets.h"
+#include "sb_lua_modules.h"
 #include "sb_png.h"
 
 #include "vcart.h"
@@ -875,6 +876,7 @@ static bool start_cartridge(const char *filepath) {
         return false;
     }
     open_cartridge_libraries(g_engine.L);
+    sb_lua_modules_register(g_engine.L, filepath);
     register_sugarbee_api(g_engine.L);
 
     if (!load_virtual_cartridge(filepath)) {

@@ -115,7 +115,18 @@ been recorded. On 2026-11-18, the user confirmed all Pi checks passed at
 `ba7cb7a`: 147/147 serial tests, triangle-demo visual/lifecycle checks,
 regressions including Pong and Pac-Man, and Exit to system. Pi acceptance
 is complete.
-Modules/data access and diagnostics need bounded contracts before implementation.
+Active checkpoint after `235046f`: general-purpose cartridge-local
+`require("module.name")`, exact dotted-name mapping, private session cache and
+shared instruction budgets. Agreed limits: 256 KiB/module, 8 MiB cumulative
+source/session, 128 cached modules and 16 nested imports. Explicit retry after
+failure, no rollback of side effects, and failed-read source accounting.
+No scenario-specific API, manifest or external package support.
+See the [contract](docs/api/modules.md) and [demo](examples/modules-demo/README.md).
+Desktop: 158/158 serial tests and 15 final targeted checks passed; nine native
+module modes passed ASan/UBSan with leak detection disabled (environment limit).
+The user confirmed desktop validation passed on 2026-11-18.
+Pi validation remains pending.
+Generic data access and diagnostics remain separately scoped discussions.
 No budget, voice-count, mixing-gain or sample-rate increase is proposed.
 
 ## Music checkpoint history

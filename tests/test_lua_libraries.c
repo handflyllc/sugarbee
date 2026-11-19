@@ -17,6 +17,7 @@ int main(void) {
         lua_State *L = luaL_newstate();
         if (!L) return 1;
         open_cartridge_libraries(L);
+        sb_lua_modules_register(L, "/nonexistent/test.vcart");
         if (lua_gettop(L) != 0) {
             lua_close(L);
             return 1;
@@ -25,8 +26,9 @@ int main(void) {
         lua_setglobal(L, "record_finalizer");
         const char *checks =
             "for _, name in ipairs({'coroutine','debug','io','os','package',"
-            "'require','dofile','loadfile'}) do "
+            "'dofile','loadfile'}) do "
             "assert(_G[name] == nil, name .. ' must be unavailable') end "
+            "assert(type(require)=='function'); "
             "local t = {3, 1, 2}; table.sort(t); "
             "assert(table.concat(t, ',') == '1,2,3'); "
             "assert(string.upper('bee') == 'BEE'); "

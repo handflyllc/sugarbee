@@ -25,8 +25,9 @@ after upload. Persistent texture handles are owned by the graphics context.
 
 The image loader supports PNG; it is not the only cartridge asset loader.
 [WAV audio](wav.md) and [native music JSON](music.md) have dedicated loaders.
-There is currently no general Lua text/binary-file reader or cartridge-local
-`require` for additional Lua files. Those remain separate design candidates.
+[Cartridge-local `require`](modules.md) loads additional Lua source files with
+separate per-module and session limits. A general Lua text/binary-file reader
+remains a separate design candidate.
 
 ## Resource validation and limitations
 

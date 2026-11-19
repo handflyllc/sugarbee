@@ -323,6 +323,8 @@ local function call(name, stage, ...)
     if not ok then fail(stage, err) end
 end
 
+-- Explicit local loader: never fall back to the interpreter's package search.
+require = dofile(runner_dir .. 'smoke_modules.lua')(game_dir)
 local chunk, load_err = loadfile(game_dir .. "/main.lua")
 if not chunk then fail("load", load_err) end
 local ok, run_err = xpcall(chunk, debug.traceback)

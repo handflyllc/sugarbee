@@ -360,8 +360,14 @@ if(SUGARBEE_BUILD_HOST)
     target_link_libraries(sugarbee_lua_audio PUBLIC sugarbee_audio sugarbee_assets sugarbee_wav PkgConfig::LUA54)
     sugarbee_warnings(sugarbee_lua_audio)
 
+    add_library(sugarbee_lua_modules STATIC src/sb_lua_modules.c)
+    target_include_directories(sugarbee_lua_modules PUBLIC "${PROJECT_SOURCE_DIR}/include")
+    target_link_libraries(sugarbee_lua_modules PUBLIC sugarbee_assets PkgConfig::LUA54)
+    sugarbee_warnings(sugarbee_lua_modules)
+
     add_executable(sugarbee src/main.c)
     target_link_libraries(sugarbee PRIVATE
+        sugarbee_lua_modules
         sugarbee_save
         sugarbee_lua_synth
         sugarbee_lua_audio
@@ -681,6 +687,22 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
 
 
 
+    if(SUGARBEE_BUILD_PACKER)
+        add_executable(test_lua_modules tests/test_lua_modules.c)
+        target_link_libraries(test_lua_modules PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+        sugarbee_warnings(test_lua_modules)
+        add_test(NAME lua_modules_pack COMMAND "${CMAKE_COMMAND}"
+            "-DPACKER=$<TARGET_FILE:sbee-pack>" "-DROOT=${PROJECT_BINARY_DIR}/module-fixtures"
+            "-DCART=${PROJECT_BINARY_DIR}/modules.vcart"
+            -P "${PROJECT_SOURCE_DIR}/tests/modules_pack.cmake")
+        set_tests_properties(lua_modules_pack PROPERTIES FIXTURES_SETUP lua_modules TIMEOUT 10)
+        foreach(mode basic errors depth count bytes failed_bytes budget host crc)
+            add_test(NAME lua_modules_${mode} COMMAND test_lua_modules
+                "${PROJECT_BINARY_DIR}/modules.vcart" ${mode})
+            set_tests_properties(lua_modules_${mode} PROPERTIES FIXTURES_REQUIRED lua_modules TIMEOUT 10)
+        endforeach()
+    endif()
+
     add_executable(test_lua_libraries tests/test_lua_libraries.c)
     target_link_libraries(test_lua_libraries PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
     sugarbee_warnings(test_lua_libraries)
@@ -886,6 +908,13 @@ if(BUILD_TESTING)
     endif()
 
     if(LUA54_INTERPRETER_COMPATIBLE)
+        if(SUGARBEE_BUILD_PACKER)
+            add_test(NAME smoke_modules_model COMMAND "${LUA54_INTERPRETER}"
+                "${PROJECT_SOURCE_DIR}/tests/test_smoke_modules.lua"
+                "${PROJECT_SOURCE_DIR}/tests/smoke_modules.lua"
+                "${PROJECT_BINARY_DIR}/module-fixtures")
+            set_tests_properties(smoke_modules_model PROPERTIES FIXTURES_REQUIRED lua_modules TIMEOUT 10)
+        endif()
         add_test(NAME song_change_model COMMAND "${LUA54_INTERPRETER}"
             "${PROJECT_SOURCE_DIR}/tests/song-change/test.lua" "${PROJECT_SOURCE_DIR}")
         add_test(NAME cartridge_smoke_song-change COMMAND "${LUA54_INTERPRETER}"
