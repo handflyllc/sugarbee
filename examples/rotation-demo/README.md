@@ -29,7 +29,9 @@ Implementation baseline: `1d6e289`. Desktop automated validation passed on
 The user confirmed all desktop validation checks passed on 2026-11-19:
 quarter-turn orientation, center/external pivots, continuous rotation, tint/opacity,
 clipping, Pause/resume, relaunch reset, Pong/opacity-demo regressions and Exit
-to system. Pi acceptance remains pending.
+to system. On 2026-11-20, the user confirmed Pi acceptance at `cf64b42`: **184/184 tests**
+and all five requested checks passed (orientation, pivots, animation/tint/opacity/
+clipping, Pause/resume/relaunch, Pong/opacity-demo regressions and Exit to system).
 
 Native pixel checks cover orientation at quarter turns, negative/wrapped angles,
 zero-angle parity, odd-size center equivalence, external pivot visibility,

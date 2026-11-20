@@ -156,7 +156,7 @@ accepted future work retains that status without a schedule.
 | 18 | Closed as corrected in original report: runner exists. See 19/R3. |
 | 19 | Smoke-runner gaps addressed at `247b95f`; modeled services remain distinct from native validation. |
 | 20 | Clip rectangle completed; Pi accepted at `4d04212`. |
-| 21 | Sprite rotation implemented with clockwise degrees, destination-relative pivots and bounded destination sizes; desktop accepted 2026-11-19 (184 tests and manual checks). Pi acceptance pending. See [demo](../../examples/rotation-demo/README.md). |
+| 21 | Sprite rotation implemented with clockwise degrees, destination-relative pivots and bounded destination sizes; desktop accepted 2026-11-19; Pi accepted at `cf64b42` on 2026-11-20 (184 tests and all five manual checks). See [demo](../../examples/rotation-demo/README.md). |
 | 22 | Integer source crop is current contract; remainder offset workaround valid. Link to resolution/camera discussion. |
 | 23 | Reported cartridge bookkeeping fault; no engine defect reproduced. Test same-song restart during fade in future example. |
 | 24 | Diagnostics candidate; updates/draw is not an exact FPS measurement. |
