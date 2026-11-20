@@ -226,7 +226,7 @@ endif()
 
 if(SUGARBEE_BUILD_HOST)
     find_package(PkgConfig REQUIRED)
-    pkg_check_modules(SDL2 REQUIRED IMPORTED_TARGET sdl2)
+    pkg_check_modules(SDL2 REQUIRED IMPORTED_TARGET sdl2>=2.0.12)
     pkg_check_modules(LUA54 REQUIRED IMPORTED_TARGET lua5.4)
     pkg_check_modules(MINIZIP REQUIRED IMPORTED_TARGET minizip)
     find_package(ZLIB REQUIRED)
@@ -242,7 +242,7 @@ if(SUGARBEE_BUILD_HOST)
     # only include/sb_graphics.h for drawing services.
     add_library(sugarbee_graphics STATIC src/sb_graphics_sdl.c src/sb_text_metrics.c src/font8x8.c)
     target_include_directories(sugarbee_graphics PUBLIC "${PROJECT_SOURCE_DIR}/include")
-    target_link_libraries(sugarbee_graphics PRIVATE PkgConfig::SDL2)
+    target_link_libraries(sugarbee_graphics PRIVATE PkgConfig::SDL2 m)
     sugarbee_warnings(sugarbee_graphics)
 
     add_library(sugarbee_input STATIC src/sb_input_sdl.c)
@@ -762,6 +762,11 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
             ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy")
     endif()
 
+    add_executable(test_lua_rotation tests/test_lua_rotation.c)
+    target_link_libraries(test_lua_rotation PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    sugarbee_warnings(test_lua_rotation)
+    add_test(NAME lua_rotation COMMAND test_lua_rotation "${PROJECT_SOURCE_DIR}/tests/rotation/main.lua")
+    set_tests_properties(lua_rotation PROPERTIES ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy" TIMEOUT 10)
     add_executable(test_lua_graphics_bounds tests/test_lua_graphics_bounds.c)
     target_link_libraries(test_lua_graphics_bounds PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
     sugarbee_warnings(test_lua_graphics_bounds)
@@ -805,6 +810,11 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     add_test(NAME graphics_clip COMMAND test_clip)
     set_tests_properties(graphics_clip PROPERTIES ENVIRONMENT "SDL_VIDEODRIVER=dummy" TIMEOUT 10)
 
+    add_executable(test_rotation tests/test_rotation.c)
+    target_link_libraries(test_rotation PRIVATE sugarbee_graphics PkgConfig::SDL2)
+    sugarbee_warnings(test_rotation)
+    add_test(NAME graphics_rotation COMMAND test_rotation)
+    set_tests_properties(graphics_rotation PROPERTIES ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy" TIMEOUT 10)
     add_executable(test_opacity tests/test_opacity.c)
     target_link_libraries(test_opacity PRIVATE sugarbee_graphics PkgConfig::SDL2)
     sugarbee_warnings(test_opacity)
@@ -1035,7 +1045,9 @@ if(BUILD_TESTING)
                 "${PROJECT_SOURCE_DIR}/tests/save-lab/test.lua"
                 "${PROJECT_SOURCE_DIR}/examples/save-lab/main.lua")
         set_tests_properties(save_lab_behavior PROPERTIES TIMEOUT 5)
-        foreach(cartridge IN ITEMS opacity-demo graphics-demo moving-box sprite-demo
+        add_test(NAME smoke_rotation COMMAND "${LUA54_INTERPRETER}"
+            "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua" "${PROJECT_SOURCE_DIR}/tests/rotation" 1 1)
+        foreach(cartridge IN ITEMS rotation-demo opacity-demo graphics-demo moving-box sprite-demo
                 asset-demo sprite-sheet-demo pong-lab invaders-lab pacman-demo)
             add_test(NAME cartridge_smoke_${cartridge}
                 COMMAND "${LUA54_INTERPRETER}"

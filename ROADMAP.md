@@ -4,6 +4,19 @@ Reviewed 2026-11-16 against `7085043` (runtime `4d7ca11`), the updated
 SugarBeats passdown and five-game friction report. This is a revisable plan,
 not a release schedule.
 
+## Active checkpoint: sprite rotation
+
+Authorized after `1d6e289`: separate whole-sprite and scaled-region rotation calls,
+clockwise fractional degrees, default exact center and optional destination-pixel
+pivot pair. Custom pivots may lie outside the sprite within signed 32-bit range.
+User accepted destination limits of 4096 per axis and 4,194,304 pixels total.
+Tint, opacity, camera and clip preserved; existing sprite APIs unchanged.
+Implemented with SDL_RenderCopyExF (SDL >=2.0.12); native/Lua/smoke checks and
+[visual demo](examples/rotation-demo/README.md) added. Desktop automated
+validation passed: 184/184 serial tests and native pixel UBSan checks.
+User confirmed all desktop validation checks passed on 2026-11-19.
+Pi acceptance pending.
+
 ## Completed checkpoint: rectangle and text opacity
 
 Authorized after `dd650c5`: optional final per-call alpha on rect/print,

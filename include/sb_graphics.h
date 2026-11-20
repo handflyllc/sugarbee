@@ -143,6 +143,19 @@ bool sb_graphics_sprite_region(sb_graphics_t *graphics, sb_texture_t texture,
                                int dest_width, int dest_height,
                                bool flip_x, bool flip_y);
 
+#define SB_ROTATED_MAX_SIDE 4096
+#define SB_ROTATED_MAX_PIXELS 4194304u
+
+/* Clockwise degrees; destination-relative pivot defaults to exact center.
+ * Finite custom pivots may be fractional, within signed 32-bit coordinate range.
+ * Destination limits: 4096 per axis, 4194304 total pixels.
+ * Culls rotated bounds; source bounds match sprite_region. */
+bool sb_graphics_sprite_region_rotated(sb_graphics_t *graphics, sb_texture_t texture,
+        int x, int y, int sx, int sy, int sw, int sh, int dw, int dh,
+        double angle, bool custom_pivot, double px, double py);
+bool sb_graphics_sprite_rotated(sb_graphics_t *graphics, sb_texture_t texture,
+        int x, int y, double angle, bool custom_pivot, double px, double py);
+
 /* Release a texture. Returns false for unknown/stale handles. */
 bool sb_graphics_texture_destroy(sb_graphics_t *graphics, sb_texture_t texture);
 

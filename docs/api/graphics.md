@@ -32,6 +32,8 @@ below. Text, rectangles, lines, circles and triangles are unaffected by sprite t
 
 | Lua call | Behavior |
 | --- | --- |
+| `sugarbee.sprite_rotated(texture, x, y, angle [, pivot_x, pivot_y])` | Rotate a whole texture at native size; see rotation contract below. |
+| `sugarbee.sprite_region_rotated(texture, x, y, sx, sy, sw, sh, dw, dh, angle [, pivot_x, pivot_y])` | Rotate a scaled source region; destination dimensions are required. |
 | `sugarbee.width()` / `sugarbee.height()` | Return the fixed game canvas dimensions; no arguments. |
 | `sugarbee.sprite_tint(r, g, b [, a])` | Set sprite RGB tint and optional opacity. |
 | `sugarbee.sprite_tint_reset()` | Restore white tint and full opacity. |
@@ -574,3 +576,54 @@ rasterization does not promise an exact match to the fill boundary. No separate
 outline API, general polygons, gradients, textures, alpha or antialiasing is
 included. Earlier engines lack this function.
 See the [triangle demo](../../examples/triangle-demo/README.md).
+
+## Sprite rotation
+
+The separate `sprite_rotated` and `sprite_region_rotated` calls preserve existing
+sprite APIs. Both return zero Lua results. Invalid handles, arguments, source
+regions, size limits or failed drawing raise a Lua error. Region source bounds
+must lie entirely within the texture and all source/destination sizes must be
+positive. The rotated-region call requires both destination dimensions; it has
+no flip parameters in this checkpoint.
+
+- `x, y` denote the **unrotated destination top-left**, in signed 32-bit integer
+  logical coordinates. Region coordinates and sizes use the same integer rules.
+- `angle` is finite clockwise degrees, including fractional values. Zero retains
+  the artwork's original orientation; negative angles and values beyond 360 wrap.
+  Very large finite values are accepted but already-lost floating-point precision
+  cannot be recovered. Nonfinite angles are errors.
+- With no pivot arguments, the pivot is the exact destination center, including
+  half-pixel centers for odd dimensions. If supplied, **both** coordinates must
+  be finite numbers within -2147483648..2147483647. Fractional and outside pivots
+  are allowed. Explicit nil pivots are invalid; omit both to select the center.
+- Pivots are measured from the unrotated top-left in **destination pixels**.
+  A 16×16 region drawn at 64×64 defaults to pivot `(32,32)`, not `(8,8)`.
+- Destination limits apply before drawing/culling, including zero-angle and
+  offscreen calls: **4096 per axis** and **4,194,304 total pixels**. Whole sprites
+  use their texture dimensions. These limits apply only to the new rotation APIs.
+- Existing sprite tint, alpha blending, camera and destination clipping apply.
+  Rotation adds no persistent state; subsequent drawing and host UI are unrotated.
+  A source rectangle outside the viewport may rotate into view and is not culled
+  solely by its original position.
+- Sampling remains nearest-neighbor. Arbitrary-angle pixel art naturally has
+  stair-stepping; fractional edge coverage can vary between SDL backends.
+  A normalized zero angle uses the existing sprite path exactly.
+
+```lua
+-- Whole texture, rotating around its center.
+sugarbee.sprite_rotated(ship, x, y, heading + artwork_offset)
+-- 16x16 sheet region, scaled to 64x64, rotating around its top-left.
+sugarbee.sprite_region_rotated(sheet, x, y, 16, 0, 16, 16, 64, 64, angle, 0, 0)
+```
+
+The SDL backend uses `SDL_RenderCopyExF`, requiring SDL **2.0.12 or later**.
+Custom pivots are converted into an equivalent shifted-center rotation; rotated
+bounds are checked in double precision before conversion to SDL coordinates.
+The destination limits bound work/temporary image sizes in the software fallback;
+they are not a recommended draw budget or a constant-memory rendering promise.
+Native functions `sb_graphics_sprite_rotated` and
+`sb_graphics_sprite_region_rotated` return false on invalid input or rendering
+failure, true on success (including a valid fully offscreen draw). `custom_pivot`
+selects whether to use the supplied pivot doubles or the exact center.
+
+See [rotation demo and acceptance checks](../../examples/rotation-demo/README.md).

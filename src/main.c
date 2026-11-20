@@ -5,6 +5,7 @@
  */
 
 #define _POSIX_C_SOURCE 200809L
+#include <math.h>
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #include <lua.h>
@@ -531,6 +532,39 @@ static int l_sugarbee_sprite_region(lua_State *L) {
     return 0;
 }
 
+/* Stack: validated arguments -> zero results. No native mutation until validated. */
+static int rotated_draw(lua_State *L, bool region) {
+    int base=region ? 10 : 4, count=lua_gettop(L);
+    if (count!=base && count!=base+2)
+        return luaL_error(L,"rotated sprite expects angle and optional paired pivot coordinates");
+    lua_Integer handle=luaL_checkinteger(L,1);
+    int x=graphics_int_arg(L,2), y=graphics_int_arg(L,3);
+    int values[6]={0};
+    if (region) for (int i=0;i<6;++i) values[i]=graphics_int_arg(L,i+4);
+    double angle=luaL_checknumber(L,base), px=0, py=0;
+    if (!isfinite(angle)) return luaL_argerror(L,base,"angle must be finite");
+    bool custom=count==base+2;
+    if (custom) {
+        px=luaL_checknumber(L,base+1); py=luaL_checknumber(L,base+2);
+        if (!isfinite(px) || px<INT_MIN || px>INT_MAX ||
+            !isfinite(py) || py<INT_MIN || py>INT_MAX)
+            return luaL_error(L,"pivot must be finite and within signed 32-bit coordinate range");
+    }
+    if (handle<=0 || (uint64_t)handle>UINT32_MAX)
+        return luaL_argerror(L,1,"invalid texture handle");
+    if (region && (values[4] > SB_ROTATED_MAX_SIDE || values[5] > SB_ROTATED_MAX_SIDE ||
+        (values[4] > 0 && values[5] > 0 &&
+         (uint64_t)values[4]*(uint64_t)values[5] > SB_ROTATED_MAX_PIXELS)))
+        return luaL_error(L,"rotated destination exceeds 4096 per axis or 4194304 pixels");
+    bool ok=region ? sb_graphics_sprite_region_rotated(g_engine.graphics,(sb_texture_t)handle,
+        x,y,values[0],values[1],values[2],values[3],values[4],values[5],angle,custom,px,py) :
+        sb_graphics_sprite_rotated(g_engine.graphics,(sb_texture_t)handle,x,y,angle,custom,px,py);
+    if (!ok) return luaL_error(L,"invalid texture/region, rotated destination exceeds 4096 per axis or 4194304 pixels, or draw failed");
+    return 0;
+}
+static int l_sugarbee_sprite_rotated(lua_State *L) { return rotated_draw(L,false); }
+static int l_sugarbee_sprite_region_rotated(lua_State *L) { return rotated_draw(L,true); }
+
 static int l_sugarbee_texture_free(lua_State *L) {
     lua_Integer texture = luaL_checkinteger(L, 1);
     lua_pushboolean(L, texture > 0 && (uint64_t)texture <= UINT32_MAX &&
@@ -678,6 +712,8 @@ void register_sugarbee_api(lua_State* L) {
     lua_pushcfunction(L, l_sugarbee_texture_rgba); lua_setfield(L, -2, "texture_rgba");
     lua_pushcfunction(L, l_sugarbee_texture_load); lua_setfield(L, -2, "texture_load");
     lua_pushcfunction(L, l_sugarbee_sprite); lua_setfield(L, -2, "sprite");
+    lua_pushcfunction(L, l_sugarbee_sprite_rotated); lua_setfield(L, -2, "sprite_rotated");
+    lua_pushcfunction(L, l_sugarbee_sprite_region_rotated); lua_setfield(L, -2, "sprite_region_rotated");
     lua_pushcfunction(L, l_sugarbee_sprite_region); lua_setfield(L, -2, "sprite_region");
     lua_pushcfunction(L, l_sugarbee_texture_free); lua_setfield(L, -2, "texture_free");
     lua_pushcfunction(L, l_sugarbee_btn);   lua_setfield(L, -2, "btn");

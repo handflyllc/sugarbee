@@ -25,7 +25,7 @@ engine revision; routine cross-project handoffs are no longer required.
 ## Build
 
 See [dependencies](docs/development/dependencies.md) and
-[building](docs/development/building.md). The baseline uses CMake, SDL2, Lua
+[building](docs/development/building.md). The baseline uses CMake, SDL2 (2.0.12 or later), Lua
 5.4, minizip, zlib, and the system `zip` command for cartridge packaging.
 
 ## Documentation

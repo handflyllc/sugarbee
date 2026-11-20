@@ -17,7 +17,7 @@ sudo apt install --no-install-recommends \
 | `build-essential` | C99 compiler and linker |
 | `cmake` | Build-system generator (minimum CMake 3.16) |
 | `pkg-config` | SDL2, Lua, and minizip discovery |
-| `libsdl2-dev` | Current host graphics/windowing/gamepad API |
+| `libsdl2-dev` | SDL >=2.0.12; host graphics/windowing/gamepad API, including fractional-pivot sprite rotation |
 | `liblua5.4-dev` | Embedded Lua 5.4 VM and headers |
 | `libminizip-dev` | ZIP reader for bounded cartridge asset access (`sb_assets.c`) |
 | `libpng-dev` | PNG image decoding from cartridge memory (`sb_png.c`); no SDL_image required |

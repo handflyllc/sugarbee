@@ -343,6 +343,29 @@ function sugarbee.sprite_region(handle, x, y, sx, sy, sw, sh, dw, dh, flip_x, fl
     counts.draw_calls = counts.draw_calls + 1
 end
 
+local function rotation_args(region, ...)
+    local a=table.pack(...)
+    local base=region and 10 or 4
+    assert(a.n==base or a.n==base+2, 'rotation expects angle and optional paired pivot')
+    for i=2,(region and 9 or 3) do
+        a[i]=check_int('rotation',i,a[i])
+        assert(a[i]>=-2147483648 and a[i]<=2147483647, 'rotation integer outside range')
+    end
+    for i=base,a.n do
+        a[i]=tonumber(a[i])
+        assert(a[i] and a[i]==a[i] and math.abs(a[i])<math.huge, 'rotation number must be finite')
+        if i>base then assert(a[i]>=-2147483648 and a[i]<=2147483647, 'pivot outside range') end
+    end
+    local t=get_texture('rotation',check_int('rotation',1,a[1]))
+    local dw,dh=t.w,t.h
+    if region then dw,dh=a[8],a[9] end
+    assert(dw<=4096 and dh<=4096 and dw*dh<=4194304, 'rotation size limit exceeded')
+    if region then sugarbee.sprite_region(a[1],a[2],a[3],a[4],a[5],a[6],a[7],dw,dh)
+    else sugarbee.sprite(a[1],a[2],a[3]) end
+end
+function sugarbee.sprite_rotated(...) rotation_args(false,...) end
+function sugarbee.sprite_region_rotated(...) rotation_args(true,...) end
+
 function sugarbee.texture_free(handle)
     handle = check_int("texture_free", 1, handle)
     if textures[handle] then

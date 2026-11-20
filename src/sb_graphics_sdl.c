@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <math.h>
 #include <string.h>
 
 extern const unsigned char font8x8_basic[128][8];
@@ -730,6 +731,61 @@ bool sb_graphics_sprite(sb_graphics_t *graphics, sb_texture_t texture,
                                               0, 0, slot->width, slot->height,
                                               slot->width, slot->height,
                                               false, false);
+}
+
+/* SDL's software rotation uses temporary surfaces. Bound the destination size
+ * rather than allowing a huge destination to allocate before clipping. */
+bool sb_graphics_sprite_region_rotated(sb_graphics_t *graphics, sb_texture_t texture,
+        int x, int y, int sx, int sy, int sw, int sh, int dw, int dh,
+        double angle, bool custom_pivot, double px, double py) {
+    texture_slot_t *slot = find_texture(graphics, texture);
+    if (!slot || sx < 0 || sy < 0 || sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0 ||
+        sw > slot->width || sh > slot->height || sx > slot->width-sw ||
+        sy > slot->height-sh || !isfinite(angle)) return false;
+    /* Validate before culling: offscreen and zero-angle calls share the limits. */
+    if (dw > SB_ROTATED_MAX_SIDE || dh > SB_ROTATED_MAX_SIDE ||
+        (uint64_t)dw*(uint64_t)dh > SB_ROTATED_MAX_PIXELS) return false;
+    if (!custom_pivot) { px=dw/2.0; py=dh/2.0; }
+    if (!isfinite(px) || !isfinite(py) || px < INT_MIN || px > INT_MAX ||
+        py < INT_MIN || py > INT_MAX) return false;
+    angle=fmod(angle,360.0);
+    if (angle<0) angle+=360.0;
+    if (angle==0) return sb_graphics_sprite_region(graphics,texture,x,y,
+        sx,sy,sw,sh,dw,dh,false,false);
+    double c,sn;
+    if (angle==90) { c=0; sn=1; }
+    else if (angle==180) { c=-1; sn=0; }
+    else if (angle==270) { c=0; sn=-1; }
+    else { double rad=angle*(3.14159265358979323846/180.0); c=cos(rad); sn=sin(rad); }
+    /* Express any custom pivot as a shifted center rotation, keeping large
+     * pivot/camera coordinates out of SDL's float/int intermediate arithmetic. */
+    double rx=dw/2.0-px, ry=dh/2.0-py;
+    double cx=(double)x-graphics->camera_x+px+c*rx-sn*ry;
+    double cy=(double)y-graphics->camera_y+py+sn*rx+c*ry;
+    double hw=(fabs(c)*dw+fabs(sn)*dh)/2.0;
+    double hh=(fabs(sn)*dw+fabs(c)*dh)/2.0;
+    double l=0,t=0,r=graphics->width,bt=graphics->height;
+    if (SDL_RenderIsClipEnabled(graphics->renderer)) {
+        SDL_Rect clip; SDL_RenderGetClipRect(graphics->renderer,&clip);
+        l=fmax(l,clip.x); t=fmax(t,clip.y);
+        r=fmin(r,(double)clip.x+clip.w); bt=fmin(bt,(double)clip.y+clip.h);
+    }
+    if (l>=r || t>=bt || cx+hw<l || cy+hh<t || cx-hw>r || cy-hh>bt) return true;
+    SDL_Rect source={sx,sy,sw,sh};
+    SDL_FRect destination={(float)(cx-dw/2.0),(float)(cy-dh/2.0),(float)dw,(float)dh};
+    SDL_FPoint center={(float)(dw/2.0),(float)(dh/2.0)};
+    if (SDL_SetTextureColorMod(slot->texture,graphics->tint_r,graphics->tint_g,
+                              graphics->tint_b)!=0 ||
+        SDL_SetTextureAlphaMod(slot->texture,graphics->tint_a)!=0) return false;
+    return SDL_RenderCopyExF(graphics->renderer,slot->texture,&source,&destination,
+                             angle,&center,SDL_FLIP_NONE)==0;
+}
+
+bool sb_graphics_sprite_rotated(sb_graphics_t *graphics, sb_texture_t texture,
+        int x, int y, double angle, bool custom_pivot, double px, double py) {
+    texture_slot_t *slot=find_texture(graphics,texture);
+    return slot && sb_graphics_sprite_region_rotated(graphics,texture,x,y,
+        0,0,slot->width,slot->height,slot->width,slot->height,angle,custom_pivot,px,py);
 }
 
 bool sb_graphics_texture_destroy(sb_graphics_t *graphics, sb_texture_t texture) {
