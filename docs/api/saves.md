@@ -127,4 +127,6 @@ lifecycle/argument checks and smoke/Save Lab behavior coverage are implemented.
 Desktop automated validation passed on 2026-11-20: **189/189 serial tests**.
 The user confirmed all desktop manual checks passed on 2026-11-20: cancellation,
 deletion/repeated deletion, unchanged running counter, missing-save reload,
-relaunch reset, saving again, pause/exit and Pong. Pi acceptance is pending.
+relaunch reset, saving again, pause/exit and Pong. On 2026-11-20, the user
+confirmed Pi acceptance at `a19284a`: **189/189 tests** and all four requested
+manual checks passed. Desktop and Pi save-deletion acceptance are complete.

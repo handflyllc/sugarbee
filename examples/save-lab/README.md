@@ -86,4 +86,6 @@ from their own encoded collection and save the remainder instead.
 Deletion automated validation on 2026-11-20: **189/189 serial tests passed**.
 The user confirmed all desktop deletion checks passed on 2026-11-20, including
 cancellation, repeated deletion, reload/relaunch, saving again, lifecycle and Pong.
-Pi deletion acceptance remains pending.
+On 2026-11-20, the user confirmed Pi acceptance at `a19284a`: **189/189 tests**
+and all four requested manual checks passed. Desktop and Pi deletion acceptance
+are complete.

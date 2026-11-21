@@ -4,7 +4,7 @@ Reviewed 2026-11-16 against `7085043` (runtime `4d7ca11`), the updated
 SugarBeats passdown and five-game friction report. This is a revisable plan,
 not a release schedule.
 
-## Active checkpoint: explicit save deletion
+## Completed checkpoint: explicit save deletion
 
 Authorized after `00d541b`: `sugarbee.delete_save()` removes only the current
 UUID's save, succeeds when absent, and distinguishes I/O failure before deletion
@@ -13,7 +13,9 @@ owns confirmation, in-memory reset and multiple slots within the existing 64 KiB
 file. Native storage, host/Lua binding, smoke model and Save Lab are extended.
 [Save contract](docs/api/saves.md) and [manual checks](examples/save-lab/README.md).
 Desktop automated validation passed: 189/189 serial tests. The user confirmed all
-desktop manual checks passed on 2026-11-20. Pi acceptance is pending. The outdated sprite-tint proposal below is reconciled with its
+desktop manual checks passed on 2026-11-20. The user confirmed Pi acceptance at
+`a19284a` on 2026-11-20: 189/189 tests and all manual checks passed.
+The outdated sprite-tint proposal below is reconciled with its
 implemented stateful API; no graphics behavior changes are included.
 
 ## Completed checkpoint: developer timing readout

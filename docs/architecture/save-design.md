@@ -530,5 +530,6 @@ after uncertain persistence. Games must still handle retry I/O failures.
 Multiple game slots may be serialized inside the existing 64 KiB string; the
 engine deletes that complete file. Confirmation and in-memory reset belong to
 the cartridge. Desktop manual deletion checks were accepted by the user on
-2026-11-20; Pi acceptance is pending. The
-earlier save acceptance records above do not establish deletion validation.
+2026-11-20. The user also confirmed Pi acceptance at `a19284a` on 2026-11-20:
+189/189 tests and all requested manual checks passed. This completes the
+save-deletion checkpoint; actual power-loss testing remains deferred.
