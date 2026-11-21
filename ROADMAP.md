@@ -4,7 +4,7 @@ Reviewed 2026-11-16 against `7085043` (runtime `4d7ca11`), the updated
 SugarBeats passdown and five-game friction report. This is a revisable plan,
 not a release schedule.
 
-## Active checkpoint: cartridge-local text wrapping
+## Completed checkpoint: cartridge-local text wrapping
 
 Authorized after `016d248`. A reusable `ui.textwrap` Lua module and
 [text wrapping demo](examples/text-wrap-demo/README.md) implement bounded layout
@@ -14,7 +14,10 @@ survive; oversized words split at byte boundaries. Embedded NUL is rejected.
 Layout returns lines and height; the game owns drawing, caching and scrolling.
 No engine API, font, encoding or keyboard-input changes. Desktop automated
 validation passed: 195/195 serial tests on 2026-11-21. The user confirmed all
-desktop manual checks passed on 2026-11-21. Pi acceptance remains pending.
+desktop manual checks passed on 2026-11-21. The user confirmed Pi acceptance
+at `d31754e` on 2026-11-21: 195/195 tests on rerun and all manual checks passed.
+The initial module-fixture setup timeout and dependent failures are recorded in
+the demo validation notes; their cause remains unresolved.
 Keyboard entry remains a separate discussion.
 
 ## Completed checkpoint: direct synth frequency control

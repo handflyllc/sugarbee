@@ -58,4 +58,13 @@ The helper has focused layout/error/limit tests and the demo runs in the modeled
 smoke runner. Native text metrics remain covered by existing C tests. Desktop
 automated validation passed on 2026-11-21: **195/195 serial tests**. Desktop
 manual acceptance was confirmed by the user on 2026-11-21: all four requested
-checks passed. Pi acceptance remains pending; no new renderer behavior is implemented.
+checks passed. The user confirmed Pi acceptance at `d31754e` on 2026-11-21:
+**195/195 tests on rerun and all four manual checks passed**. No new renderer
+behavior is implemented.
+
+The first Pi suite run reportedly timed out at #103, `lua_modules_pack`
+(10-second fixture setup), preventing ten dependent tests from running. The
+subsequent full suite passed. The first log was overwritten by the rerun; cause
+remains unresolved. SD-card/storage failure is a user concern, not an established
+diagnosis. If it recurs, preserve `build/Testing/Temporary/LastTest.log` before
+rerunning. No timeout or runtime changes were made in response.
