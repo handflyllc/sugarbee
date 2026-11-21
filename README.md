@@ -33,6 +33,7 @@ See [dependencies](docs/development/dependencies.md) and
 - [The SugarBee Manifesto — purpose and principles](MANIFESTO.md)
 - [Release-readiness checklist](docs/development/release-checklist.md)
 - [Release notes](RELEASE_NOTES.md)
+- [Developer timing readout (`--stats`)](docs/development/stats.md)
 - [Build and testing](docs/development/building.md)
 - [Dependencies](docs/development/dependencies.md)
 - [Friction reconciliation and focused review](docs/development/friction-review-2026-11-16.md)

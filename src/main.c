@@ -32,6 +32,7 @@
 #include "sb_graphics.h"
 #include "sb_input.h"
 #include "sb_timing.h"
+#include "sb_stats.h"
 #include "sb_save.h"
 #include "sb_audio.h"
 #include "sb_lua_synth.h"
@@ -84,6 +85,7 @@ typedef struct {
     
     // Active Cartridge Data
     vcart_header_t current_cart;
+    bool stats_enabled;
     bool cart_loaded;
     bool cartridge_exit_requested;
     bool cart_initialized;
@@ -1174,13 +1176,42 @@ static void set_cartridge_paused(bool paused) {
     sb_audio_session_pause(g_engine.audio, paused);
 }
 
+/* Host-only diagnostic: outside the retained cartridge image and drawing state. */
+static void draw_stats(const sb_stats_t *stats) {
+    if (!g_engine.stats_enabled) return;
+    if (!sb_graphics_begin_host_frame(g_engine.graphics)) return;
+    sb_graphics_rect(g_engine.graphics,8,8,640,64,0,0,0,true);
+    const char *status=g_engine.guru_active ? "Stats GURU" :
+        !g_engine.cart_loaded ? "Stats IDLE" : g_engine.paused ? "Stats PAUSED" :
+        stats->view.limited ? "Stats SAMPLE LIMIT" : !stats->view.ready ? "Stats WARMUP" : NULL;
+    if (status) { sb_graphics_text(g_engine.graphics,status,16,16,255,255,255,1); return; }
+    const sb_stats_view_t *v=&stats->view;
+    char line[128];
+    snprintf(line,sizeof line,"FPS %.1f | Frame %.1f/%.1f ms",v->fps,
+        v->frame_average*1000,v->frame_worst*1000);
+    sb_graphics_text(g_engine.graphics,line,16,16,255,255,255,1);
+    snprintf(line,sizeof line,"Upd %.1f | Draw %.1f | Present %.1f ms",
+        v->update*1000,v->draw*1000,v->present*1000);
+    sb_graphics_text(g_engine.graphics,line,16,34,255,255,255,1);
+    snprintf(line,sizeof line,"Sim drop %.1f ms",v->dropped*1000);
+    sb_graphics_text(g_engine.graphics,line,16,52,255,255,255,1);
+}
+static bool stats_gameplay(void) {
+    return g_engine.stats_enabled && g_engine.cart_loaded && !g_engine.paused && !g_engine.guru_active;
+}
+
 void main_loop(void) {
     sb_timing_t timing;
+    sb_stats_t stats;
+    sb_stats_reset(&stats);
+    Uint64 stats_last_present = 0;
     sb_timing_reset(&timing);
     const Uint64 frequency = SDL_GetPerformanceFrequency();
     Uint64 last_counter = SDL_GetPerformanceCounter();
 
     while (g_engine.is_running) {
+        bool stats_active=stats_gameplay();
+        double stats_update=0, stats_draw=0;
         if (!sb_input_poll(g_engine.input)) {
             g_engine.is_running = false;
             break;
@@ -1216,6 +1247,8 @@ void main_loop(void) {
                 g_engine.guru_active = false;
 
                 sb_timing_reset(&timing);
+                sb_stats_reset(&stats);
+                stats_last_present = 0;
                 last_counter = SDL_GetPerformanceCounter();
 
                 /* Do not reuse the recovery input as idle-host input. */
@@ -1318,9 +1351,13 @@ void main_loop(void) {
                         }
                     }
                 }
+                if (pause_changed) stats_active = false;
                 if (g_engine.cart_loaded && !g_engine.paused && !pause_changed) {
+                    Uint64 before=g_engine.stats_enabled ? SDL_GetPerformanceCounter() : 0;
                     call_lua_global_function(
                         "update", true, sb_timing_step_seconds());
+                    if (g_engine.stats_enabled && frequency)
+                        stats_update+=(double)(SDL_GetPerformanceCounter()-before)/frequency;
                 }
 
                 sb_input_end_update(g_engine.input);
@@ -1339,6 +1376,8 @@ void main_loop(void) {
         if (g_engine.cartridge_exit_requested) {
             end_cartridge();
             sb_timing_reset(&timing);
+            sb_stats_reset(&stats);
+            stats_last_present = 0;
             last_counter = SDL_GetPerformanceCounter();
         } else if (g_engine.cartridge_rescan_requested) {
             g_engine.cartridge_rescan_requested = false;
@@ -1348,6 +1387,8 @@ void main_loop(void) {
             }
 
             sb_timing_reset(&timing);
+            sb_stats_reset(&stats);
+            stats_last_present = 0;
             last_counter = SDL_GetPerformanceCounter();
         } else if (g_engine.cartridge_launch_requested) {
             g_engine.cartridge_launch_requested = false;
@@ -1368,6 +1409,8 @@ void main_loop(void) {
             }
 
             sb_timing_reset(&timing);
+            sb_stats_reset(&stats);
+            stats_last_present = 0;
             last_counter = SDL_GetPerformanceCounter();
         }
 
@@ -1417,7 +1460,10 @@ void main_loop(void) {
                     break;
                 }
 
+                Uint64 before=g_engine.stats_enabled ? SDL_GetPerformanceCounter() : 0;
                 call_lua_global_function("draw", false, 0.0);
+                if (g_engine.stats_enabled && frequency)
+                    stats_draw=(double)(SDL_GetPerformanceCounter()-before)/frequency;
             }
 
             if (!sb_graphics_show_game_frame(g_engine.graphics)) {
@@ -1446,7 +1492,23 @@ void main_loop(void) {
             }
         }
 
+        if (g_engine.stats_enabled && (!stats_active || !stats_gameplay())) {
+            sb_stats_reset(&stats);
+            stats_last_present = 0;
+        }
+        draw_stats(&stats);
+        Uint64 before_present=g_engine.stats_enabled ? SDL_GetPerformanceCounter() : 0;
         sb_graphics_present(g_engine.graphics);
+        if (g_engine.stats_enabled) {
+            Uint64 end=SDL_GetPerformanceCounter();
+            if (stats_active && stats_gameplay() && frequency) {
+                if (stats_last_present && end>stats_last_present)
+                    sb_stats_add(&stats,(double)(end-stats_last_present)/frequency,
+                        stats_update,stats_draw,(double)(end-before_present)/frequency,
+                        timing.dropped_seconds);
+                stats_last_present=end;
+            }
+        }
         /* Software-renderer fallback may not have VSync; don't spin idle. */
         if (!g_engine.guru_active && updates == 0) SDL_Delay(1);
     }
@@ -1689,9 +1751,13 @@ static void scan_cartridge_directory(const char *directory) {
     }
 }
 
-/* --console is an explicit leading option; neither hardware nor display implies it. */
+/* Explicit ordered host options; neither hardware nor display implies them. */
 static bool parse_host_arguments(int argc, char *argv[]) {
     int first = 1;
+    if (argc > first && strcmp(argv[first], "--stats") == 0) {
+        g_engine.stats_enabled = true;
+        ++first;
+    }
     if (argc > first && strcmp(argv[first], "--console") == 0) {
         g_engine.console_mode = true;
         ++first;
@@ -1776,12 +1842,14 @@ static bool select_host_save_directory(void) {
 }
 
 int main(int argc, char* argv[]) {
-    if (!parse_host_arguments(argc, argv)) {
+    bool help=argc==2 && strcmp(argv[1],"--help")==0;
+    if (help || !parse_host_arguments(argc, argv)) {
         fprintf(stderr,
-                "Usage: %s [--console] [--save-dir DIRECTORY] [cartridge.vcart]\n"
-                "       %s [--console] [--save-dir DIRECTORY] --cartridges DIRECTORY\n",
+                "Usage: %s [--stats] [--console] [--save-dir DIRECTORY] [cartridge.vcart]\n"
+                "       %s [--stats] [--console] [--save-dir DIRECTORY] --cartridges DIRECTORY\n"
+                "  --stats  Show developer timing readout (see docs/development/stats.md)\n",
                 argv[0], argv[0]);
-        return 1;
+        return help ? 0 : 1;
     }
 
     if (select_host_save_directory()) {

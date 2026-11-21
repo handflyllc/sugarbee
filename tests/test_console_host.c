@@ -15,6 +15,20 @@ static void reset_host(bool console) {
 }
 
 int main(void) {
+    char *stats[] = {"sugarbee", "--stats"};
+    char *stats_cart[] = {"sugarbee", "--stats", "game.vcart"};
+    char *stats_all[] = {"sugarbee", "--stats", "--console", "--save-dir", "/tmp/saves", "--cartridges", "/tmp/carts"};
+    char *stats_bad[] = {"sugarbee", "--stats", "--stats"};
+    reset_host(false);
+    CHECK(parse_host_arguments(2, stats) && g_engine.stats_enabled);
+    reset_host(false);
+    CHECK(parse_host_arguments(3, stats_cart) && g_engine.stats_enabled);
+    CHECK(strcmp(g_engine.startup_cartridge_path,"game.vcart") == 0);
+    reset_host(false);
+    CHECK(parse_host_arguments(7, stats_all) && g_engine.stats_enabled && g_engine.console_mode);
+    CHECK(strcmp(g_engine.save_directory_override,"/tmp/saves") == 0);
+    CHECK(strcmp(g_engine.cartridge_directory,"/tmp/carts") == 0);
+    CHECK(!parse_host_arguments(3, stats_bad));
     char *idle[] = {"sugarbee"};
     char *console[] = {"sugarbee", "--console"};
     char *direct[] = {"sugarbee", "--console", "game.vcart"};

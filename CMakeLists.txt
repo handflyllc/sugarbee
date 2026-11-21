@@ -18,7 +18,7 @@ function(sugarbee_warnings target)
 endfunction()
 
 # Pure-C fixed simulation scheduler is usable by every platform backend.
-add_library(sugarbee_timing STATIC src/sb_timing.c)
+add_library(sugarbee_timing STATIC src/sb_timing.c src/sb_stats.c)
 target_include_directories(sugarbee_timing PUBLIC "${PROJECT_SOURCE_DIR}/include")
 sugarbee_warnings(sugarbee_timing)
 
@@ -398,6 +398,12 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     target_link_libraries(test_console_host PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
     sugarbee_warnings(test_console_host)
     add_test(NAME console_host_controls COMMAND test_console_host)
+    add_executable(test_host_stats tests/test_host_stats.c)
+    target_link_libraries(test_host_stats PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+    sugarbee_warnings(test_host_stats)
+    add_test(NAME host_stats COMMAND test_host_stats "${PROJECT_SOURCE_DIR}/examples/stats-demo/main.lua")
+    set_tests_properties(host_stats PROPERTIES ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy")
+    add_test(NAME host_help COMMAND sugarbee --help)
 
     add_test(NAME wav_output COMMAND sbee-wav-test)
     set_tests_properties(wav_output PROPERTIES TIMEOUT 15 ENVIRONMENT "SDL_AUDIODRIVER=dummy")
@@ -926,6 +932,10 @@ if(BUILD_TESTING)
     target_link_libraries(test_timing PRIVATE sugarbee_timing)
     sugarbee_warnings(test_timing)
     add_test(NAME timing_smoke COMMAND test_timing)
+    add_executable(test_stats tests/test_stats.c)
+    target_link_libraries(test_stats PRIVATE sugarbee_timing)
+    sugarbee_warnings(test_stats)
+    add_test(NAME stats_window COMMAND test_stats)
 
     add_executable(test_vcart tests/test_vcart.c)
     target_link_libraries(test_vcart PRIVATE sugarbee_vcart)
@@ -1047,7 +1057,7 @@ if(BUILD_TESTING)
         set_tests_properties(save_lab_behavior PROPERTIES TIMEOUT 5)
         add_test(NAME smoke_rotation COMMAND "${LUA54_INTERPRETER}"
             "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua" "${PROJECT_SOURCE_DIR}/tests/rotation" 1 1)
-        foreach(cartridge IN ITEMS rotation-demo opacity-demo graphics-demo moving-box sprite-demo
+        foreach(cartridge IN ITEMS stats-demo rotation-demo opacity-demo graphics-demo moving-box sprite-demo
                 asset-demo sprite-sheet-demo pong-lab invaders-lab pacman-demo)
             add_test(NAME cartridge_smoke_${cartridge}
                 COMMAND "${LUA54_INTERPRETER}"

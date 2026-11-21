@@ -299,3 +299,9 @@ The new `sprite_region()` API validates source bounds and sizes; the expanded
 using the SDL dummy driver. `sprite_sheet_png_smoke` also validates the
 192×32 atlas. Follow with the old gold-rectangle, Moving Box,
 asset-demo, idle-startup, and Guru recovery regressions.
+
+## Optional developer timing
+
+Launch with `./build/sugarbee --stats path/to/game.vcart`. See
+[stats field definitions, limitations and example](stats.md). Use `--help` for
+the supported option order. The overlay is disabled by default.

@@ -159,7 +159,7 @@ accepted future work retains that status without a schedule.
 | 21 | Sprite rotation implemented with clockwise degrees, destination-relative pivots and bounded destination sizes; desktop accepted 2026-11-19; Pi accepted at `cf64b42` on 2026-11-20 (184 tests and all five manual checks). See [demo](../../examples/rotation-demo/README.md). |
 | 22 | Integer source crop is current contract; remainder offset workaround valid. Link to resolution/camera discussion. |
 | 23 | Reported cartridge bookkeeping fault; no engine defect reproduced. Test same-song restart during fade in future example. |
-| 24 | Diagnostics candidate; updates/draw is not an exact FPS measurement. |
+| 24 | Opt-in `--stats` timing diagnostic implemented; desktop accepted 2026-11-20; Pi pending. See [definitions](stats.md). Host presentations, callback wall times and discarded simulation time; no automatic quality controls. |
 | 25 | Bounded general-purpose cartridge data reads completed; Pi accepted at `9d75cd8`. See [data](../api/data.md). |
 | 26 | Sprite tint completed; Pi accepted at `9516590`. Multiplicative tint is not arbitrary palette replacement. |
 | 27 | Resolved documentation ambiguity: partial sprite alpha blends. |

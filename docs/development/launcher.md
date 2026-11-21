@@ -19,12 +19,12 @@ No default cartridge directory or configuration file is implemented.
 The accepted command forms are:
 
 ```sh
-./build/sugarbee [--console] [--save-dir DIRECTORY] [cartridge.vcart]
-./build/sugarbee [--console] [--save-dir DIRECTORY] --cartridges DIRECTORY
+./build/sugarbee [--stats] [--console] [--save-dir DIRECTORY] [cartridge.vcart]
+./build/sugarbee [--stats] [--console] [--save-dir DIRECTORY] --cartridges DIRECTORY
 ```
 
-Square brackets above indicate optional arguments; do not type them. `--console`
-remains first when present, followed by `--save-dir` before the cartridge or
+Square brackets above indicate optional arguments; do not type them. `--stats`
+comes first when present, followed by `--console`, then `--save-dir` before the cartridge or
 `--cartridges` argument. Duplicate, misplaced, empty, or missing options/values
 are usage errors. A value beginning with `-` must be expressed as a path such
 as `./-saves`. Quote paths containing spaces.
@@ -53,7 +53,8 @@ Configuration-file lookup and automatic migration are not implemented.
 
 ## Console mode: confirmed exit to system
 
-`--console` must be the first option. It can be used alone, before a direct
+`--console` comes before save/cartridge options, after optional `--stats`.
+It can be used alone, before a direct
 cartridge path, or before `--cartridges DIRECTORY`. Hardware and display mode
 never enable it automatically. It does not enable OS power-off.
 
@@ -146,3 +147,9 @@ See the [manual checklist](../../tests/launcher/README.md). The automated suite
 includes fifty-six native tests and, when Lua 5.4 is available, the Save Lab
 behavior test and eight cartridge smoke
 tests using a stand-in API. It does not automate the launcher interaction flow.
+
+## Developer timing
+
+A leading `--stats` enables a compact host timing overlay. See
+[definitions and interpretation](stats.md); this is disabled by default.
+`./build/sugarbee --help` prints command usage without starting the host.

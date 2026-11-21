@@ -9,6 +9,7 @@
 
 typedef struct {
     double accumulator_seconds;
+    double dropped_seconds; /* Last advance: elapsed clamp plus discarded backlog. */
 } sb_timing_t;
 
 /* Start with an empty accumulator; no simulation update is due initially. */

@@ -33,6 +33,13 @@ int main(void) {
     CHECK(sb_timing_advance(&timer, 20.0) == SB_MAX_UPDATES_PER_FRAME);
     CHECK(sb_timing_advance(&timer, 0.0) == 0);
 
+    CHECK(timer.dropped_seconds == 0.0);
+    sb_timing_reset(&timer);
+    CHECK(sb_timing_advance(&timer, 0.5) == 5);
+    CHECK(fabs(timer.dropped_seconds - (0.5 - 5 * dt)) < 1e-9);
+    CHECK(sb_timing_advance(&timer, dt) == 1);
+    CHECK(timer.dropped_seconds == 0.0);
+
     /* Erroneous elapsed inputs cannot drive the scheduler backwards. */
     CHECK(sb_timing_advance(&timer, -1.0) == 0);
     CHECK(sb_timing_advance(&timer, NAN) == 0);
