@@ -87,5 +87,6 @@ checks. Desktop automated results and manual/Pi acceptance are recorded below.
 
 Desktop automated validation on 2026-11-21: **204/204 serial tests passed**,
 including all four new pane checks. Build completed without warnings. The user
-confirmed all five desktop manual checks passed on 2026-11-21. Pi acceptance
-remains pending.
+confirmed all five desktop manual checks passed on 2026-11-21. The user confirmed
+Pi acceptance at `953a202` on 2026-11-21: **204/204 tests passed**, along with
+the requested manual validation. Desktop and Pi acceptance are complete.
