@@ -68,4 +68,7 @@ real renderer overlay isolation, and adjustable-load cartridge smoke tests.
 Desktop automated validation passed on 2026-11-20: **188/188 serial tests**.
 The user confirmed all desktop manual checks passed on 2026-11-20: readout and
 load controls, pause/resume/exit/relaunch, disabled overlay, Pong and smaller-canvas
-rendering. Pi acceptance remains pending.
+rendering. On 2026-11-20, the user confirmed Pi acceptance at `f5f9072`:
+**188/188 tests** and all five requested validation checks passed, including
+readout/load controls, lifecycle resets, disabled overlay, Pong/smaller-canvas
+regressions and normal host exit.

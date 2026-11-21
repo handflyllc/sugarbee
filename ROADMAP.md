@@ -4,7 +4,7 @@ Reviewed 2026-11-16 against `7085043` (runtime `4d7ca11`), the updated
 SugarBeats passdown and five-game friction report. This is a revisable plan,
 not a release schedule.
 
-## Active checkpoint: developer timing readout
+## Completed checkpoint: developer timing readout
 
 Authorized after `4124871`: opt-in leading `--stats`, compact host overlay with
 FPS, average/maximum frame interval, update/draw/present wall times and discarded
@@ -13,7 +13,9 @@ pause/session transitions. No game API, automatic quality adjustment or hardware
 tuning. [Contract and interpretation](docs/development/stats.md) and an
 [adjustable-load example](examples/stats-demo/README.md) are implemented.
 Desktop automated validation passed: 188/188 serial tests. The user confirmed
-all desktop manual checks passed on 2026-11-20. Pi acceptance is pending. This addresses friction item 24; Lua budget errors remain separate.
+all desktop manual checks passed on 2026-11-20. The user confirmed Pi acceptance
+at `f5f9072` on 2026-11-20: 188/188 tests and all manual checks passed.
+This addresses friction item 24; Lua budget errors remain separate.
 
 ## Completed checkpoint: sprite rotation
 
@@ -177,7 +179,7 @@ On 2026-11-18, the user confirmed Pi acceptance at `93ea8a3`: 158/158 serial
 tests and all modules-demo, Guru recovery, lifecycle, Pong/Pac-Man regression
 and Exit to system checks passed. Desktop and Pi acceptance are complete.
 General-purpose data access is covered by the checkpoint below; the developer
-timing diagnostic is now the active checkpoint at the top of this document.
+timing diagnostic is now completed at the top of this document.
 No budget, voice-count, mixing-gain or sample-rate increase is proposed.
 
 ## Completed checkpoint: general-purpose cartridge data reads

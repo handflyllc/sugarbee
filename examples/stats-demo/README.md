@@ -29,4 +29,6 @@ Desktop automated validation: **188/188 serial tests passed**, 2026-11-20,
 including all six workload settings with production Lua bindings and budgets.
 
 The user confirmed all desktop manual checks passed on 2026-11-20.
-Pi validation is pending against the forthcoming checkpoint commit.
+On 2026-11-20, the user confirmed Pi acceptance at `f5f9072`: **188/188 tests**
+and all five requested validation checks passed. Desktop and Pi acceptance
+are complete.
