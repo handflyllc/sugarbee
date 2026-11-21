@@ -26,7 +26,12 @@ passes, one fixture timeout and ten blocked tests) and a successful 11/11 focuse
 serial recheck. The fixture passed in 8.76 seconds against its 10-second limit;
 the group took 10.57 seconds. This was not a single clean 200-test Pi run. The
 intermittent fixture timeout remains an unresolved test-reliability follow-up;
-no storage fault is established and no runtime or timeout changes were made.
+no storage fault is established and no runtime or timeout changes were made
+during that validation. Follow-up after `bcafa4c`: increase only the
+`lua_modules_pack` setup timeout to 20 seconds for Pi headroom; dependent tests
+retain 10 seconds. Desktop focused serial validation passed 11/11 after CMake
+regeneration, with the new timeout confirmed. Pi verification of this allowance
+is pending; the original delay remains unexplained.
 
 ## Completed checkpoint: cartridge-local text wrapping
 

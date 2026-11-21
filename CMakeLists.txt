@@ -718,7 +718,8 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
             "-DPACKER=$<TARGET_FILE:sbee-pack>" "-DROOT=${PROJECT_BINARY_DIR}/module-fixtures"
             "-DCART=${PROJECT_BINARY_DIR}/modules.vcart"
             -P "${PROJECT_SOURCE_DIR}/tests/modules_pack.cmake")
-        set_tests_properties(lua_modules_pack PROPERTIES FIXTURES_SETUP lua_modules TIMEOUT 10)
+        # Pi fixture generation/packaging measured 8.76s; allow setup headroom.
+        set_tests_properties(lua_modules_pack PROPERTIES FIXTURES_SETUP lua_modules TIMEOUT 20)
         foreach(mode basic errors depth count bytes failed_bytes budget host crc)
             add_test(NAME lua_modules_${mode} COMMAND test_lua_modules
                 "${PROJECT_BINARY_DIR}/modules.vcart" ${mode})
