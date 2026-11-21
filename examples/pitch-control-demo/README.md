@@ -41,7 +41,9 @@ Desktop and Pi acceptance:
 
 The user confirmed all desktop listening, lifecycle and regression checks passed
 on 2026-11-20. Audible stepping and a digital character were noted but accepted
-for this direct-control checkpoint. Pi acceptance is pending after a break.
+for this direct-control checkpoint. The user confirmed Pi acceptance at `f37ed75`
+on 2026-11-21: **193/193 tests and all requested checks passed**. Audio output
+had reverted to A/V; the user restored HDMI0 before confirming the checks.
 A direct-versus-smoothed comparison remains a possible future investigation;
 no smoothing implementation is authorized. See the
 [API contract](../../docs/api/audio.md#direct-frequency-control).

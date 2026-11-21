@@ -168,7 +168,7 @@ accepted future work retains that status without a schedule.
 | 30 | Lua active-local limit remains; cartridge-local modules now support responsibility separation (entry 5). |
 | 31 | Native line primitive completed; Pi accepted at `0357700`. |
 | 32 | Filled triangles completed with bounded clipping and defined edge coverage; Pi accepted at `ba7cb7a`. |
-| 33 | Direct Lua `synth.set_frequency(voice, hz)` implemented using the existing native setter; preserves phase/envelope, respects music ownership. Desktop accepted 2026-11-20 (193 tests and all manual checks), with audible stepping noted; Pi pending. Direct-versus-smoothed comparison deferred. |
+| 33 | Direct Lua `synth.set_frequency(voice, hz)` implemented using the existing native setter; preserves phase/envelope, respects music ownership. Desktop accepted 2026-11-20 (193 tests and all manual checks), with audible stepping noted; Pi accepted at `f37ed75` on 2026-11-21 (193 tests and all requested checks, HDMI0 output). Direct-versus-smoothed comparison deferred. |
 
 ## Historical performance interpretation and checkpoint recommendation
 

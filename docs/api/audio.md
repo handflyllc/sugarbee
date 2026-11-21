@@ -118,8 +118,9 @@ The [pitch-control demo](../../examples/pitch-control-demo/README.md) compares
 steps and sweeps on triangle, saw and 50% pulse. Native waveform generation,
 voice count, mix gain, sample rate, music format and SugarBeats are unchanged.
 Desktop acceptance was confirmed by the user on 2026-11-20, with audible stepping
-and a digital character noted. Pi acceptance remains pending. A direct-versus-
-smoothed comparison is deferred for possible future discussion; no smoothing
+and a digital character noted. The user confirmed Pi acceptance at `f37ed75`
+on 2026-11-21: 193/193 tests and all requested checks passed with HDMI0 output.
+A direct-versus-smoothed comparison is deferred for possible future discussion; no smoothing
 implementation is authorized.
 
 ## Host lifecycle
