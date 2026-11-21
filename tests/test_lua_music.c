@@ -117,7 +117,7 @@ int main(int argc,char **argv) {
         CHECK(run("opts={voices={3,1,2},volume=0,loop=true}; assert(m.play(song,opts)); "
             "opts.voices[1]=9; assert(m.state()=='playing'); "
             "local ok,r=m.play(song,{voices={1,2,3}}); assert(ok==false and r=='music_busy'); "
-            "assert(not sugarbee.synth.note_on(1,440)); assert(not m.unload(song))"));
+            "assert(not sugarbee.synth.note_on(1,440)); local ok,r=sugarbee.synth.set_frequency(1,440); assert(ok==false and r=='audio_rejected'); assert(not m.unload(song))"));
         CHECK(seq->voice_map[0]==3 && seq->gain==0 && seq->gain_left==0 && seq->loop);
         float muted[1024]; audio_output(g_engine.audio,(Uint8 *)muted,sizeof muted);
         for (size_t i=0;i<1024;++i) CHECK(muted[i]==0);
@@ -130,7 +130,7 @@ int main(int argc,char **argv) {
         render(1488000-992); CHECK(seq->frame==0 && seq->gain==.5 && seq->voice_map[0]==3);
         render(100);
         CHECK(run("assert(sugarbee.synth.note_on(9,660)); assert(m.stop()); assert(m.state()=='finishing'); "
-            "assert(not m.unload(song)); assert(m.stop())"));
+            "assert(not m.unload(song)); local ok,r=sugarbee.synth.set_frequency(1,440); assert(ok==false and r=='audio_rejected'); assert(sugarbee.synth.set_frequency(9,880)); assert(m.stop())"));
         render(480); CHECK(run("assert(m.state()=='idle'); assert(m.stop())"));
         CHECK(sb_music_shared_voice_active(&g_engine.audio->music,9));
         CHECK(run("assert(sugarbee.synth.stop(9)); assert(sugarbee.synth.note_on(2,440)); "

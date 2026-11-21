@@ -62,6 +62,7 @@ See [dependencies](docs/development/dependencies.md) and
 - [Cartridge WAV API](docs/api/wav.md)
 - [Experimental music asset and playback API](docs/api/music.md)
 - [WAV Lab](examples/wav-lab/README.md)
+- [Direct pitch-control listening demo](examples/pitch-control-demo/README.md)
 - [Interactive Synth Lab](examples/synth-lab/README.md)
 - [Music Lab](examples/music-lab/README.md)
 - [Song-change example](examples/song-change/README.md)

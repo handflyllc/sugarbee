@@ -99,6 +99,16 @@ static int note_on(lua_State *L) {
     return result(L,noise ? sb_audio_voice_start_selected_noise(ctx->audio,voice) :
                   sb_audio_voice_start_selected(ctx->audio,voice,frequency));
 }
+/* Stack: two arguments; one true result or false plus a refusal code.
+ * Validate before the device lock. This never starts/retriggers a note. */
+static int set_frequency(lua_State *L) {
+    arity(L,2);
+    unsigned voice=voice_arg(L);
+    double hz=number(L,2,voice,"frequency",SB_AUDIO_PITCH_MIN,SB_AUDIO_PITCH_MAX);
+    synth_context_t *ctx=context(L);
+    return result(L,ctx->voices[voice-1].waveform!=SB_AUDIO_VOICE_NOISE &&
+                  sb_audio_voice_pitch(ctx->audio,voice,hz));
+}
 static int note_off(lua_State *L) {
     arity(L,1);
     return result(L,sb_audio_voice_note_off(context(L)->audio,voice_arg(L)));
@@ -109,7 +119,7 @@ static int stop(lua_State *L) {
 }
 void sb_lua_synth_register(lua_State *L, sb_audio_t *audio) {
     static const luaL_Reg functions[]={{"configure",configure},{"note_on",note_on},
-        {"note_off",note_off},{"stop",stop},{NULL,NULL}};
+        {"set_frequency",set_frequency},{"note_off",note_off},{"stop",stop},{NULL,NULL}};
     lua_newtable(L);
     synth_context_t *ctx=lua_newuserdatauv(L,sizeof(*ctx),0);
     ctx->audio=audio;

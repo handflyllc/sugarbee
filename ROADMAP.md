@@ -4,6 +4,21 @@ Reviewed 2026-11-16 against `7085043` (runtime `4d7ca11`), the updated
 SugarBeats passdown and five-game friction report. This is a revisable plan,
 not a release schedule.
 
+## Active checkpoint: direct synth frequency control
+
+Authorized after `ee10a79`: `sugarbee.synth.set_frequency(voice, hz)` exposes the
+native phase/envelope-preserving setter for active pitched voices, 27.5–4186.01 Hz.
+Idle/noise/music-reserved voices refuse the request; normal audio-unavailable and
+argument validation conventions apply. No pitch ramp, scheduling, pitch envelope,
+voice-count/mix/sample-rate changes or composer changes. Native/Lua regressions
+and the [listening demo](examples/pitch-control-demo/README.md) cover steps and
+sweeps on triangle, saw and 50% pulse. Desktop automated validation passed: 193/193
+serial tests. The user confirmed all desktop listening, lifecycle and regression
+checks passed on 2026-11-20. Audible stepping and a digital character were noted
+but accepted for direct control. A direct-versus-smoothed comparison is deferred
+as a possible future investigation, not authorized implementation. Pi validation
+is pending after the user returns from a break.
+
 ## Completed checkpoint: explicit save deletion
 
 Authorized after `00d541b`: `sugarbee.delete_save()` removes only the current

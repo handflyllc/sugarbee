@@ -24,6 +24,7 @@ sugarbee.synth.note_off(1)
 | `configure(voice, settings)` | Update supplied fields without starting a note. |
 | `note_on(voice, hz)` | Start/retrigger the selected triangle, saw, or pulse. |
 | `note_on(voice)` | Start/retrigger selected noise; a frequency is an error. |
+| `set_frequency(voice, hz)` | Change an active pitched voice without retriggering its envelope. |
 | `note_off(voice)` | Release using the note's captured release duration. |
 | `stop(voice)` | Stop with a 10 ms fade, overriding the configured release. |
 
@@ -34,7 +35,7 @@ The rejected request changes nothing. A repeated request for the current
 transition destination succeeds without extending the transition.
 
 When no audio device opened, configuration still validates and retains settings,
-returning `true`. Playback/release/stop return `false, "audio_unavailable"`.
+returning `true`. Playback/frequency/release/stop return `false, "audio_unavailable"`.
 Cartridges should continue gameplay. There is no reconnection or separate
 availability query in this checkpoint.
 
@@ -79,6 +80,48 @@ with the existing native smoothing. Zero envelope times can produce sharp edges.
 To overlap notes, use separate voices. Nine-voice headroom and output gain are
 unchanged; adding a voice does not reduce the others' volume.
 
+## Direct frequency control
+
+`set_frequency(voice, hz)` takes exactly two arguments: an integer voice 1–9
+and a finite numeric frequency **27.5–4186.01 Hz**, inclusive. Fractional hertz
+are preserved; there is no rounding, snapping or clamping. Numeric strings,
+missing/extra arguments, nonfinite or out-of-range values raise Lua errors
+before any audio state changes, even without an audio device.
+
+Success returns one value, `true`. An idle voice, a voice configured as noise,
+a music-reserved voice (including rests and finishing), or a failed audio session
+returns `false, "audio_rejected"`, unchanged. No device returns
+`false, "audio_unavailable"` for valid arguments. This call never starts a note
+or stores a pending frequency for an idle voice. Start with `note_on(voice, hz)`.
+
+An active note keeps oscillator phase, envelope stage/progress, captured ADSR,
+filter history, volume/pan ramps and pulse width. During release or short stop,
+a frequency change does not cancel or extend the fade. During an accepted
+transition to a pitched waveform, it updates audible pitched sources together;
+configured noise remains unavailable to this Lua pitch control.
+
+The native setter runs under the audio-device lock. New samples use the changed
+frequency; samples already buffered for playback cannot change. There is **no
+pitch smoothing or scheduled glide**. A game can calculate targets in `update(dt)`
+for engine sounds, sirens or slides. At the normal update rate these are discrete
+60 Hz control changes; phase continuity does not guarantee that every jump or
+sweep sounds smooth. Catch-up updates need not become evenly spaced audio events.
+
+```lua
+-- Start once, then change frequency without repeating the attack.
+sugarbee.synth.note_on(1, 220)
+-- Later, in update():
+local ok, reason = sugarbee.synth.set_frequency(1, 330.5)
+```
+
+The [pitch-control demo](../../examples/pitch-control-demo/README.md) compares
+steps and sweeps on triangle, saw and 50% pulse. Native waveform generation,
+voice count, mix gain, sample rate, music format and SugarBeats are unchanged.
+Desktop acceptance was confirmed by the user on 2026-11-20, with audible stepping
+and a digital character noted. Pi acceptance remains pending. A direct-versus-
+smoothed comparison is deferred for possible future discussion; no smoothing
+implementation is authorized.
+
 ## Host lifecycle
 
 Pause fades to silence over 10 ms, freezes the complete bank, and resume fades
@@ -86,8 +129,7 @@ back in. Failure rejects controls and fades out. Eligible shutdown retains audio
 access; paused shutdown stays silent. Teardown clears voices immediately without
 waiting for notes to finish. See [lifecycle checks](../../tests/audio-session.md).
 
-Separate pitch-only controls, music-file formats, and sequencing helpers are
-not exposed here. WAV playback uses the separate [sugarbee.audio API](wav.md). The basic [Synth Lab](../../examples/synth-lab/README.md)
+Music assets and sequencing use the separate [music API](music.md). WAV playback uses the separate [sugarbee.audio API](wav.md). The basic [Synth Lab](../../examples/synth-lab/README.md)
 demonstrates the current API. The [Musical Synth Lab](../../examples/musical-synth-lab/README.md) uses a
 local Lua note/duration table for four Mozart bars; desktop and Pi
 validation passed at `683badf`, as recorded in its README.

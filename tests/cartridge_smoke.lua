@@ -160,6 +160,7 @@ end
 sugarbee.synth = {
     configure = function() return true end,
     note_on = function() return true end,
+    set_frequency = function() return true end,
     note_off = function() return true end,
     stop = function() return true end
 }

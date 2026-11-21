@@ -78,8 +78,11 @@ The adapter validates the complete request before native mutation. A single
 locked native transaction publishes all settings or rejects them unchanged.
 Configuration remains usable without output; playback reports unavailability.
 
-The synth namespace has no separate pitch-only setter, seed control, availability
-query or resonance. WAV and music bindings exist in their own namespaces. A basic [Synth Lab](../../examples/synth-lab/README.md) exercises
+The direct-frequency checkpoint adds `set_frequency(voice, hz)`; desktop
+acceptance was confirmed on 2026-11-20, with audible stepping noted. Pi acceptance
+is pending. A direct-versus-smoothed comparison is deferred, not an authorized
+implementation. Seed control, an availability query
+and resonance remain unexposed. WAV and music bindings exist in their own namespaces. A basic [Synth Lab](../../examples/synth-lab/README.md) exercises
 real cartridge calls. The separate [Musical Synth Lab](../../examples/musical-synth-lab/README.md)
 now plays the first four bars of Mozart's Eine kleine Nachtmusik from a verified
 public-domain score, melody only one octave down. A local note/duration table
@@ -108,14 +111,17 @@ and update timing use the existing API. Desktop and Pi validation passed per the
   Repeated note-off does not restart release. Stop overrides release with a
   480-frame fade; repeated stop/note-off cannot prolong that stop.
 - Idle slots can start any implemented type. Active cross-type starts are
-  rejected. Noise has a separate frequency-free note-on and rejects pitch edits.
+  rejected. Noise has a separate frequency-free note-on. Lua frequency controls
+  reject configured noise; the native pitch setter can retain a pitch without
+  changing steady noise, and updates pitched sources during waveform transitions.
 - Bank reset cancels notes and restores defaults; it is cleanup, not a fade.
   Normal host startup remains silent; cartridges request notes explicitly.
 
 ## Voice lifecycle contract
 
-The minimal Lua API uses the native foundations. Separate pitch-only setters
-remain deferred; current native restrictions above remain in force.
+The Lua API uses the native foundations. Direct `set_frequency` preserves phase
+and envelope progress without introducing pitch smoothing. See the
+[Lua contract](../api/audio.md#direct-frequency-control).
 
 
 - Every voice starts silent with predictable settings.
@@ -124,7 +130,7 @@ remain deferred; current native restrictions above remain in force.
   full-attack-duration rule implemented natively. Noise uses `note_on(voice)`
   with no frequency.
 - Native `sb_audio_voice_pitch` changes frequency without retriggering the
-  envelope; there is no corresponding Lua pitch-only setter.
+  envelope; Lua `sugarbee.synth.set_frequency` exposes it for active pitched voices.
 - Each `note_on` captures attack, decay, sustain, and release settings for that
   note, including its later release. Envelope configuration edits apply to the
   next note; a sustained note may continue indefinitely until released or stopped.

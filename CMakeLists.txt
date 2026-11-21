@@ -659,6 +659,17 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
             set_tests_properties(musical_synth_lab_${mode} PROPERTIES FIXTURES_REQUIRED musical_synth_lab
                 TIMEOUT 5 ENVIRONMENT "SDL_AUDIODRIVER=dummy;SDL_VIDEODRIVER=dummy")
         endforeach()
+        add_test(NAME pitch_control_pack COMMAND sbee-pack
+            -i "${PROJECT_SOURCE_DIR}/examples/pitch-control-demo"
+            -o "${PROJECT_BINARY_DIR}/pitch-control-demo.vcart" -t "Pitch Control"
+            --uuid 6a193cf7-83ca-45b0-b827-45d0394eab13)
+        set_tests_properties(pitch_control_pack PROPERTIES FIXTURES_SETUP pitch_control TIMEOUT 5)
+        foreach(mode IN ITEMS pitch pitch-unavailable)
+            add_test(NAME pitch_control_${mode} COMMAND test_lua_synth
+                "${PROJECT_BINARY_DIR}/pitch-control-demo.vcart" ${mode})
+            set_tests_properties(pitch_control_${mode} PROPERTIES FIXTURES_REQUIRED pitch_control
+                TIMEOUT 20 ENVIRONMENT "SDL_AUDIODRIVER=dummy;SDL_VIDEODRIVER=dummy")
+        endforeach()
         add_test(NAME synth_lab_pack COMMAND sbee-pack
             -i "${PROJECT_SOURCE_DIR}/examples/synth-lab"
             -o "${CMAKE_CURRENT_BINARY_DIR}/synth-lab-test.vcart" -t "Synth Lab"
@@ -1064,7 +1075,7 @@ if(BUILD_TESTING)
         set_tests_properties(save_lab_behavior PROPERTIES TIMEOUT 5)
         add_test(NAME smoke_rotation COMMAND "${LUA54_INTERPRETER}"
             "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua" "${PROJECT_SOURCE_DIR}/tests/rotation" 1 1)
-        foreach(cartridge IN ITEMS stats-demo rotation-demo opacity-demo graphics-demo moving-box sprite-demo
+        foreach(cartridge IN ITEMS pitch-control-demo stats-demo rotation-demo opacity-demo graphics-demo moving-box sprite-demo
                 asset-demo sprite-sheet-demo pong-lab invaders-lab pacman-demo)
             add_test(NAME cartridge_smoke_${cartridge}
                 COMMAND "${LUA54_INTERPRETER}"
