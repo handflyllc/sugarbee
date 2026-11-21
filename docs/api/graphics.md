@@ -121,7 +121,9 @@ sugarbee.print(text,
 ```
 
 See the [text measurement demo](../../examples/text-metrics-demo/README.md).
-Automatic wrapping, alignment modes, new fonts and text input are separate work.
+A reusable [cartridge-local wrapping helper](../../examples/text-wrap-demo/README.md)
+now provides bounded word layout using these metrics. It is not a built-in API.
+Alignment modes, new fonts and text input remain separate work.
 
 ### Example (current API)
 

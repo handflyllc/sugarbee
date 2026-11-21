@@ -1075,7 +1075,11 @@ if(BUILD_TESTING)
         set_tests_properties(save_lab_behavior PROPERTIES TIMEOUT 5)
         add_test(NAME smoke_rotation COMMAND "${LUA54_INTERPRETER}"
             "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua" "${PROJECT_SOURCE_DIR}/tests/rotation" 1 1)
-        foreach(cartridge IN ITEMS pitch-control-demo stats-demo rotation-demo opacity-demo graphics-demo moving-box sprite-demo
+        add_test(NAME text_wrap_behavior COMMAND "${LUA54_INTERPRETER}"
+            "${PROJECT_SOURCE_DIR}/tests/text-wrap/test.lua"
+            "${PROJECT_SOURCE_DIR}/examples/text-wrap-demo/ui/textwrap.lua")
+        set_tests_properties(text_wrap_behavior PROPERTIES TIMEOUT 5)
+        foreach(cartridge IN ITEMS text-wrap-demo pitch-control-demo stats-demo rotation-demo opacity-demo graphics-demo moving-box sprite-demo
                 asset-demo sprite-sheet-demo pong-lab invaders-lab pacman-demo)
             add_test(NAME cartridge_smoke_${cartridge}
                 COMMAND "${LUA54_INTERPRETER}"

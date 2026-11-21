@@ -44,6 +44,7 @@ See [dependencies](docs/development/dependencies.md) and
 - [Canvas declaration and scaling](docs/api/canvas.md)
 - [Canvas demo](examples/canvas-demo/README.md)
 - [Text measurement demo](examples/text-metrics-demo/README.md)
+- [Text wrapping helper and demo](examples/text-wrap-demo/README.md)
 - [Filled triangle demo](examples/triangle-demo/README.md)
 - [Circle primitives demo](examples/circle-demo/README.md)
 - [Line primitive demo](examples/line-demo/README.md)

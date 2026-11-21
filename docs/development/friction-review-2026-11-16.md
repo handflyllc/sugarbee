@@ -145,7 +145,7 @@ accepted future work retains that status without a schedule.
 | 7 | Persistent source UUID workflow implemented; desktop and Pi accepted 2026-11-19 (178 tests and manual checks), Pi at `73ee6a3`. See [packaging identity](packaging-identity.md). General manifest remains deferred. |
 | 8 | Explicit UUID-scoped `delete_save()` implemented; desktop and Pi accepted 2026-11-20 (Pi `a19284a`, 189 tests and all manual checks). Missing saves succeed; no directory creation. Multi-slot data remains game-owned. See [save contract](../api/saves.md). |
 | 9 | Argument/text-arithmetic repairs R1/R2 completed; Pi accepted at `d2ee33c`. Existing integer contract preserved. |
-| 10 | Text measurement completed, Pi accepted at `d699492`. Automatic wrapping remains a candidate. |
+| 10 | Text measurement completed, Pi accepted at `d699492`. A bounded cartridge-local wrapping helper and demo are implemented; desktop accepted 2026-11-21 (195 tests and all manual checks), Pi acceptance pending. |
 | 11 | Closed as not an issue; Start remains host-reserved. |
 | 12 | Range/track restrictions resolved in current SugarBeats; noise and envelope editing remain composer work. No engine extension presumed. |
 | 13 | Tested song-change example completed at `16f408a`; stop/wait/play contract remains intentional. |
