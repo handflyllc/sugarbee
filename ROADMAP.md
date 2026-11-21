@@ -4,7 +4,7 @@ Reviewed 2026-11-16 against `7085043` (runtime `4d7ca11`), the updated
 SugarBeats passdown and five-game friction report. This is a revisable plan,
 not a release schedule.
 
-## Active checkpoint: explicit keyboard text entry
+## Completed checkpoint: explicit keyboard text entry
 
 Authorized after `e0acd12`. Opt-in `text_begin()` / `text_end()` and ordered
 `text_events()` provide bounded ASCII typing and basic editing events. Enter
@@ -20,7 +20,13 @@ Keyboard selection, clipboard, mouse, Unicode composition, multiline editing
 and adventure-specific command parsing are outside this checkpoint.
 Desktop automated validation passed on 2026-11-21: 200/200 serial tests,
 warning-free build and native input UBSan checks. The user confirmed all desktop
-manual checks passed on 2026-11-21. Pi acceptance remains pending.
+manual checks passed on 2026-11-21. Pi manual checks also passed at `44e7c47`
+on 2026-11-21. Pi automated coverage is complete across the initial run (189
+passes, one fixture timeout and ten blocked tests) and a successful 11/11 focused
+serial recheck. The fixture passed in 8.76 seconds against its 10-second limit;
+the group took 10.57 seconds. This was not a single clean 200-test Pi run. The
+intermittent fixture timeout remains an unresolved test-reliability follow-up;
+no storage fault is established and no runtime or timeout changes were made.
 
 ## Completed checkpoint: cartridge-local text wrapping
 

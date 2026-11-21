@@ -84,4 +84,17 @@ single-line editing. The smoke runner supplies **empty text batches only**;
 it does not model typing, keyboard suppression or host pause behavior.
 Desktop automated validation on 2026-11-21: **200/200 serial tests passed**,
 warning-free build and native input UBSan checks passed. The user confirmed all
-desktop manual checks passed on 2026-11-21. Pi acceptance remains pending.
+desktop manual checks passed on 2026-11-21. The user confirmed all manual Pi
+checks passed at `44e7c47` on 2026-11-21. Pi acceptance is complete using the
+initial 189 passing tests plus the successful 11/11 focused serial recheck;
+this does not represent a single clean 200-test Pi run.
+
+The Pi suite timed out at `lua_modules_pack` (10.06 seconds, 10-second limit),
+blocking ten dependent module checks. Native text-entry tests passed. The later
+standalone `pi-modules-trace.log` shows fixture generation and packaging completed
+successfully (44041 ZIP bytes), but contains no elapsed timing. This does not
+establish the original cause or diagnose storage failure. The affected CTest
+group subsequently passed in `pi-modules-recheck.log`: 11/11 tests, 10.57 seconds
+total, with the fixture taking 8.76 seconds against its 10-second limit. The
+small timeout margin warrants follow-up, but the original delay remains
+unexplained. No timeout or runtime changes were made.
