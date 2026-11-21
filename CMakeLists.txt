@@ -882,6 +882,13 @@ if(BUILD_TESTING)
     add_test(NAME save_reader COMMAND test_save)
     set_tests_properties(save_reader PROPERTIES TIMEOUT 5)
 
+    add_executable(test_save_delete tests/test_save_delete.c)
+    target_link_libraries(test_save_delete PRIVATE sugarbee_save)
+    target_link_options(test_save_delete PRIVATE "-Wl,--wrap=unlinkat" "-Wl,--wrap=fsync" "-Wl,--wrap=close")
+    sugarbee_warnings(test_save_delete)
+    add_test(NAME save_delete COMMAND test_save_delete)
+    set_tests_properties(save_delete PROPERTIES TIMEOUT 10)
+
     add_executable(test_save_write tests/test_save_write.c)
     target_link_libraries(test_save_write PRIVATE sugarbee_save)
     # Linux linker fault injection stays confined to this test executable.

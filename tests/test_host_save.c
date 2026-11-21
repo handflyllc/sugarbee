@@ -213,6 +213,7 @@ int main(void) {
     unsigned before_missing = mkdirs;
     CHECK(run_lua("local r = table.pack(sugarbee.load_save()); "
                   "assert(r.n == 2 and r[1] == nil and r[2] == 'not_found')"));
+    CHECK(run_lua("local r=table.pack(sugarbee.delete_save()); assert(r.n==2 and r[1]==true and r[2]==nil)"));
     CHECK(mkdirs == before_missing && access(missing, F_OK) != 0);
     CHECK(!resolve_save_directory(NULL, NULL, NULL, NULL));
     CHECK(run_lua("local a, b = sugarbee.load_save(); assert(a == nil and b == 'io_error'); "
@@ -270,6 +271,32 @@ int main(void) {
     end_cartridge();
     CHECK(new_session(3));
     CHECK(run_lua("assert(sugarbee.load_save() == 'shutdown')"));
+
+    CHECK(run_lua("assert(not pcall(sugarbee.delete_save,nil)); "
+                  "assert(not pcall(sugarbee.delete_save,'other-uuid')); "
+                  "local r=table.pack(sugarbee.delete_save()); assert(r.n==2 and r[1]==true and r[2]==nil); "
+                  "assert(select(2,sugarbee.load_save())=='not_found'); "
+                  "assert(sugarbee.delete_save()); assert(sugarbee.save('again'))"));
+    g_engine.cart_loaded=false;
+    CHECK(run_lua("local a,b=sugarbee.delete_save(); assert(a==nil and b=='io_error')"));
+    g_engine.cart_loaded=true; g_engine.guru_active=true;
+    CHECK(host_delete_save()==SB_SAVE_IO_ERROR);
+    g_engine.guru_active=false; g_engine.execution_limit_exceeded=true;
+    CHECK(host_delete_save()==SB_SAVE_IO_ERROR);
+    g_engine.execution_limit_exceeded=false;
+    CHECK(run_lua("assert(sugarbee.load_save()=='again')"));
+    fail_preparation=true; /* Also injects failure into deletion's directory fsync. */
+    CHECK(run_lua("local a,b=sugarbee.delete_save(); assert(a==nil and b=='durability_uncertain')"));
+    fail_preparation=false;
+    CHECK(run_lua("assert(select(2,sugarbee.load_save())=='not_found'); assert(sugarbee.delete_save()); "
+                  "function init() assert(sugarbee.delete_save()); assert(sugarbee.save('init')) end "
+                  "function update(dt) assert(sugarbee.delete_save()); assert(sugarbee.save('update')) end "
+                  "function shutdown() assert(sugarbee.delete_save()) end"));
+    call_lua_global_function("init",false,0); CHECK(!g_engine.guru_active);
+    g_engine.cart_initialized=true;
+    call_lua_global_function("update",true,1.0/60); CHECK(!g_engine.guru_active);
+    end_cartridge(); CHECK(new_session(3));
+    CHECK(run_lua("assert(select(2,sugarbee.load_save())=='not_found')"));
 
     /* Exercise the protected copy's memory-error path, then recover normally. */
     uint8_t full[SB_SAVE_MAX_BYTES]; memset(full, 'm', sizeof(full));

@@ -31,9 +31,10 @@ share that identity. This is organization, not authentication.
 ```lua
 local data, code = sugarbee.load_save()
 local ok, code = sugarbee.save(data)
+local ok, code = sugarbee.delete_save()
 ```
 
-Both calls are synchronous. Expected storage failures return stable codes;
+All three calls are synchronous. Expected storage failures return stable codes;
 games must not parse human-readable diagnostic messages. Wrong argument types
 raise normal Lua programming errors. Saving requires a string.
 
@@ -42,7 +43,7 @@ raise normal Lua programming errors. Saving requires a string.
 | `load_save()` returns `string, nil` | Successful load; an empty string is valid data. |
 | `load_save()` returns `nil, "not_found"` | No save exists; the game can use defaults. |
 | `save(data)` returns `true, nil` | Replacement and required synchronization succeeded. |
-| Either returns `nil, "too_large"` | Data exceeds 65,536 bytes; do not truncate or replace the existing save. |
+| Read/write returns `nil, "too_large"` | Data exceeds 65,536 bytes; do not truncate or replace the existing save. |
 | Either returns `nil, "io_error"` | A storage operation failed; report details to the console. For save, replacement has not occurred. |
 | `save(data)` returns `nil, "durability_uncertain"` | Replacement occurred, but final synchronization failed. The new save may already be present; durability is not confirmed. |
 
@@ -511,3 +512,23 @@ Together with desktop results, this completes the agreed bounded minimal-save
 milestone. Actual power-loss testing remains deferred. Filesystem/hardware
 persistence guarantees, concurrent writers, and automatic abandoned-file cleanup
 are not established or added by this validation.
+
+## Explicit deletion checkpoint — 2026-11-20
+
+The deletion contract is defined in the [save API](../api/saves.md). The host
+uses the same healthy-session, UUID and selected-path rules as read/write.
+Native deletion opens the directory, validates the UUID entry without following
+save-file symlinks, unlinks only a regular file, synchronizes the same directory,
+and closes it. Failure after removal is distinguished from failure before it.
+There is no directory preparation, slot schema, automatic save suppression,
+recursive deletion or cleanup of other files. Concurrent filesystem changes
+remain unsupported, as in the existing writer.
+
+A missing directory succeeds without creation. For an existing directory the
+absence is synchronized even on repeated deletion, enabling a successful retry
+after uncertain persistence. Games must still handle retry I/O failures.
+Multiple game slots may be serialized inside the existing 64 KiB string; the
+engine deletes that complete file. Confirmation and in-memory reset belong to
+the cartridge. Desktop manual deletion checks were accepted by the user on
+2026-11-20; Pi acceptance is pending. The
+earlier save acceptance records above do not establish deletion validation.

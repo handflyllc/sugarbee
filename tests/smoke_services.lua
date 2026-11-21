@@ -46,6 +46,12 @@ function M.new(config, asset_exists)
         if saved==nil then return nil, 'not_found' end
         return saved, nil
     end
+    function api.delete_save(...)
+        arity(0, ...)
+        if not ready then return nil, 'io_error' end
+        saved=nil
+        return true, nil
+    end
     local music = {}
     api.music=music
     local function check(handle)

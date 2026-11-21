@@ -14,6 +14,7 @@ local function bad(fn, ...)
 end
 result(nil,'io_error',s.load_save())
 result(nil,'io_error',s.save('top-level'))
+result(nil,'io_error',s.delete_save())
 c.begin()
 result(nil,'not_found',s.load_save())
 for _,bytes in ipairs({'', 'a\0b', string.rep('x',65536)}) do
@@ -22,6 +23,10 @@ end
 result(nil,'too_large',s.save(string.rep('x',65537)))
 result(string.rep('x',65536),nil,s.load_save())
 bad(s.save); bad(s.save,12); bad(s.save,'ok',nil); bad(s.load_save,nil)
+bad(s.delete_save,nil)
+result(true,nil,s.delete_save()); result(nil,'not_found',s.load_save())
+result(true,nil,s.delete_save()); result(true,nil,s.save('after deletion'))
+result('after deletion',nil,s.load_save())
 local other, oc=services.new(config,exists); oc.begin()
 result(nil,'not_found',other.load_save()) -- per-run isolation
 result(nil,'Asset not found',m.load('missing'))

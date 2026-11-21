@@ -1,4 +1,4 @@
-/* Internal save storage API; no Lua binding yet. */
+/* Internal save storage API used by host/Lua storage services. */
 #ifndef SB_SAVE_H
 #define SB_SAVE_H
 
@@ -32,7 +32,7 @@ typedef enum {
  * On success the caller owns *data (free it), even for an empty save.
  * Use *length, not strlen: bytes may contain zeros and are not NUL-terminated.
  * On failure, valid output pointers are reset to NULL/0. Invalid C arguments
- * return INVALID_ARGUMENT; host/Lua argument validation will be added later.
+ * return INVALID_ARGUMENT; the host validates Lua arguments separately.
  */
 sb_save_result_t sb_save_read(const char *directory, const uint8_t uuid[16],
                               uint8_t **data, size_t *length);
@@ -49,6 +49,14 @@ sb_save_result_t sb_save_read(const char *directory, const uint8_t uuid[16],
  */
 sb_save_result_t sb_save_write(const char *directory, const uint8_t uuid[16],
                                const uint8_t *data, size_t length);
+
+/* Delete only <UUID>.sav; missing directory/file is successful. No creation.
+ * Reject nonregular entries, including symlinks. Synchronize the directory even
+ * if the file is already absent (allows retry after uncertain deletion).
+ * IO_ERROR: no deletion performed by this call. DURABILITY_UNCERTAIN: deletion
+ * occurred but directory sync/close failed. Concurrent path changes unsupported.
+ */
+sb_save_result_t sb_save_delete(const char *directory, const uint8_t uuid[16]);
 
 /* Prepare exactly one child beneath an existing host-selected parent.
  * child must be a single nonempty name, not ".", "..", or contain '/'.

@@ -4,6 +4,18 @@ Reviewed 2026-11-16 against `7085043` (runtime `4d7ca11`), the updated
 SugarBeats passdown and five-game friction report. This is a revisable plan,
 not a release schedule.
 
+## Active checkpoint: explicit save deletion
+
+Authorized after `00d541b`: `sugarbee.delete_save()` removes only the current
+UUID's save, succeeds when absent, and distinguishes I/O failure before deletion
+from uncertain durability afterward. No directory creation or slot API. The game
+owns confirmation, in-memory reset and multiple slots within the existing 64 KiB
+file. Native storage, host/Lua binding, smoke model and Save Lab are extended.
+[Save contract](docs/api/saves.md) and [manual checks](examples/save-lab/README.md).
+Desktop automated validation passed: 189/189 serial tests. The user confirmed all
+desktop manual checks passed on 2026-11-20. Pi acceptance is pending. The outdated sprite-tint proposal below is reconciled with its
+implemented stateful API; no graphics behavior changes are included.
+
 ## Completed checkpoint: developer timing readout
 
 Authorized after `4124871`: opt-in leading `--stats`, compact host overlay with
@@ -519,22 +531,22 @@ bank is a separate user proposal, not an accepted capacity change. See
 [discussion scope and mixing considerations](docs/architecture/audio-design.md#discussion-directions--2026-11-12).
 Current engine limits remain unchanged; no implementation is authorized here.
 
-## Accepted future graphics work — sprite tinting (2026-11-12)
+## Sprite tinting — implemented; glyph-sheet applications remain future work
 
-Optional per-draw sprite tinting is accepted future work; implementation timing
-is TBD. Support PETSCII-inspired visuals using an original white-on-transparent
-glyph sheet and the existing sprite rendering path. Cartridge-side cells select
-a glyph and foreground color; rectangles can supply background colors. No native
-character mode, Commodore encoding or hardware emulation is planned.
+Sprite tint and opacity were accepted on desktop and Pi at `9516590` on
+2026-11-17. The implemented API uses `sprite_tint(r, g, b [, a])` to set state
+for subsequent sprite draws, and `sprite_tint_reset()` to restore white/full
+opacity. Tint resets at each game frame and is isolated from host/session state.
+It is not an optional color argument attached to each sprite call. See the
+[authoritative contract](docs/api/graphics.md#sprite-tint-and-opacity) and
+[tint demo](examples/tint-demo/README.md).
 
-Default white tint must preserve existing sprite appearance and cartridge calls.
-Tint applies independently to each draw, including draws sharing a texture;
-source pixels/transparency remain intact and tint must not leak to later draws.
-Exact C/Lua API and validation are to be designed at implementation time. Verify
-color output, transparent pixels, successive different tints and unchanged legacy
-drawing, followed by desktop/Pi visual checks. Tinting is also useful for icons
-and player colors. Revisit the approach if later evidence warrants replacement;
-no implementation is authorized by this planning entry.
+An original white-on-transparent glyph sheet can reuse this existing capability
+for individually colored cells; rectangles can supply backgrounds. A cartridge
+sets the desired tint before drawing each glyph, then resets it for later artwork.
+A PETSCII-inspired adventure, glyph-sheet helper and pane/input design remain
+future discussions. No native character mode, Commodore encoding, arbitrary
+palette replacement or hardware emulation is implied.
 
 ## Future adventure discussion — panes and input (2026-11-12)
 

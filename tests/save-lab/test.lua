@@ -1,6 +1,7 @@
 -- Deterministic cartridge-logic checks; native storage is tested separately.
 local source = assert(arg[1])
-local stored, load_error, save_error
+local stored, load_error, save_error, delete_error
+local deletions = 0
 local pressed = {}
 local lines = {}
 local saves = 0
@@ -12,6 +13,12 @@ sugarbee = {
         if load_error then return nil, load_error end
         if stored == nil then return nil, "not_found" end
         return stored, nil
+    end,
+    delete_save = function()
+        deletions = deletions + 1
+        if delete_error then return nil, delete_error end
+        stored = nil
+        return true, nil
     end,
     save = function(data)
         assert(type(data) == "string")
@@ -25,7 +32,7 @@ local function screen(counter, message)
     lines = {}
     draw()
     assert(lines[2] == "COUNTER: " .. counter, table.concat(lines, "\n"))
-    assert(lines[6] == message, table.concat(lines, "\n"))
+    assert(lines[7] == message, table.concat(lines, "\n"))
 end
 local function press(button)
     pressed = {[button] = true}
@@ -60,6 +67,22 @@ end
 load_error = nil
 save_error = "durability_uncertain"; press("a")
 screen(999999, "durability_uncertain - new save may be present")
+save_error = nil
+press("a"); assert(stored == "999999")
+press("x"); screen(999999, "Erase save? X / U confirms; B / K cancels")
+assert(deletions == 0)
+press("b"); screen(999999, "Delete cancelled"); assert(stored == "999999")
+press("x"); press("x"); screen(999999, "Save deleted - counter unchanged")
+assert(deletions == 1 and stored == nil)
+press("b"); screen(999999, "No save yet - counter unchanged")
+press("x"); press("x"); assert(deletions == 2)
+press("a"); assert(stored == "999999")
+for _,code in ipairs({"io_error", "durability_uncertain"}) do
+    delete_error = code
+    press("x"); press("x")
+    screen(999999, code == "io_error" and "Delete failed: io_error" or "durability_uncertain - save may be gone")
+end
+delete_error = nil
 local before = saves
 for _ = 1, 120 do update(1/60); draw() end
 assert(saves == before and shutdown == nil)

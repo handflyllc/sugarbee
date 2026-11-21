@@ -128,7 +128,7 @@ static sb_save_result_t report_host_storage_result(const char *operation,
     if (result == SB_SAVE_TOO_LARGE) reason = "save exceeds 65536 bytes";
     else if (result == SB_SAVE_INVALID_ARGUMENT) reason = "invalid internal arguments";
     else if (result == SB_SAVE_DURABILITY_UNCERTAIN)
-        reason = "replacement occurred; durability is uncertain";
+        reason = "storage change occurred; durability is uncertain";
     char uuid[37];
     vcart_uuid_to_string(g_engine.current_cart.cart_uuid, uuid);
     fprintf(stderr, "[SugarBee] Save storage %s (%s), UUID %s, directory '%s': %s\n",
@@ -154,6 +154,20 @@ sb_save_result_t host_load_save(uint8_t **data, size_t *length) {
     snprintf(directory, sizeof(directory), "/%s", location.relative);
     return report_host_storage_result("load", "read",
         sb_save_read(directory, g_engine.current_cart.cart_uuid, data, length));
+}
+
+sb_save_result_t host_delete_save(void) {
+    if (!host_save_session_available())
+        return report_host_storage_result("delete", "no healthy active cartridge", SB_SAVE_IO_ERROR);
+    if (!g_engine.save_directory[0])
+        return report_host_storage_result("delete", "no selected directory", SB_SAVE_IO_ERROR);
+    sb_save_location_t location;
+    if (sb_save_resolve_location(g_engine.save_directory, &location) != SB_SAVE_OK)
+        return report_host_storage_result("delete", "path resolution", SB_SAVE_IO_ERROR);
+    char directory[SB_SAVE_MAX_PATH_BYTES + 2u];
+    snprintf(directory, sizeof(directory), "/%s", location.relative);
+    return report_host_storage_result("delete", "remove/sync",
+        sb_save_delete(directory, g_engine.current_cart.cart_uuid));
 }
 
 sb_save_result_t host_write_save(const uint8_t *data, size_t length) {
@@ -649,6 +663,16 @@ static int l_sugarbee_save(lua_State *L) {
     return 2;
 }
 
+/* Stack: no arguments, exactly two results (success/error code). */
+static int l_sugarbee_delete_save(lua_State *L) {
+    if (lua_gettop(L) != 0) return luaL_error(L, "delete_save expects no arguments");
+    sb_save_result_t result = host_delete_save();
+    if (result != SB_SAVE_OK) return push_save_failure(L, result);
+    lua_pushboolean(L, true);
+    lua_pushnil(L);
+    return 2;
+}
+
 /* Private protected-call helper: [borrowed bytes, length] -> [Lua string].
    Never exposed to cartridge code. The caller retains ownership of bytes. */
 static int copy_loaded_save(lua_State *L) {
@@ -721,6 +745,7 @@ void register_sugarbee_api(lua_State* L) {
     lua_pushcfunction(L, l_sugarbee_btn);   lua_setfield(L, -2, "btn");
     lua_pushcfunction(L, l_sugarbee_btnp);  lua_setfield(L, -2, "btnp");
     lua_pushcfunction(L, l_sugarbee_save); lua_setfield(L, -2, "save");
+    lua_pushcfunction(L, l_sugarbee_delete_save); lua_setfield(L, -2, "delete_save");
     lua_pushcfunction(L, l_sugarbee_load_save); lua_setfield(L, -2, "load_save");
     sb_lua_synth_register(L, g_engine.audio);
     sb_lua_audio_register(L, g_engine.lua_audio);

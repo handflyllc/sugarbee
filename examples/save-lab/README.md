@@ -1,6 +1,6 @@
 # Save Lab
 
-A small counter demonstrates explicit save/load using the real SugarBee API.
+A small counter demonstrates explicit save/load/delete using the real SugarBee API.
 The counter ranges from 0 to 999999. It loads on startup, but saves only when
 A/J is pressed. There is deliberately no shutdown save.
 
@@ -24,6 +24,7 @@ also deletes this lab's saves. It is test storage, not a backup location.
 | Left/Right or keyboard A/D | Change counter once per press |
 | Gamepad A / keyboard J | Save current counter |
 | Gamepad B / keyboard K | Reload saved counter |
+| Gamepad X / keyboard U | Request deletion; press again to confirm (B/K cancels) |
 | Start / Enter | Existing host pause/exit menu |
 
 Missing saves start at zero. Reload failure or invalid data leaves the current
@@ -63,3 +64,26 @@ On Raspberry Pi OS Lite 64-bit at `51cbc8b`, the user confirmed explicit save
 and reload, relaunch persistence after unsaved edits, persistence through
 repacking, and confirmed Exit to system status 0. All 61 automated tests passed.
 This validation does not include actual power-loss testing.
+
+## Save deletion checkpoint
+
+Rebuild and rerun the fixture script above to package the new controls. Use the
+isolated lab save directory. Deletion intentionally leaves the running counter
+unchanged; a later explicit save writes it again. No shutdown save is present.
+
+1. Change the counter and save. Press U once, then K: deletion cancels; K again
+   reloads the saved value.
+2. Press U twice: deletion succeeds, counter stays unchanged. K reports no save.
+   Repeat deletion on the absent save: success again.
+3. Exit Game and relaunch: counter starts at zero with no save. Change and save
+   again; exit/relaunch restores the new value.
+4. Pause/resume and normal host exit still work. Pong remains unaffected.
+5. Run the serial suite.
+
+The API erases the whole UUID save. Multi-slot games must remove a single slot
+from their own encoded collection and save the remainder instead.
+
+Deletion automated validation on 2026-11-20: **189/189 serial tests passed**.
+The user confirmed all desktop deletion checks passed on 2026-11-20, including
+cancellation, repeated deletion, reload/relaunch, saving again, lifecycle and Pong.
+Pi deletion acceptance remains pending.

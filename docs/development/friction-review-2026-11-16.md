@@ -143,7 +143,7 @@ accepted future work retains that status without a schedule.
 | 5 | Bounded cartridge-local Lua modules completed; Pi accepted at `93ea8a3`. See [modules](../api/modules.md). |
 | 6 | Packaging workflow candidate; use a cartridge-only input directory today. |
 | 7 | Persistent source UUID workflow implemented; desktop and Pi accepted 2026-11-19 (178 tests and manual checks), Pi at `73ee6a3`. See [packaging identity](packaging-identity.md). General manifest remains deferred. |
-| 8 | Save deletion candidate; empty save remains an application convention. |
+| 8 | Explicit UUID-scoped `delete_save()` implemented; desktop accepted 2026-11-20 (189 tests and manual checks); Pi pending. Missing saves succeed; no directory creation. Multi-slot data remains game-owned. See [save contract](../api/saves.md). |
 | 9 | Argument/text-arithmetic repairs R1/R2 completed; Pi accepted at `d2ee33c`. Existing integer contract preserved. |
 | 10 | Text measurement completed, Pi accepted at `d699492`. Automatic wrapping remains a candidate. |
 | 11 | Closed as not an issue; Start remains host-reserved. |

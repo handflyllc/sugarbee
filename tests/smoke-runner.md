@@ -42,7 +42,7 @@ lifecycle fixture does. Passing those tests says nothing about JSON correctness.
 One in-memory string per invocation, initially absent. No player save files,
 UUID storage directories, HOME/XDG paths or persistence across invocations are
 accessed by these stubs. Empty strings and embedded zero bytes round-trip.
-`save`/`load_save` check argument counts and types and return exactly two results.
+`save`/`load_save`/`delete_save` check argument counts and types and return exactly two results.
 More than 65536 bytes returns `nil, 'too_large'` without replacing the old value;
 missing data returns `nil, 'not_found'`. Valid calls during top-level loading
 return `nil, 'io_error'`; init/update/draw/shutdown can use the memory slot.
@@ -168,3 +168,7 @@ close failure. A new model invocation starts a new counter.
 It does not model ZIP/header/CRC validation or native allocation failures.
 Unpacked files and symlinks are trusted test inputs; this is not filesystem
 isolation. Native tests remain authoritative for archive handling and safety.
+
+The deletion model clears only its invocation-local saved string, succeeds when
+already absent, and checks zero arguments and lifecycle availability. Native
+failure and persistence semantics are covered separately by storage tests.

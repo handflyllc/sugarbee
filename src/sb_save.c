@@ -79,6 +79,33 @@ static int sync_save_fd(int fd) {
     return result;
 }
 
+sb_save_result_t sb_save_delete(const char *directory, const uint8_t uuid[16]) {
+    if (!directory || !*directory || !uuid) return SB_SAVE_INVALID_ARGUMENT;
+    int dirfd = open(directory, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    if (dirfd < 0) return errno == ENOENT ? SB_SAVE_OK : SB_SAVE_IO_ERROR;
+
+    char filename[41];
+    vcart_uuid_to_string(uuid, filename);
+    memcpy(filename + 36, ".sav", 5);
+    bool removed = false;
+    sb_save_result_t result = SB_SAVE_IO_ERROR;
+    struct stat info;
+    if (fstatat(dirfd, filename, &info, AT_SYMLINK_NOFOLLOW) == 0) {
+        if (!S_ISREG(info.st_mode)) goto cleanup;
+        if (unlinkat(dirfd, filename, 0) != 0) goto cleanup;
+        removed = true;
+    } else if (errno != ENOENT) {
+        goto cleanup;
+    }
+    /* Also sync an already absent entry, so a retry can confirm persistence. */
+    if (sync_save_fd(dirfd) == 0) result = SB_SAVE_OK;
+    else if (removed) result = SB_SAVE_DURABILITY_UNCERTAIN;
+cleanup:
+    if (close(dirfd) != 0 && result == SB_SAVE_OK)
+        result = removed ? SB_SAVE_DURABILITY_UNCERTAIN : SB_SAVE_IO_ERROR;
+    return result;
+}
+
 /* Takes ownership of an already opened directory, including on failure.
    Arguments and size have been validated by the public entry point. */
 static sb_save_result_t write_save_in_directory(int dirfd, const uint8_t uuid[16],

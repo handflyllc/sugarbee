@@ -412,7 +412,8 @@ before changing state. Unlike the older primitive color conversion, these
 channels are checked rather than wrapped. `sprite_tint_reset()` takes no
 arguments. Both functions return no values.
 
-One active sprite tint affects subsequent `sprite` and `sprite_region` calls,
+One active sprite tint affects subsequent `sprite`, `sprite_region`,
+`sprite_rotated` and `sprite_region_rotated` calls,
 including PNG and RGBA textures, cropped/scaled/flipped regions, camera offsets
 and clipping. Calls replace all four channels; they do not accumulate.
 The texture's pixel data is unchanged, so one sheet can be reused in many colors.

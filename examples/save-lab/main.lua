@@ -2,6 +2,7 @@
 local counter = 0
 local maximum = 999999
 local status = "No save yet"
+local delete_pending = false
 
 local function load_counter()
     local data, code = sugarbee.load_save()
@@ -28,10 +29,33 @@ end
 
 function init()
     counter = 0
+    delete_pending = false
     load_counter()
 end
 
 function update(dt)
+    if delete_pending then
+        if sugarbee.btnp("b") then
+            delete_pending = false
+            status = "Delete cancelled"
+        elseif sugarbee.btnp("x") then
+            delete_pending = false
+            local ok, code = sugarbee.delete_save()
+            if ok then
+                status = "Save deleted - counter unchanged"
+            elseif code == "durability_uncertain" then
+                status = "durability_uncertain - save may be gone"
+            else
+                status = "Delete failed: " .. code
+            end
+        end
+        return
+    end
+    if sugarbee.btnp("x") then
+        delete_pending = true
+        status = "Erase save? X / U confirms; B / K cancels"
+        return
+    end
     -- btnp changes the counter once per press, not once per rendered frame.
     if sugarbee.btnp("left") then
         counter = math.max(0, counter - 1)
@@ -60,6 +84,7 @@ function draw()
     sugarbee.print("LEFT / RIGHT (or A / D keys): change counter", 60, 260, 220, 220, 220, 2)
     sugarbee.print("A button / J key: save     B button / K key: reload", 60, 310, 220, 220, 220, 2)
     sugarbee.print("START / ENTER: host pause and exit menu", 60, 360, 220, 220, 220, 2)
+    sugarbee.print("X button / U key: request deletion, then confirm", 60, 410, 220, 220, 220, 2)
     sugarbee.print(status, 60, 460, 255, 220, 120, 2)
     sugarbee.print("Only A / J saves. Exiting does not save.", 60, 540, 220, 220, 220, 2)
 end
