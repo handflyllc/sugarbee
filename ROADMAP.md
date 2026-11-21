@@ -30,8 +30,9 @@ no storage fault is established and no runtime or timeout changes were made
 during that validation. Follow-up after `bcafa4c`: increase only the
 `lua_modules_pack` setup timeout to 20 seconds for Pi headroom; dependent tests
 retain 10 seconds. Desktop focused serial validation passed 11/11 after CMake
-regeneration, with the new timeout confirmed. Pi verification of this allowance
-is pending; the original delay remains unexplained.
+regeneration, with the new timeout confirmed. The user confirmed the requested
+Pi recheck passed after the timeout change (`9f2665e`) on 2026-11-21. This
+completes the timeout-allowance follow-up; the original delay remains unexplained.
 
 ## Completed checkpoint: cartridge-local text wrapping
 
