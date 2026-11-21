@@ -610,7 +610,7 @@ bank is a separate user proposal, not an accepted capacity change. See
 [discussion scope and mixing considerations](docs/architecture/audio-design.md#discussion-directions--2026-11-12).
 Current engine limits remain unchanged; no implementation is authorized here.
 
-## Sprite tinting — implemented; glyph-sheet applications remain future work
+## Sprite tinting — implemented; glyph-sheet example shelved
 
 Sprite tint and opacity were accepted on desktop and Pi at `9516590` on
 2026-11-17. The implemented API uses `sprite_tint(r, g, b [, a])` to set state
@@ -623,9 +623,15 @@ It is not an optional color argument attached to each sprite call. See the
 An original white-on-transparent glyph sheet can reuse this existing capability
 for individually colored cells; rectangles can supply backgrounds. A cartridge
 sets the desired tint before drawing each glyph, then resets it for later artwork.
-A PETSCII-inspired adventure, glyph-sheet helper and pane/input design remain
-future discussions. No native character mode, Commodore encoding, arbitrary
-palette replacement or hardware emulation is implied.
+Decision on 2026-11-21: shelve the proposed glyph-sheet example/helper until
+further notice. Glyph artwork, meaning, cell dimensions and scaling belong to
+the game author; no standard SugarBee glyph set or 8x8 requirement is planned.
+Authors may choose 16x16 or other dimensions using existing sprite-region,
+tint, rectangle and clipping APIs. Integer enlargement of an 8x8 glyph does not
+supply the detail of artwork authored at a higher resolution. No implementation
+was started. The separate three-pane demo is already accepted; the full
+adventure remains a future game concept. No native character mode, Commodore
+encoding, arbitrary palette replacement or hardware emulation is implied.
 
 ## Future adventure discussion — panes and input (2026-11-12)
 
