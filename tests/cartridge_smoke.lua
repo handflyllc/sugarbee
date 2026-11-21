@@ -59,6 +59,7 @@ end
 local textures = {}          -- handle -> {w = ..., h = ...}
 local next_handle = 1
 local held, pressed = {}, {}
+local input_callback = nil
 local counts = {draw_calls = 0, textures = 0}
 
 local BUTTONS = {up = true, down = true, left = true, right = true, a = true,
@@ -378,6 +379,20 @@ end
 
 function sugarbee.btn(name, player)  return button_state("btn", name, player, held) end
 function sugarbee.btnp(name, player) return button_state("btnp", name, player, pressed) end
+-- Empty-delivery text model only. Logical scripted buttons represent gamepad
+-- input; SDL text, keyboard suppression and host lifecycle use native tests.
+local function text_context(read, ...)
+    assert(select('#', ...) == 0, 'text input expects no arguments')
+    assert(input_callback == 'update' or (not read and input_callback == 'init'),
+        'text input called outside its supported callback')
+end
+function sugarbee.text_begin(...) text_context(false, ...) end
+function sugarbee.text_end(...) text_context(false, ...) end
+function sugarbee.text_events(...)
+    text_context(true, ...)
+    return {}, nil
+end
+
 
 -- ---------------------------------------------------------------------------
 -- Run the cartridge
@@ -391,7 +406,9 @@ end
 local function call(name, stage, ...)
     local fn = _G[name]
     if type(fn) ~= "function" then return end      -- the host skips absent callbacks
+    input_callback = name
     local ok, err = xpcall(fn, debug.traceback, ...)
+    input_callback = nil
     if not ok then fail(stage, err) end
 end
 

@@ -878,6 +878,24 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
                 "-P" "${PROJECT_SOURCE_DIR}/tests/asset_smoke.cmake")
     endif()
 
+    if(SUGARBEE_BUILD_PACKER)
+        add_executable(test_text_entry_host tests/test_text_entry_host.c)
+        target_link_libraries(test_text_entry_host PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+        sugarbee_warnings(test_text_entry_host)
+        add_test(NAME text_entry_pack COMMAND sbee-pack
+            -i "${PROJECT_SOURCE_DIR}/examples/text-entry-demo"
+            -o "${PROJECT_BINARY_DIR}/text-entry-demo.vcart" -t "Text Entry"
+            --uuid 745d5ac0-2620-4c84-a380-f8ab0efbf248)
+        set_tests_properties(text_entry_pack PROPERTIES FIXTURES_SETUP text_entry TIMEOUT 10)
+        add_test(NAME text_entry_host COMMAND test_text_entry_host "${PROJECT_BINARY_DIR}/text-entry-demo.vcart")
+        set_tests_properties(text_entry_host PROPERTIES FIXTURES_REQUIRED text_entry TIMEOUT 15
+            ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy")
+    endif()
+    add_executable(test_text_input tests/test_text_input.c)
+    target_link_libraries(test_text_input PRIVATE sugarbee_input PkgConfig::SDL2)
+    sugarbee_warnings(test_text_input)
+    add_test(NAME text_input COMMAND test_text_input)
+    set_tests_properties(text_input PROPERTIES TIMEOUT 10 ENVIRONMENT "SDL_VIDEODRIVER=dummy")
     add_executable(test_input tests/test_input.c)
     target_link_libraries(test_input PRIVATE sugarbee_input PkgConfig::SDL2)
     sugarbee_warnings(test_input)
@@ -1075,11 +1093,15 @@ if(BUILD_TESTING)
         set_tests_properties(save_lab_behavior PROPERTIES TIMEOUT 5)
         add_test(NAME smoke_rotation COMMAND "${LUA54_INTERPRETER}"
             "${PROJECT_SOURCE_DIR}/tests/cartridge_smoke.lua" "${PROJECT_SOURCE_DIR}/tests/rotation" 1 1)
+        add_test(NAME text_line_behavior COMMAND "${LUA54_INTERPRETER}"
+            "${PROJECT_SOURCE_DIR}/tests/text-entry/helper.lua"
+            "${PROJECT_SOURCE_DIR}/examples/text-entry-demo/ui/textline.lua")
+        set_tests_properties(text_line_behavior PROPERTIES TIMEOUT 5)
         add_test(NAME text_wrap_behavior COMMAND "${LUA54_INTERPRETER}"
             "${PROJECT_SOURCE_DIR}/tests/text-wrap/test.lua"
             "${PROJECT_SOURCE_DIR}/examples/text-wrap-demo/ui/textwrap.lua")
         set_tests_properties(text_wrap_behavior PROPERTIES TIMEOUT 5)
-        foreach(cartridge IN ITEMS text-wrap-demo pitch-control-demo stats-demo rotation-demo opacity-demo graphics-demo moving-box sprite-demo
+        foreach(cartridge IN ITEMS text-entry-demo text-wrap-demo pitch-control-demo stats-demo rotation-demo opacity-demo graphics-demo moving-box sprite-demo
                 asset-demo sprite-sheet-demo pong-lab invaders-lab pacman-demo)
             add_test(NAME cartridge_smoke_${cartridge}
                 COMMAND "${LUA54_INTERPRETER}"

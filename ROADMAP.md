@@ -4,6 +4,24 @@ Reviewed 2026-11-16 against `7085043` (runtime `4d7ca11`), the updated
 SugarBeats passdown and five-game friction report. This is a revisable plan,
 not a release schedule.
 
+## Active checkpoint: explicit keyboard text entry
+
+Authorized after `e0acd12`. Opt-in `text_begin()` / `text_end()` and ordered
+`text_events()` provide bounded ASCII typing and basic editing events. Enter
+submits while typing; Escape or physical Start opens the host menu. Outside
+text entry, Enter retains its host pause behavior. Keyboard gameplay mappings
+are suppressed while typing; physical gamepads remain available. Held keys,
+queued typing and mode/pause/focus/session transitions are handled explicitly.
+A 128-event batch rejects overflow or unsupported text rather than silently
+submitting altered input. Game code owns focus, buffer, cursor and history.
+The [demo and reusable Lua editor](examples/text-entry-demo/README.md) use a
+256-character single line, horizontal scrolling and six history entries.
+Keyboard selection, clipboard, mouse, Unicode composition, multiline editing
+and adventure-specific command parsing are outside this checkpoint.
+Desktop automated validation passed on 2026-11-21: 200/200 serial tests,
+warning-free build and native input UBSan checks. The user confirmed all desktop
+manual checks passed on 2026-11-21. Pi acceptance remains pending.
+
 ## Completed checkpoint: cartridge-local text wrapping
 
 Authorized after `016d248`. A reusable `ui.textwrap` Lua module and
@@ -261,8 +279,9 @@ confirmed all desktop checks passed: measured boxes and sample cycling,
 Pause/resume, exit/relaunch, canvas-demo/Pong regressions and Exit to system.
 On 2026-11-18, the user confirmed Pi acceptance at `d699492`: 165/165 tests
 and all requested visual, lifecycle and regression checks passed.
-Automatic wrapping, alignment options, new fonts and text entry remain separate
-work; no expansion of this checkpoint is implied.
+Wrapping was subsequently completed as a cartridge-local helper. Explicit text
+entry is implemented in the active checkpoint above. Alignment options and new
+fonts remain separate future work.
 
 ## Completed checkpoint: logical canvas declaration and scaling
 
@@ -605,16 +624,17 @@ Input alternatives to revisit:
   uses commands or selected actions. Controller support need not be required for
   this cartridge. This option may avoid unnecessary mixed-input complexity.
 
-Neither alternative has been selected. If text entry is needed, distinguish
+The new explicit-text-entry checkpoint supports explore/command switching; it
+does not select an interaction style for the future adventure. Distinguish
 platform text events from editing/action keys; define focus, submit/cancel and
-host-control precedence explicitly. Enter currently opens the host pause menu,
-so command submission cannot silently reuse it without a deliberate policy.
-Physical controller behavior during typing also remains an open decision.
+host-control precedence explicitly. Enter submits while explicit text entry is
+enabled; Escape and controller Start retain host-menu access. Physical controllers remain available, and the
+game chooses whether their actions continue while typing.
 
-Potential engine work: text-entry/editing events and keyboard mapping suppression;
-mouse input and drawing clip rectangles only if the chosen interface needs them.
-These capabilities are not yet implemented or approved as an implementation
-checkpoint. Command parsing, room logic and pane contents belong in the cartridge.
+Text-entry/editing events and keyboard mapping suppression are implemented in
+the active checkpoint above; drawing clip rectangles were previously completed.
+Mouse input remains future work. Command parsing, room logic and pane contents
+belong in the cartridge.
 Start with a fixed three-pane prototype and a bounded command line when this work
 becomes active; settle text length/character support and input-conflict checks then.
 

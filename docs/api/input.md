@@ -41,15 +41,96 @@ in seconds and is currently always 1/60. Keep `x` fractional during updates;
 `math.floor(x)` converts only the drawing coordinate to the required integer.
 This remains valid when the movement speed changes. See [timing](timing.md).
 
+## Explicit text entry
+
+Opt-in text entry belongs to the active cartridge. Existing games keep their
+keyboard-to-player-0 mapping, with Escape added as a host Start shortcut.
+
+| Function | Contract |
+| --- | --- |
+| `sugarbee.text_begin()` | Enable keyboard text entry. No arguments or results; only in healthy `init()`/`update()` callbacks. Idempotent while already enabled. |
+| `sugarbee.text_end()` | Disable text entry. Same callback/argument/result rules. Idempotent while disabled. |
+| `sugarbee.text_events()` | Consume this update's event batch. No arguments; returns exactly `(events, error_or_nil)`. Only in a healthy `update()` callback. |
+
+These calls raise Lua errors for arguments (including explicit nil), unsupported
+callback phases, missing input context or unavailable/failed/paused cartridge
+sessions. They cannot be used during top-level loading, `draw()` or `shutdown()`.
+Successful end/begin does not create or change a game-owned text buffer.
+
+`events` is a fresh dense array in platform event order. Each printable ASCII
+character (32–126) is `{type='text', text='a'}` with exactly one byte of text.
+Editing events have just a `type` field: `backspace`, `delete`, `left`, `right`,
+`home`, `end`, or `submit`. Enter and keypad Enter generate `submit` on a fresh
+press, never on a key repeat. Platform repeat is accepted for printable text and
+editing keys; no engine-generated repeat timer is added. Shift/layout processing
+comes from SDL text events, rather than translating keycodes to characters.
+Escape is always reserved for the host and never delivered as text/edit input.
+Tab, Up/Down, modifier keys and other unlisted keys have no editing event.
+Selection shortcuts, clipboard access, composition and Unicode are unsupported.
+
+A pending batch holds at most **128 events**, including characters and editing
+actions. It accumulates across polls until the next fixed update. Exceeding the
+limit rejects the entire pending batch: `{}, 'overflow'`. Non-ASCII/control text,
+nonterminated platform text or nonempty composition events reject the entire
+batch: `{}, 'unsupported_text'`. The first rejection wins; subsequent events,
+including Enter, are discarded until that batch is handed to the next update.
+This avoids submitting silently truncated or altered commands. No rejection
+changes the game's buffer; the game must handle the status explicitly.
+
+The first read in an update consumes the batch; later reads return `{}, nil`.
+An unread batch expires at the end of that update. Catch-up updates never replay
+it. Disabled text entry returns `{}, nil`. There is one input mode/batch for the
+whole cartridge, not per-player or per-field. The game routes it to its focused
+editor, and owns buffer limits, cursor, rendering, submission and history.
+
+```lua
+-- Within update(), while your editor is focused:
+local events, status = sugarbee.text_events()
+local submitted, err = editor:apply(events, status) -- example Lua helper
+if submitted ~= nil then
+    sugarbee.text_end()
+    -- Interpret/store submitted text in your game.
+end
+```
+
+While typing, keyboard gameplay mappings (WASD/arrows, J/K/U/I and Right Shift)
+are suppressed. Physical gamepads remain available, and controller Start remains
+host-reserved. Games choose whether movement or other gamepad actions continue.
+Beginning/ending text entry discards pending text and keyboard edges, blocks held
+keyboard keys until release and flushes queued platform text/composition events.
+Physical controller edges are preserved. To avoid repeating an activation/menu
+key into the editor, text/edit events are also ignored while any key held across
+a mode transition remains held; release those keys before typing.
+
+Pause suspends platform text input and temporarily restores keyboard menu
+mappings. Resume restores the requested text mode. Both discard queued typing;
+held menu keys must be released before typing resumes. The game-owned line and
+cursor survive because Lua state survives pause. Focus loss clears keyboard
+state and pending typing, stops platform text input and retains the requested
+mode. Focus return restarts it; repeat events without a fresh key press are
+suppressed. Focus loss does not automatically pause game simulation.
+
+Exit, failed startup and Guru reset text mode and queues. A fresh cartridge
+session starts with text entry off. Held typing keys cannot become movement or
+host actions after end/reset until released. Escape works for all games, not
+just text-enabled ones; it also acts as Start in console-mode idle dialogs.
+
+See the [text entry demo and reusable single-line editor](../../examples/text-entry-demo/README.md).
+The helper's 256-character cap is a game-side policy, distinct from the engine's
+128-event batch limit. General keyboard polling, mouse input, arbitrary key
+bindings and multiline editors are not added by this API.
+
 ## Host pause menu
 
-Start on any connected controller, or Enter on the keyboard, opens the
-host-controlled pause menu. Resume is selected each time the menu opens.
+Start on any connected controller, or Escape on the keyboard, opens the
+host-controlled pause menu. Enter also opens it outside explicit text entry;
+while typing, Enter submits to the game. Resume is selected each time the menu opens.
 
 - Up/Down selects Resume or Exit Game.
 - A confirms the selected action.
 - B or Start resumes play regardless of the selection.
 - Keyboard equivalents are Up/Down or W/S, J to confirm, and K to resume.
+  Enter or Escape also resumes from the host menu.
 
 Start is reserved for the host. Cartridge calls to `sugarbee.btn("start")`
 and `sugarbee.btnp("start")` always return false.
@@ -90,8 +171,8 @@ In directory mode, a startup scan automatically launches a sole eligible
 cartridge if there are no scan errors or omitted eligible entries. Exiting,
 recovering from Guru, or rescanning never triggers automatic launch.
 With the explicit leading `--console` flag, idle B/K does nothing and
-Start/Enter opens an Exit to system confirmation with Cancel selected.
-Up/Down selects; A/J activates; B/K or Start/Enter cancels. While the panel is
+Start/Enter/Escape opens an Exit to system confirmation with Cancel selected.
+Up/Down selects; A/J activates; B/K or Start/Enter/Escape cancels. While the panel is
 open, launch, rescan, and list navigation are blocked. Confirming Exit to system
 ends the host loop, runs normal cleanup, and returns to the launching terminal.
 The OS continues running; operating system power-off is not implemented.
@@ -110,7 +191,7 @@ For **development**, the keyboard is an additional player-0 controller:
 | Directions | Arrow keys or W/A/S/D |
 | A / B | J / K |
 | X / Y | U / I |
-| Start | Enter |
+| Start | Enter (outside text entry), Escape |
 | Select | Right Shift |
 
 The keyboard and player-0 gamepad are combined: either can hold a logical

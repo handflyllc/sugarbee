@@ -172,3 +172,13 @@ isolation. Native tests remain authoritative for archive handling and safety.
 The deletion model clears only its invocation-local saved string, succeeds when
 already absent, and checks zero arguments and lifecycle availability. Native
 failure and persistence semantics are covered separately by storage tests.
+
+## Text input model limitation
+
+The runner recognizes `text_begin()`, `text_end()` and `text_events()` with their
+zero-argument/callback rules, but supplies empty text-event batches only. It does
+not simulate SDL typing, composition, repeat, overflow, keyboard mapping
+suppression, focus changes or the host menu. Its scripted logical buttons can
+be treated as physical gamepad input. Production native `text_input` and
+`text_entry_host` tests cover input delivery and demo editing/lifecycle; manual
+keyboard checks remain necessary on desktop and Pi.

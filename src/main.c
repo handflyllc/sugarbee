@@ -639,6 +639,48 @@ static int l_sugarbee_btnp(lua_State* L) {
     return 1;
 }
 
+/* Text input is callback-scoped. Stack: zero arguments -> no results for
+ * begin/end, or (ordered event table, nil/error code) for text_events. */
+static void text_call_context(lua_State *L, bool read) {
+    if (lua_gettop(L) != 0) luaL_error(L, "text input: expected no arguments");
+    bool update = g_engine.execution_stage && strcmp(g_engine.execution_stage, "update()") == 0;
+    bool init = g_engine.execution_stage && strcmp(g_engine.execution_stage, "init()") == 0;
+    if (!host_save_session_available() || g_engine.paused || !g_engine.input ||
+        (!update && (read || !init)))
+        luaL_error(L, read ? "text_events requires a healthy update()" :
+            "text_begin/text_end require a healthy init() or update()");
+}
+static int l_sugarbee_text_begin(lua_State *L) {
+    text_call_context(L, false);
+    sb_input_text_mode(g_engine.input, true);
+    return 0;
+}
+static int l_sugarbee_text_end(lua_State *L) {
+    text_call_context(L, false);
+    sb_input_text_mode(g_engine.input, false);
+    return 0;
+}
+static int l_sugarbee_text_events(lua_State *L) {
+    text_call_context(L, true);
+    sb_text_batch_t batch;
+    sb_input_text_read(g_engine.input, &batch);
+    static const char *names[] = {"text", "backspace", "delete", "left",
+        "right", "home", "end", "submit"};
+    lua_createtable(L, (int)batch.count, 0);
+    for (size_t i = 0; i < batch.count; ++i) {
+        const sb_text_event_t *event = &batch.events[i];
+        lua_createtable(L, 0, event->kind == SB_TEXT_CHARACTER ? 2 : 1);
+        lua_pushstring(L, names[event->kind]); lua_setfield(L, -2, "type");
+        if (event->kind == SB_TEXT_CHARACTER) {
+            lua_pushlstring(L, &event->character, 1); lua_setfield(L, -2, "text");
+        }
+        lua_rawseti(L, -2, (lua_Integer)i + 1);
+    }
+    if (batch.status == SB_TEXT_OK) lua_pushnil(L);
+    else lua_pushstring(L, batch.status == SB_TEXT_OVERFLOW ? "overflow" : "unsupported_text");
+    return 2;
+}
+
 /* Push exactly two results: nil and a stable storage failure code. */
 static int push_save_failure(lua_State *L, sb_save_result_t result) {
     const char *code = "io_error";
@@ -744,6 +786,9 @@ void register_sugarbee_api(lua_State* L) {
     lua_pushcfunction(L, l_sugarbee_texture_free); lua_setfield(L, -2, "texture_free");
     lua_pushcfunction(L, l_sugarbee_btn);   lua_setfield(L, -2, "btn");
     lua_pushcfunction(L, l_sugarbee_btnp);  lua_setfield(L, -2, "btnp");
+    lua_pushcfunction(L, l_sugarbee_text_begin); lua_setfield(L, -2, "text_begin");
+    lua_pushcfunction(L, l_sugarbee_text_end); lua_setfield(L, -2, "text_end");
+    lua_pushcfunction(L, l_sugarbee_text_events); lua_setfield(L, -2, "text_events");
     lua_pushcfunction(L, l_sugarbee_save); lua_setfield(L, -2, "save");
     lua_pushcfunction(L, l_sugarbee_delete_save); lua_setfield(L, -2, "delete_save");
     lua_pushcfunction(L, l_sugarbee_load_save); lua_setfield(L, -2, "load_save");
@@ -765,6 +810,7 @@ void trigger_guru_meditation(uint32_t code, const char* title, const char* messa
     }
 
     fflush(stderr);
+    sb_input_text_reset(g_engine.input);
     sb_audio_session_fail(g_engine.audio);
     sb_lua_audio_fail(g_engine.lua_audio);
     sb_lua_music_fail(g_engine.lua_music);
@@ -968,6 +1014,7 @@ static bool start_cartridge(const char *filepath) {
         end_cartridge();
         return false;
     }
+    sb_input_text_reset(g_engine.input);
     sb_audio_session_begin(g_engine.audio);
     g_engine.L = luaL_newstate();
     if (!g_engine.L) {
@@ -1198,6 +1245,7 @@ static void draw_system_exit_confirmation(void) {
 
 static void set_cartridge_paused(bool paused) {
     g_engine.paused = paused;
+    sb_input_text_suspend(g_engine.input, paused);
     sb_audio_session_pause(g_engine.audio, paused);
 }
 
@@ -1572,6 +1620,7 @@ static void call_lua_shutdown(void) {
 static void end_cartridge(void) {
     sb_audio_session_prepare_shutdown(g_engine.audio);
     call_lua_shutdown();
+    sb_input_text_reset(g_engine.input);
     sb_audio_session_end(g_engine.audio);
     sb_lua_audio_end(g_engine.lua_audio);
     sb_lua_music_end(g_engine.lua_music);
