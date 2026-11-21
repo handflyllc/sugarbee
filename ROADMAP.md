@@ -4,6 +4,19 @@ Reviewed 2026-11-16 against `7085043` (runtime `4d7ca11`), the updated
 SugarBeats passdown and five-game friction report. This is a revisable plan,
 not a release schedule.
 
+## Active checkpoint: three-pane interaction demo
+
+Authorized after `ce194ef`. A cartridge-only [three-pane demo](examples/panes-demo/README.md)
+combines the existing line editor, wrapping, modules and clipping. Typed commands
+maximize/restore scene, console and status panes; maximized scene/status retain
+a command strip. A five-station marker supplies persistent scene state. The game
+owns commands, a 256-character draft and 12-entry output history. Enter submits;
+Escape/physical Start opens the host menu. No native API changes, mouse input,
+custom glyph sheet, scenario loader or adventure framework. Desktop automated
+validation passed on 2026-11-21: 204/204 serial tests and a warning-free build.
+The user confirmed all five desktop manual checks passed on 2026-11-21.
+Pi validation remains pending.
+
 ## Completed checkpoint: explicit keyboard text entry
 
 Authorized after `e0acd12`. Opt-in `text_begin()` / `text_end()` and ordered
@@ -219,7 +232,7 @@ on 2026-11-17. The user also confirmed Pi acceptance at `0357700` on 2026-11-17:
 145/145 serial tests and all manual checks passed. Pi colors appeared washed
 out but were accepted; the cause is unconfirmed (see the demo validation note).
 Thickness, antialiasing and line alpha remain separate scopes.
-Filled triangles are the active checkpoint below.
+Filled triangles were subsequently completed below.
 Completed checkpoint `cb1fcca`: opaque circle outlines and filled disks,
 sharing an integer pixel rule, checked RGB, camera/clip support and work bounded
 by visible rows even for extreme radii. See the
@@ -292,7 +305,7 @@ Pause/resume, exit/relaunch, canvas-demo/Pong regressions and Exit to system.
 On 2026-11-18, the user confirmed Pi acceptance at `d699492`: 165/165 tests
 and all requested visual, lifecycle and regression checks passed.
 Wrapping was subsequently completed as a cartridge-local helper. Explicit text
-entry is implemented in the active checkpoint above. Alignment options and new
+entry is implemented in the completed checkpoint above. Alignment options and new
 fonts remain separate future work.
 
 ## Completed checkpoint: logical canvas declaration and scaling
@@ -644,11 +657,11 @@ enabled; Escape and controller Start retain host-menu access. Physical controlle
 game chooses whether their actions continue while typing.
 
 Text-entry/editing events and keyboard mapping suppression are implemented in
-the active checkpoint above; drawing clip rectangles were previously completed.
+the completed checkpoint above; drawing clip rectangles were previously completed.
 Mouse input remains future work. Command parsing, room logic and pane contents
 belong in the cartridge.
-Start with a fixed three-pane prototype and a bounded command line when this work
-becomes active; settle text length/character support and input-conflict checks then.
+The active three-pane demo above now exercises this layout with typed view
+commands and a bounded command line. The full adventure remains future work.
 
 ## Limits and deferred work
 

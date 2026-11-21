@@ -46,6 +46,7 @@ See [dependencies](docs/development/dependencies.md) and
 - [Text measurement demo](examples/text-metrics-demo/README.md)
 - [Text wrapping helper and demo](examples/text-wrap-demo/README.md)
 - [Keyboard text entry and line editor](examples/text-entry-demo/README.md)
+- [Three-pane command-driven demo](examples/panes-demo/README.md)
 - [Filled triangle demo](examples/triangle-demo/README.md)
 - [Circle primitives demo](examples/circle-demo/README.md)
 - [Line primitive demo](examples/line-demo/README.md)

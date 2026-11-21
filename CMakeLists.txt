@@ -880,6 +880,17 @@ if(BUILD_TESTING AND SUGARBEE_BUILD_HOST)
     endif()
 
     if(SUGARBEE_BUILD_PACKER)
+        add_executable(test_panes_host tests/test_panes_host.c)
+        target_link_libraries(test_panes_host PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
+        sugarbee_warnings(test_panes_host)
+        add_test(NAME panes_pack COMMAND sbee-pack
+            -i "${PROJECT_SOURCE_DIR}/examples/panes-demo"
+            -o "${PROJECT_BINARY_DIR}/panes-demo.vcart" -t "Three Panes"
+            --uuid 6b58f806-8162-47bc-b220-832d93e684ce)
+        set_tests_properties(panes_pack PROPERTIES FIXTURES_SETUP panes TIMEOUT 10)
+        add_test(NAME panes_host COMMAND test_panes_host "${PROJECT_BINARY_DIR}/panes-demo.vcart")
+        set_tests_properties(panes_host PROPERTIES FIXTURES_REQUIRED panes TIMEOUT 15
+            ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy")
         add_executable(test_text_entry_host tests/test_text_entry_host.c)
         target_link_libraries(test_text_entry_host PRIVATE ${SUGARBEE_HOST_TEST_LIBRARIES})
         sugarbee_warnings(test_text_entry_host)
@@ -1102,7 +1113,11 @@ if(BUILD_TESTING)
             "${PROJECT_SOURCE_DIR}/tests/text-wrap/test.lua"
             "${PROJECT_SOURCE_DIR}/examples/text-wrap-demo/ui/textwrap.lua")
         set_tests_properties(text_wrap_behavior PROPERTIES TIMEOUT 5)
-        foreach(cartridge IN ITEMS text-entry-demo text-wrap-demo pitch-control-demo stats-demo rotation-demo opacity-demo graphics-demo moving-box sprite-demo
+        add_test(NAME panes_behavior COMMAND "${LUA54_INTERPRETER}"
+            "${PROJECT_SOURCE_DIR}/tests/panes/test.lua"
+            "${PROJECT_SOURCE_DIR}/examples/panes-demo")
+        set_tests_properties(panes_behavior PROPERTIES TIMEOUT 5)
+        foreach(cartridge IN ITEMS panes-demo text-entry-demo text-wrap-demo pitch-control-demo stats-demo rotation-demo opacity-demo graphics-demo moving-box sprite-demo
                 asset-demo sprite-sheet-demo pong-lab invaders-lab pacman-demo)
             add_test(NAME cartridge_smoke_${cartridge}
                 COMMAND "${LUA54_INTERPRETER}"
