@@ -4,6 +4,46 @@ Reviewed 2026-11-16 against `7085043` (runtime `4d7ca11`), the updated
 SugarBeats passdown and five-game friction report. This is a revisable plan,
 not a release schedule.
 
+## Agreed next milestone: RC2 release preparation — 2026-11-23
+
+Release the current engine at `1fb9542` as `v0.1.0-rc2`, with no new runtime
+features. This is the scope decision, not release acceptance or publication.
+Existing 204-test desktop/Pi checkpoint acceptance remains valid; fresh Release
+builds and final distributions still require their own validation.
+
+Preparation order:
+1. Thoroughly reconcile documentation against code: API claims, current versus
+   historical status, dependencies, build instructions, compatibility guidance,
+   known limitations and release notes. Preserve RC1 history.
+2. Refresh packaging and select representative examples, including native music
+   and newer graphics/text capabilities. Record engine requirements for shipped
+   examples; machine-enforced version checks are not part of RC2.
+3. Validate fresh native Release builds on Debian x86_64 and Pi ARM64 with the
+   full serial suite and a compact manual acceptance checklist.
+4. Validate independently extracted source and both binary archives, dependencies,
+   cartridge identities, notices, build identity and checksums.
+5. Tag and publish the accepted commit with matching source/native artifacts.
+   User performs credentialed pushes/publication. SugarHive is a separate product.
+
+Discuss any confirmed correctness or packaging blocker explicitly before changing
+runtime scope. No new input events, font API, batching or audio features are
+included merely to close the NO CARRIER friction report's fifteen entries.
+
+Early post-RC2 priority: design host-side cartridge/engine compatibility checks
+before further API expansion. Distinguish container format version from engine
+API requirements; settle version comparisons, future breaking changes and legacy
+cartridges without declarations before implementation. The planned separate
+`sugarbee-games` repository motivates this work but is not an RC2 dependency.
+Its working directory may later be supplied as reference; it has not been reviewed.
+Then revisit highest-friction items, particularly Up/Down/Tab text events, with
+history and completion remaining game-owned. Other items remain candidates.
+
+The 2026-11-23 NO CARRIER report was reviewed for discussion only: no reported
+showstoppers, custom-font readability is real authoring friction, and reported
+Pi glyph performance does not presently justify batching. Lua print-call counts
+are not renderer-operation counts; ordinary 60 Hz updates are not sample-timed
+pitch automation. These are review conclusions, not a new whole-engine audit.
+
 ## Completed checkpoint: three-pane interaction demo
 
 Authorized after `ce194ef`. A cartridge-only [three-pane demo](examples/panes-demo/README.md)
