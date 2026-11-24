@@ -44,8 +44,11 @@ cp docs/release/BINARY_README.md docs/release/PACKAGING.md "$stage/docs/release/
 cp src/font8x8.c "$stage/third_party/font8x8/font8x8.c"
 # Retain source and documentation for each distributed cartridge. Fixed IDs
 # keep Save Lab identity and example identities stable between package builds.
-names=(pong-lab synth-lab musical-synth-lab save-lab sprite-sheet-demo)
-uuids=(b9ab687f-a074-47d6-9836-a5ec95591e11 5f5040f9-6d44-485d-a923-f977d76cd2de 7499fd87-b134-47f5-bdf8-0889dce5ad9d 7a09c254-7fd8-4a87-9c44-742d33028ac1 1a4a0877-3042-4fad-a51e-9144ce296ec8)
+names=(pong-lab synth-lab musical-synth-lab save-lab sprite-sheet-demo
+       song-change canvas-demo rotation-demo panes-demo)
+uuids=(b9ab687f-a074-47d6-9836-a5ec95591e11 5f5040f9-6d44-485d-a923-f977d76cd2de 7499fd87-b134-47f5-bdf8-0889dce5ad9d 7a09c254-7fd8-4a87-9c44-742d33028ac1 1a4a0877-3042-4fad-a51e-9144ce296ec8
+       250c23a3-e794-4931-9e15-c4d9a6cf9037 7cc81559-25ee-490b-a115-6a8ae64e75b4
+       8b172fb6-918d-4d55-9d0c-f675432bc216 6b58f806-8162-47bc-b220-832d93e684ce)
 copy_example() {
     while IFS= read -r -d '' path; do
         mkdir -p "$stage/$(dirname "$path")"
@@ -55,6 +58,7 @@ copy_example() {
 for i in "${!names[@]}"; do
     example=${names[$i]}
     copy_example "$example"
+    "$stage/bin/sbee-pack" --init-identity -i "$stage/examples/$example" --uuid "${uuids[$i]}"
     "$stage/bin/sbee-pack" -i "$stage/examples/$example" \
         -o "$stage/cartridges/$example.vcart" -t "$example" --uuid "${uuids[$i]}"
 done
@@ -63,6 +67,8 @@ cmake -DSOURCE="$repo_root/examples/wav-lab" -DSTAGE="$output/wav-source" \
     -DGENERATOR="$build_dir/generate_wav_lab" -DPACKER="$stage/bin/sbee-pack" \
     -DOUTPUT="$stage/cartridges/wav-lab.vcart" -P tests/wav-lab/prepare.cmake
 cp -R "$output/wav-source/assets" "$stage/examples/wav-lab/"
+"$stage/bin/sbee-pack" --init-identity -i "$stage/examples/wav-lab" \
+    --uuid 87a84a28-8804-48ad-94d9-cbf68860e35d
 {
     printf 'Version: %s\nArchitecture: %s\nCommit: %s\n' "$version" "$arch" "$(git rev-parse HEAD)"
     if [[ -n "$preview" ]]; then

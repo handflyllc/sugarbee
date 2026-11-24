@@ -6,13 +6,21 @@
 #define CHECK(e) do { if (!(e)) { fprintf(stderr,"Load line %d: %s\n",__LINE__,#e); return 1; } } while (0)
 /* Link wrapping affects the loader and vendored reader without shipping test
  * hooks in the native interface. Only track calls during each load/free. */
+/* Optimized builds may fold malloc plus zeroing into calloc. Track both. */
 void *__real_malloc(size_t);
+void *__real_calloc(size_t, size_t);
 void __real_free(void *);
 static bool tracing;
 static size_t calls, live, fail_call;
 void *__wrap_malloc(size_t n) {
     if (tracing && ++calls == fail_call) return NULL;
     void *p = __real_malloc(n);
+    if (tracing && p) ++live;
+    return p;
+}
+void *__wrap_calloc(size_t count, size_t size) {
+    if (tracing && ++calls == fail_call) return NULL;
+    void *p = __real_calloc(count, size);
     if (tracing && p) ++live;
     return p;
 }

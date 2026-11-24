@@ -43,7 +43,7 @@ the host menu; Enter also does so outside explicit cartridge text entry. Exit Ga
 with status 0 and does not power off the OS. Labs use Player 1 unless documented
 otherwise; Pong supports two controllers. Cartridge-specific controls are in
 `examples/<name>/README.md` where present. Sprite-sheet movement uses the D-pad
-or arrow/WASD keys. Samples start silently until triggered.
+or arrow/WASD keys. WAV Lab starts silently until triggered.
 
 Saves normally use `$XDG_DATA_HOME/sugarbee/saves` or
 `$HOME/.local/share/sugarbee/saves`. For isolated acceptance testing, add
@@ -68,8 +68,27 @@ release. This binary package does not include the development test toolchain.
 
 Consult the packaged release notes and each example's requirement before using
 another engine version. The current header runtime value does not distinguish
-RC1 from RC2 APIs. This template's six-cartridge acceptance list reflects the
-existing packaging script; RC2 selection and validation are still pending.
+RC1 from RC2 APIs. Compatibility is not guaranteed until a future release yet to
+be determined. All included sources target this RC2 engine; this is the intended
+validation baseline, not a claim that RC2 is the earliest version for every lab.
+RC2 release acceptance remains pending until recorded in the release checklist.
+
+| Included cartridge | Coverage |
+| --- | --- |
+| pong-lab | Gameplay and two controllers |
+| synth-lab | Basic synthesis |
+| musical-synth-lab | Synth score playback |
+| save-lab | Persistent saves |
+| sprite-sheet-demo | Sprite regions, scaling and flips |
+| wav-lab | Generated WAVs, overlap and looping |
+| song-change | Native music replacement and stop policy |
+| canvas-demo | 300×200 canvas, scaling, clipping and Guru recovery |
+| rotation-demo | Sprite rotation, pivots, tint and opacity |
+| panes-demo | Modules, text entry, wrapping and pane layouts |
+
+Packaged source directories include `sugarbee.uuid`, preserving the shipped
+identity when rebuilt with the packaged packer. Original repository sources
+are unchanged by packaging.
 
 ## Extracted-package acceptance
 
@@ -77,7 +96,17 @@ Use an extraction outside the development checkout on each target host:
 
 - Verify checksums and resolved libraries; package and launch the Pong test above.
 - Launch each included cartridge: Pong, basic/musical Synth Labs, Save Lab,
-  sprite-sheet demo and WAV Lab. Check graphics, controls and audio.
+  sprite-sheet demo, WAV Lab, song-change, canvas-demo, rotation-demo and
+  panes-demo. Check graphics, controls and audio.
+- Song-change: J/K select lower/higher tones; repeated selections remain usable;
+  U stops. Pause/resume and exit/relaunch must leave controls usable.
+- Canvas: confirm the 300×200 label, all four border edges, equal-width bars and
+  round circle. Pause/resume; K deliberately raises Guru, B/K recovers.
+- Rotation: J steps 45 degrees; K toggles animation. Check center/external pivots,
+  orange sheet region, clipping, and unrotated text/host menus.
+- Panes: type `help`, `move right`, `view console`, `view scene`, `view status`,
+  `view all`. Enter submits; Escape pauses. Preserve a partially typed command
+  through pause/resume; exit/relaunch resets the scene and draft.
 - In WAV Lab test sustained looping, overlap, stop and pause/resume; exit while
   sounding and relaunch silently. Check both controllers in Pong.
 - Save/relaunch Save Lab with the same save directory and confirm persistence.

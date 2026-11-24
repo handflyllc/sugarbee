@@ -12,13 +12,13 @@ See [documentation findings](rc2-documentation-review.md),
 
 | Gate | RC2 status |
 | --- | --- |
-| Documentation reconciliation | Review recorded; packaging-specific instructions must follow the final example selection |
+| Documentation reconciliation | Review recorded; packaging instructions now reflect the ten-example selection |
 | Runtime scope | Current engine; discuss confirmed correctness/package blockers before expanding scope |
-| Packaging refresh and example selection | Pending; existing scripts stage the RC1 six-cartridge set |
-| Fresh desktop Release suite and manual checks | Pending |
+| Packaging refresh and example selection | Implemented: original six plus song-change, canvas-demo, rotation-demo and panes-demo; validation below |
+| Fresh desktop Release suite and manual checks | 204/204 serial Release tests pass after test-only allocation-tracking repair; user confirmed all ten desktop acceptance checks passed on 2026-11-23 (see packaging evidence) |
 | Fresh Pi ARM64 Release suite and manual checks | Pending |
 | Independently extracted source build and full suite | Pending |
-| Extracted x86_64 and ARM64 binary acceptance | Pending |
+| Extracted x86_64 and ARM64 binary acceptance | x86_64 preview automated checks and user ten-cartridge acceptance passed; ARM64 and final artifacts pending |
 | Final notices, build identity and checksums | Pending |
 | Matching commit/tag/artifacts and publication | Pending; intended tag `v0.1.0-rc2` |
 
@@ -42,14 +42,25 @@ CTest is serial on both targets; parallel compilation is permitted. Review any
 warnings. SDL dummy-driver checks do not establish visible rendering, audible
 playback or physical-controller behavior.
 
-## Packaging checkpoint to settle next
+## Selected packaging checkpoint
 
-Refresh `tools/package-release.sh`, `tests/release/prepare-fixtures.sh` and their
-instructions together. Keep the existing representative coverage and choose a
-bounded addition for native music and newer graphics/text capabilities. Candidates
-include song-change, canvas/rotation demonstrations and panes-demo; this is not
-a decision to ship every example. Record tested engine requirements with the
-selected cartridges. Keep source identities stable across builds.
+`tools/package-release.sh` and `tests/release/prepare-fixtures.sh` now include
+song-change, canvas-demo, rotation-demo and panes-demo alongside the original six
+release examples. Pac-Man and the deliberate execution-limit fixture are also
+prepared for development acceptance, but not distributed. The package README
+lists coverage and the intended RC2 engine requirement; API compatibility remains
+provisional. Packaged source directories retain stable `sugarbee.uuid` identities.
+
+After building all targets, prepare the manual fixtures:
+
+```sh
+bash tests/release/prepare-fixtures.sh build-rc2-release
+./build-rc2-release/sugarbee --console --save-dir ./build-rc2-release/acceptance-saves --cartridges ./build-rc2-release/acceptance
+```
+
+Use the [packaged manual checks](../release/BINARY_README.md#extracted-package-acceptance)
+for the ten selected examples, plus Pong/Pac-Man and Guru recovery. Package
+creation commands and extraction procedure are in [packaging](../release/PACKAGING.md).
 
 The existing header minimum-runtime value is `1.0.0` in RC1 and current main.
 It cannot distinguish RC2-only APIs; do not claim machine enforcement of the
@@ -62,7 +73,7 @@ outside that checkout or package from a separate clean checkout.
 
 ## Manual and extracted-package acceptance
 
-Finalize exact commands with the packaging refresh. Cover:
+Cover:
 
 - Launcher, pause/resume, Exit Game, relaunch, Guru recovery and normal host exit.
 - Pong/Pac-Man baseline behavior and simultaneous physical controllers where applicable.

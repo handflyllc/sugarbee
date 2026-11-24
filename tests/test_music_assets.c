@@ -3,12 +3,18 @@
 #include <stdlib.h>
 #include <string.h>
 #define CHECK(e) do { if (!(e)) { fprintf(stderr,"Music assets line %d: %s\n",__LINE__,#e); return 1; } } while (0)
+/* Optimized builds may fold malloc plus zeroing into calloc. Track both. */
 void *__real_malloc(size_t);
+void *__real_calloc(size_t, size_t);
 void __real_free(void *);
 static size_t calls,live,fail_call;
 void *__wrap_malloc(size_t n) {
     if (++calls==fail_call) return NULL;
     void *p=__real_malloc(n); if (p) ++live; return p;
+}
+void *__wrap_calloc(size_t count, size_t size) {
+    if (++calls==fail_call) return NULL;
+    void *p=__real_calloc(count, size); if (p) ++live; return p;
 }
 void __wrap_free(void *p) { if (p) --live; __real_free(p); }
 static char json[SB_MUSIC_LOAD_MAX_INPUT];

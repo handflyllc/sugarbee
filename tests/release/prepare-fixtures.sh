@@ -2,7 +2,7 @@
 # Package the compact RC acceptance set using the selected build's packager.
 set -euo pipefail
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
-build_dir="${1:-$repo_root/build-rc-release}"
+build_dir="${1:-$repo_root/build-rc2-release}"
 build_dir="$(cd -- "$build_dir" && pwd)"
 packer="$build_dir/sbee-pack"
 if [[ ! -x "$packer" || ! -x "$build_dir/generate_wav_lab" ]]; then
@@ -16,6 +16,14 @@ for name in pong-lab pacman-demo sprite-sheet-demo synth-lab musical-synth-lab; 
 done
 "$packer" -i "$repo_root/examples/save-lab" -o "$out/save-lab.vcart" \
     -t "Save Lab" --uuid 7a09c254-7fd8-4a87-9c44-742d33028ac1
+# Match the four RC2 additions and their stable distribution identities.
+names=(song-change canvas-demo rotation-demo panes-demo)
+uuids=(250c23a3-e794-4931-9e15-c4d9a6cf9037 7cc81559-25ee-490b-a115-6a8ae64e75b4
+       8b172fb6-918d-4d55-9d0c-f675432bc216 6b58f806-8162-47bc-b220-832d93e684ce)
+for i in "${!names[@]}"; do
+    "$packer" -i "$repo_root/examples/${names[$i]}" \
+        -o "$out/${names[$i]}.vcart" -t "${names[$i]}" --uuid "${uuids[$i]}"
+done
 cmake -DSOURCE="$repo_root/examples/wav-lab" \
     -DSTAGE="$build_dir/wav-lab/source" -DGENERATOR="$build_dir/generate_wav_lab" \
     -DPACKER="$packer" -DOUTPUT="$out/wav-lab.vcart" \

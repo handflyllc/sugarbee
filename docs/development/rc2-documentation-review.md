@@ -43,3 +43,12 @@ did `git diff --check`. Host and packer help output confirmed the documented
 command forms; CTest discovery listed 204 tests. The suite was not rerun for
 these documentation-only changes. Link checking verifies file targets, not
 external URLs or every heading anchor.
+
+## Packaging follow-up
+
+The subsequent packaging checkpoint based on `8729686` selects the original six
+examples plus song-change, canvas-demo, rotation-demo and panes-demo. The scripts
+and package instructions now agree on that set. See [packaging evidence](../release/PACKAGING.md)
+for preview automation and build warnings; manual, Pi and final distribution
+acceptance remain separate gates. The remaining-work list above records the
+review's original findings, not the current implementation status.

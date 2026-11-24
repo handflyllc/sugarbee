@@ -3,13 +3,24 @@
 #include "music_asset_fixture.h"
 #include <math.h>
 #define CHECK(e) do { if (!(e)) { fprintf(stderr,"Owned music SDL line %d: %s\n",__LINE__,#e); return 1; } } while (0)
+/* Optimized builds may fold malloc plus zeroing into calloc. Track both. */
 void *__real_malloc(size_t);
+void *__real_calloc(size_t, size_t);
 void __real_free(void *);
 static size_t allocations,frees,fail_call,live;
+static bool tracing;
 static void *tracked[128];
 void *__wrap_malloc(size_t n) {
+    if (!tracing) return __real_malloc(n);
     if (++allocations==fail_call) return NULL;
     void *p=__real_malloc(n);
+    if (p) for (unsigned i=0;i<128;++i) if (!tracked[i]) { tracked[i]=p; ++live; break; }
+    return p;
+}
+void *__wrap_calloc(size_t count, size_t size) {
+    if (!tracing) return __real_calloc(count, size);
+    if (++allocations==fail_call) return NULL;
+    void *p=__real_calloc(count, size);
     if (p) for (unsigned i=0;i<128;++i) if (!tracked[i]) { tracked[i]=p; ++live; break; }
     return p;
 }
@@ -37,6 +48,8 @@ int main(void) {
     CHECK(sb_audio_music_unload(NULL,1)==SB_MUSIC_ASSET_UNAVAILABLE);
     CHECK(sb_audio_music_play(NULL,1,map,1,false)==SB_MUSIC_ASSET_UNAVAILABLE);
     sb_audio_t *a=sb_audio_create(); CHECK(a); SDL_PauseAudioDevice(a->device,1);
+    /* Account cartridge assets, excluding the already-created host session. */
+    tracing=true;
     CHECK(load(a,&id)==SB_MUSIC_ASSET_REJECTED && !id);
     CHECK(sb_audio_music_load(a,json,strlen(json),NULL,NULL)==SB_MUSIC_ASSET_ARGUMENT);
     sb_audio_session_begin(a);

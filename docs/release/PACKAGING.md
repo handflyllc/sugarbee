@@ -1,13 +1,12 @@
-# Native packaging — RC2 preparation status
+# RC2 source and native binary packaging
 
-The existing packaging script and six-cartridge selection below were validated
-for RC1. RC2 packaging refresh and extracted-archive acceptance are pending;
-passing `0.1.0-rc2` to the script does not complete those gates. Follow the
-[current checklist](../development/release-checklist.md). Existing final-package
-clean-tree guard also rejects untracked files; preserve local transfer notes
-outside the release checkout or use a clean checkout, rather than deleting them.
+The selected set is the six RC1 cartridges plus song-change, canvas-demo,
+rotation-demo and panes-demo. Packaging refresh is implemented; fresh Release,
+manual and extracted-archive acceptance remain separate pending gates in the
+[current checklist](../development/release-checklist.md).
 
-# RC1 source and native binary packaging
+The final-package clean-tree guard also rejects untracked files; preserve local
+transfer notes outside the release checkout or use a clean checkout.
 
 Accepted scope: a source archive plus native Linux x86_64 and ARM64 binary
 archives. No installer, bundled shared libraries or appliance image. Use a
@@ -19,7 +18,7 @@ The source/API remains provisional; publication is a separate final action.
 From the repository root on either host:
 
 ```sh
-bash tools/package-release.sh build-rc-release 0.1.0-rc1
+bash tools/package-release.sh build-rc2-release 0.1.0-rc2
 ```
 
 This requires a clean committed checkout. It configures Release mode, builds
@@ -31,7 +30,7 @@ Use the full Release acceptance procedure before release.
 For a local packaging trial while documentation/tooling changes are uncommitted:
 
 ```sh
-bash tools/package-release.sh build-rc-release 0.1.0-rc1 --preview
+bash tools/package-release.sh build-rc2-release 0.1.0-rc2 --preview
 ```
 
 Preview binary archives have `-preview` in the name and a warning in BUILD-INFO.
@@ -40,15 +39,17 @@ mode does not generate a misleading source archive from an older HEAD.
 
 Final output contains:
 
-- `sugarbee-0.1.0-rc1-linux-x86_64.tar.gz` or `...-linux-arm64.tar.gz`.
-- `sugarbee-0.1.0-rc1-source.tar.gz`, made with `git archive HEAD`.
+- `sugarbee-0.1.0-rc2-linux-x86_64.tar.gz` or `...-linux-arm64.tar.gz`.
+- `sugarbee-0.1.0-rc2-source.tar.gz`, made with `git archive HEAD`.
 - `SHA256SUMS` for those archives.
 
-Each binary package includes the host and packager, six playable cartridges,
+Each binary package includes the host and packager, ten playable cartridges,
 their source examples, API/documentation references, LICENSE and attribution,
 BUILD-INFO (commit, architecture, OS, libc and resolved libraries), and internal
 binary/cartridge checksums. No local handoff, save data or shared libraries are
-copied. Source examples retain fixed package identities. WAV assets are generated
+copied. Packaged source examples contain `sugarbee.uuid` with their fixed distribution
+identities, so the included packer preserves identity on rebuild. Repository
+example sources are not modified. WAV assets are generated
 from the tracked source. The deliberate Guru acceptance fixture is not shipped
 as a playable release example.
 
@@ -59,6 +60,60 @@ SHA256SUMS before extraction and CONTENTS.sha256 afterward. Follow the packaged
 README for library resolution, play/listening, both controllers, saves, relaunch
 and Exit to system. Run the packaged `sbee-pack`, not the development executable.
 Record the archive filename, BUILD-INFO commit, OS and actual checks performed.
+
+## RC2 preview automation — 2026-11-23
+
+On Debian x86_64, the working changes based on `8729686` produced preview
+`build-rc2-release/package.CqJ7Mg/sugarbee-0.1.0-rc2-linux-x86_64-preview.tar.gz`.
+Archive and internal checksums passed after independent extraction outside the
+checkout; both executables resolved their shared libraries. All ten cartridges
+passed ZIP CRC checks. Each included source was repacked with the shipped packer
+without `--uuid`, and all ten retained their original cartridge identity.
+All twenty original/repacked cartridges launched with dummy SDL video/audio,
+remained running for one second, and exited 0 on SIGTERM without Guru diagnostics.
+Vendored yyjson license and font source notice were present. The acceptance
+fixture helper also produced twelve CRC-valid cartridges (ten plus Pac-Man and
+the deliberate Guru fixture). Shell syntax and local Markdown links passed.
+
+These are automated packaging checks, not listening, rendering, controller,
+clean-machine dependency installation, Pi or final-release acceptance. No source
+archive is generated in preview mode. Final packages must be regenerated from
+the accepted clean commit, including subsequent documentation updates.
+
+The fresh optimized build emitted four `-Wformat-truncation` warnings at
+`src/sb_music_load.c:88` and `:93`, in existing bounded diagnostic formatting.
+Inspection found paths built from fixed schema names and bounded track/event
+indices, well below the 128-byte destination; no runtime defect was established.
+These warnings are recorded rather than claiming a warning-free Release build;
+no music-loader change is included in this packaging checkpoint.
+
+The user confirmed all ten desktop acceptance checks passed on 2026-11-23
+for this extracted preview. This accepts the desktop packaging checkpoint based
+on `8729686` plus the working changes; it does not establish ARM64 acceptance
+or final artifact/tag identity. The subsequent harness repair changes tests only.
+
+### Fresh Release suite: initial failure and harness repair
+
+The full serial Release suite completed with **201/204 passing** (175.92 seconds).
+Failures: `music_assets`, `music_load`, `music_assets_sdl`, all in allocation
+accounting/failure-injection assertions. Inspection of the optimized loader object
+shows the compiler replaced `malloc` plus zeroing with `calloc`; these three test
+harnesses wrap `malloc` and `free`, but not `calloc`. That bypasses their allocation
+tracking while frees remain tracked. This is strong evidence of an optimized-build
+test instrumentation defect, not evidence of an engine leak. The user subsequently authorized a focused harness repair. All three tests now
+wrap both allocation entry points, retaining failure injection and cleanup
+assertions. The SDL ownership test begins tracing after host-session creation
+so its counters continue to measure cartridge assets. No production engine code
+or optimization flags changed. Focused Debug and Release runs both pass 3/3;
+full serial Release revalidation passed **204/204**. The original three failures
+are resolved by test-only instrumentation changes. The user confirmed all ten desktop acceptance checks passed on 2026-11-23.
+Pi Release validation remains pending.
+
+Logs are preserved under `build-rc2-release/validation-8729686/`, including the
+original failing full-suite log, build warnings, fixture and extraction checks.
+The original failure log is retained separately from repair-validation logs. Pi and final artifact validation remain pending.
+
+## Historical RC1 evidence (not RC2 acceptance)
 
 Coastline preview trial, 2026-11-06: x86_64 archive checksums and internal checksums
 passed; all runtime libraries resolved. The packaged packager rebuilt Pong from
