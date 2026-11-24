@@ -1,6 +1,7 @@
 # SugarBee audio — settled initial design
 
-Current summary reconciled 2026-11-12 with music merge `2bf169c`. The initial
+Current summary reviewed for RC2 against `41d43d0`; music merge `2bf169c`
+is historical acceptance evidence. The initial
 synthesis/WAV design and dated checkpoint evidence below remain historical context.
 Current contracts: [synth](../api/audio.md), [WAV](../api/wav.md),
 [music playback](../api/music.md) and [music assets](../specifications/music-loading.md).
@@ -17,7 +18,7 @@ exit 0 and cartridge checks accepted per the user. See
 | Area | Implemented now | Still pending |
 | --- | --- | --- |
 | Output | Host-owned SDL2 device, 48 kHz float stereo, silent fallback, clean close | Live device-failure detection/reconnection and measured end-to-end latency |
-| Voice bank | Nine explicit native slots, triangle, white noise, saw, or pulse, independent state; 10 ms transitions including noise | Broader pitch |
+| Voice bank | Nine explicit native slots, triangle, white noise, saw, or pulse, independent state; 10 ms transitions including noise | Pitch smoothing/envelopes and additional synthesis remain deferred |
 | Triangle | Direct waveform, 27.5–4186.01 Hz, phase-preserving pitch/retrigger | None for this checkpoint; future synthesis changes remain separate |
 | Saw | PolyBLEP, 27.5–4186.01 Hz, native bank/SDL integration | None for this checkpoint; future synthesis changes remain separate |
 | Pulse | Signed-edge PolyBLEP, 27.5–4186.01 Hz, width 0.05–0.95, default 0.5, 10 ms ramps, DC conditioning | None for this checkpoint; future synthesis changes remain separate |

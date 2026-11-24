@@ -1,3 +1,12 @@
+# Native packaging — RC2 preparation status
+
+The existing packaging script and six-cartridge selection below were validated
+for RC1. RC2 packaging refresh and extracted-archive acceptance are pending;
+passing `0.1.0-rc2` to the script does not complete those gates. Follow the
+[current checklist](../development/release-checklist.md). Existing final-package
+clean-tree guard also rejects untracked files; preserve local transfer notes
+outside the release checkout or use a clean checkout, rather than deleting them.
+
 # RC1 source and native binary packaging
 
 Accepted scope: a source archive plus native Linux x86_64 and ARM64 binary

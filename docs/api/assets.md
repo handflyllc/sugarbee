@@ -45,7 +45,7 @@ SugarBee 0.1 applies these provisional hard limits in the cartridge reader:
 
 Member names must be relative, forward-slash-separated paths without empty
 segments, `.` or `..`, colons, control bytes, or backslashes. Duplicate exact
-names are rejected; ZIP CRC is checked while reading the requested member.
+names of the requested member are rejected; ZIP CRC is checked while reading the requested member.
 The whole directory is scanned before an asset is accepted.
 
 The current host reads `main.lua` through the same bounded reader as assets.

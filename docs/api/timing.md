@@ -88,7 +88,7 @@ opened. `dofile` and `loadfile` are unavailable. A
 archive with a private session cache and bounded reads.
 [`sugarbee.read_file`](data.md) reads bounded data entries from that same active
 cartridge without caching or executing them. These interfaces intentionally
-excludes direct filesystem access, OS commands, native-module loading, and
+exclude direct filesystem access, OS commands, native-module loading, and
 cartridge control of debug hooks. Attempts to use missing globals produce
 ordinary Lua errors through the existing lifecycle error handling.
 

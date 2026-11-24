@@ -38,8 +38,8 @@ echo $?
 ```
 
 No dependency should report `not found`. Do not run SugarBee as root.
-Navigate with arrows/WASD or the controller D-pad, A/J selects, Start/Enter opens
-the host menu. Exit Game returns to the launcher; Exit to system closes the host
+Navigate with arrows/WASD or the controller D-pad, A/J selects, Escape or controller Start opens
+the host menu; Enter also does so outside explicit cartridge text entry. Exit Game returns to the launcher; Exit to system closes the host
 with status 0 and does not power off the OS. Labs use Player 1 unless documented
 otherwise; Pong supports two controllers. Cartridge-specific controls are in
 `examples/<name>/README.md` where present. Sprite-sheet movement uses the D-pad
@@ -56,10 +56,20 @@ Package an included example with the shipped tool:
 ./bin/sbee-pack -i examples/pong-lab -o ./pong-test.vcart -t "Pong test"
 ```
 
-For your own games, record the generated UUID and reuse it with `--uuid` across
-updates. Original source examples and API references are included for reference;
+For a new game, run `./bin/sbee-pack --init-identity -i game-dir` once and
+retain `sugarbee.uuid` in source control. Adopt an existing game's UUID using
+`--init-identity --uuid UUID`; never replace it just to rebuild. Uninitialized
+sources still accept an explicit `--uuid` or generate a build-only identity.
+Original source examples and API references are included for reference;
 repository-relative build/test links in those references require the full source
 release. This binary package does not include the development test toolchain.
+
+## Compatibility
+
+Consult the packaged release notes and each example's requirement before using
+another engine version. The current header runtime value does not distinguish
+RC1 from RC2 APIs. This template's six-cartridge acceptance list reflects the
+existing packaging script; RC2 selection and validation are still pending.
 
 ## Extracted-package acceptance
 
@@ -80,7 +90,8 @@ architecture, BUILD-INFO commit and checks performed.
 ## Attribution
 
 Original SugarBee code uses the included zlib LICENSE. The embedded font's
-upstream notice and source are retained under `third_party/font8x8/`. The musical
+upstream notice and source are retained under `third_party/font8x8/`. The vendored
+yyjson parser and its MIT license are under `third_party/yyjson/`. The musical
 lab records its score source and adaptation in its README; no recording is bundled.
 WAV Lab contains original generated samples. System libraries retain their own
 licenses and are installed separately. See the source release for build scripts,

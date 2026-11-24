@@ -1,7 +1,7 @@
 # Project SugarBee — Roadmap
 
-Reviewed 2026-11-16 against `7085043` (runtime `4d7ca11`), the updated
-SugarBeats passdown and five-game friction report. This is a revisable plan,
+RC2 documentation reviewed 2026-11-23 against `41d43d0`. Earlier checkpoint
+and friction-review evidence is retained below as history. This is a revisable plan,
 not a release schedule.
 
 ## Agreed next milestone: RC2 release preparation — 2026-11-23
@@ -11,13 +11,16 @@ features. This is the scope decision, not release acceptance or publication.
 Existing 204-test desktop/Pi checkpoint acceptance remains valid; fresh Release
 builds and final distributions still require their own validation.
 
+Documentation reconciliation is recorded in the [RC2 review](docs/development/rc2-documentation-review.md).
+Release acceptance remains pending in the [checklist](docs/development/release-checklist.md).
+
 Preparation order:
 1. Thoroughly reconcile documentation against code: API claims, current versus
    historical status, dependencies, build instructions, compatibility guidance,
    known limitations and release notes. Preserve RC1 history.
 2. Refresh packaging and select representative examples, including native music
    and newer graphics/text capabilities. Record engine requirements for shipped
-   examples; machine-enforced version checks are not part of RC2.
+   examples; changes to the existing header version check are not part of RC2.
 3. Validate fresh native Release builds on Debian x86_64 and Pi ARM64 with the
    full serial suite and a compact manual acceptance checklist.
 4. Validate independently extracted source and both binary archives, dependencies,
@@ -29,10 +32,12 @@ Discuss any confirmed correctness or packaging blocker explicitly before changin
 runtime scope. No new input events, font API, batching or audio features are
 included merely to close the NO CARRIER friction report's fifteen entries.
 
-Early post-RC2 priority: design host-side cartridge/engine compatibility checks
-before further API expansion. Distinguish container format version from engine
-API requirements; settle version comparisons, future breaking changes and legacy
-cartridges without declarations before implementation. The planned separate
+Early post-RC2 priority: improve cartridge/engine compatibility policy before
+further API expansion. An existing numeric minimum-runtime check already exists,
+but both RC1 and current main use header runtime `1.0.0`, so it cannot distinguish
+their APIs. Distinguish container format, runtime/API requirements and release
+labels; settle version comparisons, future breaking changes and legacy defaults
+before implementation. See the [current contract](docs/specifications/cartridge-format.md). The planned separate
 `sugarbee-games` repository motivates this work but is not an RC2 dependency.
 Its working directory may later be supplied as reference; it has not been reviewed.
 Then revisit highest-friction items, particularly Up/Down/Tab text events, with
@@ -184,14 +189,13 @@ and all manual checks passed. See
 [contract and acceptance checks](docs/development/packaging-identity.md).
 No runtime/save format changes or general manifest framework.
 
-## Current status and next investigation
+## Historical music and pitch checkpoint
 
 Native music loading, sequencing, looping, shared voices, transport and
 cartridge/Lua playback are merged. User-reported post-merge acceptance at
 `2bf169c516a64d4ed22fe0e975fa88ba81d72aa2`: desktop 129 tests passed;
 Pi 129 tests passed, exit 0, all cartridge checks passed. That is historical
-music acceptance; the later pitch checkpoint below supersedes it as the current
-runtime baseline.
+music acceptance; later pitch and other completed checkpoints supersede it.
 RC1 `cca7c62` / `v0.1.0-rc1` is an earlier published baseline, not a release of
 these music additions.
 
@@ -209,14 +213,15 @@ serial tests, clean piano listening, music and cartridge lifecycle checks,
 Pong/Pac-Man and Exit to system. See [runtime validation](tests/audio-piano-runtime.md) and the
 [feasibility evidence](tests/audio-piano-feasibility.md).
 Nine synth voices, existing mixing gains and 48 kHz remain unchanged.
-Percussion, twelve voices and graphics work remain separate scopes.
+Percussion and twelve voices remain deferred; later graphics work is recorded
+in the completed checkpoints above.
 
 Known unresolved issue: user-reported full-system lockups, including parallel
 Pi CTest runs, have no established cause. CTest stays serial on both machines;
 parallel compilation remains usable. No reproduction or reliability guarantee is
 implied by this planning update.
 
-## Current review checkpoint and proposed follow-up
+## Historical November 16 review and subsequent checkpoints
 
 Documentation reconciliation and focused code review are complete; no runtime
 implementation is included. See the [findings and all 33 friction dispositions](docs/development/friction-review-2026-11-16.md)

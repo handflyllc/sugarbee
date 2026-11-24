@@ -1,3 +1,52 @@
+# SugarBee 0.1.0-rc2 — draft release notes
+
+**Unreleased.** RC2 freezes the engine feature baseline at `1fb9542`; preparation
+may update documentation and packaging. No RC2 tag, final artifact identity,
+fresh Release-build acceptance or package acceptance is claimed yet. See the
+[RC2 checklist](docs/development/release-checklist.md). RC1 notes are retained below.
+
+## Changes since RC1
+
+- Native music JSON loading, sample-frame sequencing, loop eligibility, explicit
+  voice reservations, transport/gain and coordinated host pause/cleanup.
+- A0–C8 pitched synthesis (27.5–4186.01 Hz), corrected pulse edges, and direct
+  phase/envelope-preserving frequency control; no scheduled pitch glide.
+- Clip rectangles, camera offset, sprite tint/opacity, rotation with pivots,
+  lines, circles/disks and filled triangles; rectangle/text opacity.
+- Fixed logical canvas declarations and width/height queries; text measurement,
+  cartridge-local wrapping and line-editing helpers, explicit ASCII text entry.
+- Cartridge-local `require`, bounded general-purpose `read_file`, persistent
+  source UUID initialization, explicit save deletion and an opt-in `--stats` overlay.
+- Tested examples including song changes and a three-pane command interface.
+
+## Compatibility and scope
+
+The API remains provisional; this is not a stable ABI. Cartridge format v1 and
+existing save UUID semantics remain. New APIs/assets may require RC2 even though
+RC1 can read the container. The existing header runtime check uses 1.0.0 in both
+versions and cannot distinguish RC1/RC2 capabilities; see the
+[version distinction](docs/specifications/cartridge-format.md#release-labels-versus-the-existing-runtime-check).
+Document the required release alongside each game. Do not treat header acceptance
+as API compatibility or change a game's UUID simply because it is repackaged.
+
+Planned distribution: source plus native Linux x86_64/ARM64 archives, dynamically
+linked to system libraries. No bundled OS/SugarHive image or new runtime feature
+is included in this release-preparation scope. Mouse/analog input, custom-font
+APIs, additional text-edit keys, external scenarios and audio extensions remain
+separate future work. Run trusted cartridges: resource limits are not a hostile
+sandbox, and synchronized saves do not guarantee power-loss durability.
+
+## Evidence and remaining gates
+
+The latest implementation checkpoint `953a202` passed 204 serial tests and manual
+checks on desktop and Pi on 2026-11-21. These are development-checkpoint results;
+fresh Release builds, extracted distributions and final artifact identity are
+still pending. Historical Pi lockups remain unexplained; CTest stays serial.
+The module fixture setup allowance was raised to 20 seconds and passed Pi
+recheck; the original delay was not diagnosed as storage failure.
+
+---
+
 # SugarBee 0.1.0-rc1 — release notes
 
 These notes describe the published RC1 tag `v0.1.0-rc1` (`cca7c62`), not current
@@ -6,7 +55,7 @@ main. Native music playback was added after RC1; see the [roadmap](ROADMAP.md).
 Release candidate for the experimental 0.1 baseline: source plus Linux x86_64
 and ARM64 binaries. Package acceptance is complete. Official artifacts must be
 built from tag `v0.1.0-rc1`; binary BUILD-INFO files identify the exact commit.
-See the [readiness checklist](docs/development/release-checklist.md) for evidence
+See the [RC1 readiness checklist](docs/development/release-checklist-rc1.md) for evidence
 and the final artifact verification procedure.
 
 SugarBee is an experimental 2D-first virtual console runtime for Debian x86_64

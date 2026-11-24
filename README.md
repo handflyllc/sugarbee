@@ -12,10 +12,13 @@ and eight WAV playbacks with whole-sound looping. Lua 5.4
 is the first cartridge language. Source targets Debian x86_64 and Raspberry
 Pi 4 ARM64; native binaries are platform-specific.
 
-Native music was merged at `2bf169c`. The subsequent A0–C8 runtime at
-`4d7ca11` has user-accepted desktop and Pi validation: 130/130 serial tests,
-listening and cartridge/lifecycle checks. Acceptance is recorded in `7085043`;
-see [runtime evidence](tests/audio-piano-runtime.md).
+RC2 preparation is in progress; it is not yet tagged or published. The current
+feature baseline includes A0–C8 synthesis, direct frequency control, native music,
+clipping/camera/tint/rotation and drawing primitives, fixed logical canvases,
+cartridge-local modules/data reads, text measurement/entry and save deletion.
+The latest implementation checkpoint (`953a202`) passed 204 serial tests and
+manual acceptance on desktop and Pi; documentation successors do not constitute
+fresh Release/package validation. See the [RC2 checklist](docs/development/release-checklist.md).
 The published `v0.1.0-rc1` packages predate native music playback; see the
 [release notes](RELEASE_NOTES.md) for that release's scope and compatibility.
 No bootable console image is included. See the [roadmap](ROADMAP.md) for current
@@ -26,12 +29,13 @@ engine revision; routine cross-project handoffs are no longer required.
 
 See [dependencies](docs/development/dependencies.md) and
 [building](docs/development/building.md). The baseline uses CMake, SDL2 (2.0.12 or later), Lua
-5.4, minizip, zlib, and the system `zip` command for cartridge packaging.
+5.4, libpng, minizip, zlib, and the system `zip` command for cartridge packaging.
 
 ## Documentation
 
 - [The SugarBee Manifesto — purpose and principles](MANIFESTO.md)
-- [Release-readiness checklist](docs/development/release-checklist.md)
+- [RC2 release-readiness checklist](docs/development/release-checklist.md)
+- [RC2 documentation review](docs/development/rc2-documentation-review.md)
 - [Release notes](RELEASE_NOTES.md)
 - [Developer timing readout (`--stats`)](docs/development/stats.md)
 - [Build and testing](docs/development/building.md)

@@ -143,10 +143,14 @@ The launcher displays its 64-cartridge capacity, additional eligible cartridges 
 - Configuration-file/menu directory settings, optional icons, and persistent
   logging are future discussion items, not implemented features.
 
-See the [manual checklist](../../tests/launcher/README.md). The automated suite
-includes fifty-six native tests and, when Lua 5.4 is available, the Save Lab
-behavior test and eight cartridge smoke
-tests using a stand-in API. It does not automate the launcher interaction flow.
+See the [manual checklist](../../tests/launcher/README.md). The full development
+suite currently contains 204 tests when host, packer and the Lua 5.4 interpreter
+are available. Automated fixtures do not replace physical launcher interaction
+checks. Run CTest serially; see [building](building.md).
+
+During a game, Escape or controller Start opens the host pause menu. Enter also
+opens it when explicit text entry is inactive; while typing, Enter submits an
+event to the cartridge. See [text entry](../api/input.md).
 
 ## Developer timing
 

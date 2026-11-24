@@ -1,107 +1,86 @@
-# SugarBee 0.1 release-readiness checklist
+# SugarBee RC2 release-readiness checklist
 
-Status: historical RC1 acceptance record. Release finalized at `cca7c62` /
-`v0.1.0-rc1`; publication was user-reported on 2026-11-06. Runtime baseline for
-that release: `b304a00`. Preparation commit: `f99583a`. The procedures below are
-retained for reproducing RC1; they are not outstanding current-development tasks.
-RC1 contains source plus Linux x86_64/ARM64 binaries and predates native music
-playback. See the [roadmap](../../ROADMAP.md) for the current 129-test music baseline.
+Status: preparation, not acceptance or publication. Reviewed 2026-11-23 against
+`41d43d0`; accepted feature baseline `1fb9542`. No new runtime features are in
+scope. The latest implementation checkpoint `953a202` passed 204 serial tests
+and user manual checks on desktop and Pi. Those results are development evidence,
+not fresh Release or final distribution validation.
 
-| Item | Evidence / remaining work |
+The [RC1 acceptance record](release-checklist-rc1.md) is preserved separately.
+See [documentation findings](rc2-documentation-review.md),
+[release notes](../../RELEASE_NOTES.md) and [packaging](../release/PACKAGING.md).
+
+| Gate | RC2 status |
 | --- | --- |
-| Current documentation | Reconciled with baseline; local links and whitespace checked |
-| Coastline fresh Release build | `build-rc-release`, Release, full 89 tests pass, no compiler warnings (2026-11-06) |
-| Coastline Release manual acceptance | User-reported 2026-11-06: all six check groups pass; Exit to system 0 |
-| Pi fresh Release build | User-confirmed `f99583a`, all 89 Release tests pass (2026-11-06) |
-| Pi Release manual acceptance | User-reported complete on 2026-11-06, including two controllers simultaneously |
-| Two physical controllers | Both work on coastline; simultaneous operation accepted on Pi |
-| Release contents and provisional API policy | Accepted: source plus two native Linux archives, provisional API; see release notes |
-| Binary package tooling | Native build, examples, notices, build identity and checksums implemented; preview guard verified |
-| x86_64 extracted package | Preview automated checks pass; user confirmed all six extracted cartridges and exit 0 (2026-11-06) |
-| ARM64 extracted package | User-reported at `409c505` (2026-11-06): libraries resolve, all cartridges pass, repacked Pong launches/pauses/restarts, synth listening and applicable pause/resume pass |
-| Source distribution contents | `git archive` of `f99583a` inspected; fresh extracted Release build has no warnings, 89 tests pass, acceptance fixture helper succeeds; recheck final tagged-tree contents after documentation commits |
-| Final commit / tag / publication | `cca7c62` / `v0.1.0-rc1`; publication user-reported 2026-11-06 |
+| Documentation reconciliation | Review recorded; packaging-specific instructions must follow the final example selection |
+| Runtime scope | Current engine; discuss confirmed correctness/package blockers before expanding scope |
+| Packaging refresh and example selection | Pending; existing scripts stage the RC1 six-cartridge set |
+| Fresh desktop Release suite and manual checks | Pending |
+| Fresh Pi ARM64 Release suite and manual checks | Pending |
+| Independently extracted source build and full suite | Pending |
+| Extracted x86_64 and ARM64 binary acceptance | Pending |
+| Final notices, build identity and checksums | Pending |
+| Matching commit/tag/artifacts and publication | Pending; intended tag `v0.1.0-rc2` |
 
-The existing Debug and hardware results remain valid historical evidence.
-They do not replace acceptance of the Release executable. This is a finite
-baseline check, not a new feature phase or a full hostile-cartridge audit.
+## Fresh native Release validation
 
-## Clean Release build
-
-On each host, from the repository root:
+On each machine, record the commit, platform, configuration, test count and manual
+results. Use a fresh build directory and ensure the Lua 5.4 interpreter is
+installed; missing optional test prerequisites must not silently reduce coverage.
 
 ```sh
-git rev-parse --short HEAD
-cmake -S . -B build-rc-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
-cmake --build build-rc-release -j4
-ctest --test-dir build-rc-release --output-on-failure
+git rev-parse HEAD
+cmake -S . -B build-rc2-release -DCMAKE_BUILD_TYPE=Release \
+  -DBUILD_TESTING=ON -DSUGARBEE_BUILD_HOST=ON -DSUGARBEE_BUILD_PACKER=ON
+cmake --build build-rc2-release -j4
+ctest --test-dir build-rc2-release --output-on-failure
 ```
 
-Use a new build directory for the initial check. Coastline's fresh build has
-already completed. If `build-rc-release` exists on the Pi, choose another unused
-directory and substitute it throughout; do not delete prior work or saves.
-Install the standalone `lua5.4` interpreter to enable all cartridge smoke tests.
-Expect 89 tests for this baseline, rather than accepting a smaller skipped suite.
+Expected current full suite: 204 tests. Preserve failing logs before rerunning.
+The plain `ctest` command assumes `CTEST_PARALLEL_LEVEL` is unset or `1`.
+CTest is serial on both targets; parallel compilation is permitted. Review any
+warnings. SDL dummy-driver checks do not establish visible rendering, audible
+playback or physical-controller behavior.
 
-## Prepare and launch the acceptance set
+## Packaging checkpoint to settle next
 
-```sh
-bash tests/release/prepare-fixtures.sh ./build-rc-release
-./build-rc-release/sugarbee --console --save-dir ./build-rc-release/acceptance-saves --cartridges ./build-rc-release/acceptance
-echo $?
-```
+Refresh `tools/package-release.sh`, `tests/release/prepare-fixtures.sh` and their
+instructions together. Keep the existing representative coverage and choose a
+bounded addition for native music and newer graphics/text capabilities. Candidates
+include song-change, canvas/rotation demonstrations and panes-demo; this is not
+a decision to ship every example. Record tested engine requirements with the
+selected cartridges. Keep source identities stable across builds.
 
-The script uses only binaries from the selected build. It packages Pong,
-Pac-Man, sprite-sheet, Save Lab, basic/musical Synth Labs, WAV Lab, and a deliberate
-runaway-update cartridge for Guru recovery. No test source selector is edited.
-Generated packages remain in the build tree; rerunning preserves saves. Save
-Lab retains its established UUID. These are test saves, not production backups.
+The existing header minimum-runtime value is `1.0.0` in RC1 and current main.
+It cannot distinguish RC2-only APIs; do not claim machine enforcement of the
+release requirement. See [version semantics](../specifications/cartridge-format.md).
 
-The helper is available in preparation commit `f99583a`. Runtime source is
-unchanged from `b304a00`; record the actual tested commit and any local changes.
-The Pi remains a receive-only validation target.
+Use source plus native Linux x86_64 and ARM64 archives with system shared-library
+dependencies. No bootable OS image or installer is included. The packaging guard
+requires a clean checkout including untracked files; preserve transfer notes
+outside that checkout or package from a separate clean checkout.
 
-## Compact manual acceptance — coastline and Pi
+## Manual and extracted-package acceptance
 
-1. **Launcher and graphics:** navigate the list, launch the sprite-sheet demo,
-   check movement, transparency, animation and flipped sprites; pause/resume,
-   exit to launcher, rescan with X/U, and launch another cartridge.
-2. **Gameplay and input:** play Pong and Pac-Man with keyboard and an available
-   controller; verify pause, resume, exit and relaunch. No stuck inputs or Gurus.
-3. **Saves:** in Save Lab change and save the counter, exit/relaunch and confirm
-   it reloads. Exit the host completely, relaunch with the same save directory
-   and confirm persistence. Do not infer power-loss durability from this check.
-4. **Recovery:** launch Execution Limit, confirm a Guru, dismiss with B/K, then
-   launch Pong and verify normal play. The runaway cartridge is intentionally bad.
-5. **Audio:** exercise basic Synth Lab controls and musical playback; in WAV Lab
-   check both one-shots, sustained looping, overlap, pan/volume/stop, pause/resume
-   and silent relaunch. A loop should continue beyond ten seconds without a
-   recurring seam click or gap. Use the individual lab READMEs for key mappings.
-6. **Exit:** use Exit to system and confirm status 0. Relaunch the host once to
-   confirm normal startup. Record device/output and anything unexpected.
+Finalize exact commands with the packaging refresh. Cover:
 
-## Two-controller coverage
+- Launcher, pause/resume, Exit Game, relaunch, Guru recovery and normal host exit.
+- Pong/Pac-Man baseline behavior and simultaneous physical controllers where applicable.
+- Selected graphics/canvas/text demonstrations, including Enter submission and
+  Escape/controller Start pausing during text entry.
+- Synth listening across the supported range, native music transport/song changes,
+  WAV overlap/looping, and silence after exit or appropriate relaunch.
+- Save/relaunch with stable cartridge identity and intentional deletion using
+  disposable validation saves.
 
-With two physical controllers connected, move both Pong paddles independently
-and simultaneously. Check each paddle's bounds and restart after a win using
-B on each controller in separate runs. Disconnect/reconnect a controller and
-check recovery without a crash or stuck movement; verify the assigned players
-against the discovery-order policy in the input API. Record device models and
-host. If hardware is unavailable, keep the gap explicit and agree whether it
-is acceptable for the RC; do not silently mark it passed.
+On each target, extract its binary archive outside the development checkout,
+verify supplied checksums and resolved shared libraries, launch every shipped
+cartridge and repack an included source example using the shipped packer.
+Separately extract the source archive and perform a fresh Release build/full
+serial suite. Verify staged notices, documented dependencies and complete source
+contents, including vendored libraries. Record archive names and BUILD-INFO commits.
 
-## Finalization
-
-Once acceptance and release contents are agreed, commit the readiness changes
-on a focused branch. Inspect a source archive from that exact commit: include
-source, tests, tools, examples, docs, LICENSE and third-party notices; exclude
-local builds, saves, credentials and ignored handoff material. Verify the archive
-build instructions in a fresh extraction before tagging. If runtime source
-changes during readiness, repeat affected checks and refresh acceptance evidence.
-Tag the accepted commit only after remaining gates are resolved; publish/push
-through the user's normal terminal workflow. Source and both native binary archives are accepted scope; no installer or
-appliance image. See [packaging](../release/PACKAGING.md) for artifact identity
-and extracted-package acceptance.
-
-The basic and musical Synth Labs use the default player index 0 (Player 1).
-Player 2 not operating their sound controls is expected, not an input failure.
+After acceptance, reconcile final release notes/checklist and ensure the tag,
+source archive and both native archives identify the same accepted commit.
+Generate/verify final checksums after artifact creation; user performs credentialed
+pushes and publication. No release artifact has been accepted by this document.

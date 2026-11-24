@@ -128,7 +128,19 @@ and exposes eight independent one-shot or whole-sound looping playbacks.
 `sb_wav` decodes and mixes samples; `sb_lua_audio` owns the cartridge binding
 context. Repeated playback shares decoded asset storage.
 
-Pause fades and freezes synth and WAV playback together. Guru failure rejects
+The [music API](../api/music.md) loads bounded prepared JSON songs, schedules
+sample-frame events, reserves explicitly mapped synth voices, and owns loop,
+stop and gain behavior. Its collection is cartridge-owned; direct synth calls
+cannot override reserved music voices. Lua modules and data reads use the same
+bounded archive reader with separate session allowances; see [modules](../api/modules.md)
+and [data](../api/data.md).
+
+Explicit ASCII [text entry](../api/input.md#explicit-text-entry) uses a bounded
+ordered event batch. The engine suppresses keyboard gameplay mappings while
+active; the cartridge owns editing buffers, focus and command interpretation.
+Clip, camera and sprite-tint state reset at frame and host/session boundaries.
+
+Pause fades and freezes synth, music and WAV playback together. Guru failure rejects
 new commands and fades playback out; native teardown releases cartridge audio
 without waiting for loops or notes to finish. Failed device initialization permits
 silent gameplay. There is no automatic device reconnection or streaming.

@@ -30,6 +30,23 @@ minimum file bounds. Higher major runtime versions are **assumed** compatible
 for this check, but this is not a future ABI guarantee. The eventual game API
 version and runtime implementation version should be separated.
 
+### Release labels versus the existing runtime check
+
+The header format version is `1`. Separately, `VCART_OS_MAJOR/MINOR/PATCH` in
+`include/vcart.h` currently declare **1.0.0**, and `sbee-pack --os M.m.p` writes
+an optional minimum requirement (default 1.0.0). Each component is 0–255.
+The `OS` names are legacy runtime identifiers, not a SugarHive/Linux requirement.
+CMake's project version is **0.1.0**; published labels such as `v0.1.0-rc1` and
+the planned `v0.1.0-rc2` are another identity, not values encoded in those bytes.
+
+RC1 and current main both use header runtime 1.0.0. Thus the existing check
+cannot distinguish RC1 from RC2-only APIs, prereleases or individual commits.
+Passing the header check does not guarantee that a game has all required APIs.
+Do not use `--os 0.1.0` as a way to require RC2, or raise these constants merely
+to match release labels. RC2 documents example requirements; a coherent API/
+release compatibility policy and future breaking-change handling are deferred
+to the agreed post-RC2 checkpoint. No header-format change is part of RC2.
+
 `payload_size` is the **compressed ZIP archive length**, not the sum of
 uncompressed contents. Per-file uncompressed sizes are described by ZIP
 entries. The asset reader enforces archive/member size limits, declared total

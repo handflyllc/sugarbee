@@ -3,6 +3,13 @@
 Install the packages in [dependencies.md](dependencies.md). Run from the
 repository root. **Do not build as root**.
 
+Run CTest serially on both desktop and Pi. The plain `ctest` commands below
+assume `CTEST_PARALLEL_LEVEL` is unset or set to `1`. Omit CTest `-j`;
+parallel compilation remains allowed. The current full suite
+contains **204 tests** when host, packager and the Lua 5.4 interpreter are enabled.
+A smaller tools-only or interpreter-less run is not equivalent coverage.
+Fresh RC2 Release/package acceptance is tracked in the [release checklist](release-checklist.md).
+
 ## Configure and compile
 
 ```sh
@@ -101,13 +108,14 @@ Expected: a dark-blue background, gold rectangle, and white `SUGARBEE`
 text beneath it. The packaged `.vcart` under `/tmp` is disposable; regenerate
 it using the command above whenever needed.
 
-The packager prints a randomly generated UUIDv4. **Save it in your game's
-project metadata** and supply it with `--uuid <the-uuid>` for future builds,
-so save files remain associated with the same game. A project manifest will
-manage this automatically in a later milestone.
+For a new game, run `sbee-pack --init-identity -i game-dir` once and retain the
+created `sugarbee.uuid` in source control; subsequent packages reuse it. Existing
+games must adopt their existing UUID with `--init-identity --uuid UUID` to retain
+save identity. Uninitialized examples still generate a build-only UUID unless
+`--uuid` is supplied. See [packaging identity](packaging-identity.md).
 
-The host uses SDL2's window through the C graphics backend. Start/Enter opens
-its pause menu; Exit Game returns to the host, where B/K closes SugarBee.
+The host uses SDL2's window through the C graphics backend. Escape or controller Start opens
+its pause menu; Enter also pauses when explicit text entry is inactive; Exit Game returns to the host, where B/K closes SugarBee.
 The window close control also exits. Fixed simulation timing, controller discovery,
 hotplug, and a keyboard development fallback are implemented; analog input
 is not yet implemented.
@@ -188,8 +196,8 @@ cartridges are manual checks, not CTest entries.
   but Lua bindings still reside in `src/main.c`. Input polling and controller handling now live in
   `src/sb_input_sdl.c`, with a language-neutral `sb_input.h` interface.
 - The bounded ZIP reader uses minizip 1.x against the complete `.vcart` with
-  its 64-byte prefix; this has been tested on desktop Linux, but still needs
-  verification on the Raspberry Pi and with additional minizip versions.
+  its 64-byte prefix; this has been validated on Debian x86_64 and Pi ARM64.
+  Additional minizip versions and distributions are not established by that evidence.
 - Game canvases default to 1280×720; optional root `console.json` selects a
   supported fixed size. See [canvas declaration/scaling](../api/canvas.md).
   Window-size selection and runtime canvas changes are not exposed.
@@ -198,10 +206,11 @@ cartridges are manual checks, not CTest entries.
 
 ## Raspberry Pi
 
-We plan to compile the C host natively on a 64-bit Raspberry Pi Linux system
-first. This shares source code and Lua API with the Debian x86_64 host; it
-is not a binary-compatible build. A cross-toolchain and minimal Linux image
-will follow once the host's behavior is stable.
+Native builds and checkpoint validation on Raspberry Pi 4 ARM64 are established.
+They share source code and the Lua API with Debian x86_64, not native binaries.
+RC2 needs fresh Release and extracted-package acceptance on both targets.
+Bootable console deployment belongs to the separate SugarHive project; it is not
+included in the SugarBee source/native-binary release.
 
 ## Input demonstration (graphics + keyboard/gamepad)
 

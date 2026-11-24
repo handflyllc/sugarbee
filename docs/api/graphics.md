@@ -356,8 +356,9 @@ unavailable (useful for headless development tests).
 This is an **internal interface**, not a stable ABI for native game modules.
 Memory ownership is defined for uploaded texture buffers (copied) and texture
 handles (context-owned), but broader ABI versioning and native-game isolation
-remain future work. The implemented transforms are crop, resize, and flip; no
-arbitrary rotation or 3D support is implemented.
+remain future work. Implemented transforms include crop, resize, flip and
+clockwise sprite rotation with optional pivots; see [rotation](#sprite-rotation).
+3D rendering is not implemented.
 
 ## Testing
 

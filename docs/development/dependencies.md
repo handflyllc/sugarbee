@@ -30,6 +30,9 @@ full test suite is enabled. It is optional for running the compiled host, but
 omitting it skips cartridge smoke tests; a smaller passing count is not
 equivalent coverage.
 
+The music JSON loader uses vendored yyjson; its source and license are retained
+under `third_party/yyjson/`. No separate yyjson system package is required.
+
 No KDE, X11 development stack, desktop environment, Node.js, or npm dependency
 is required by SugarBee's current C build. SDL2 may have desktop-oriented
 transitive dependencies in the Debian development environment; the final
